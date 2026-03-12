@@ -1,156 +1,171 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, Search, Youtube } from "lucide-react";
-import Logo from "./Logo";
-import SideMenu from "./SideMenu";
-import { formatDate } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
-const NAV_LINKS = [
-  { label: "Home",     href: "/" },
-  { label: "Recent",   href: "/articles" },
-  { label: "Videos",   href: "/videos" },
-  { label: "Podcasts", href: "/podcasts" },
-  { label: "Shorts",   href: "/shorts" },
-];
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
+interface HeaderProps {
+  onMenuOpen: () => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname();
+const TABS = [
+  { id: "home", label: "Home" },
+  { id: "recent", label: "Recent Stories" },
+  { id: "videos", label: "Videos" },
+  { id: "shorts", label: "Short Reads" },
+];
+
+export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderProps) {
+  const [dateStr, setDateStr] = useState("");
+
+  useEffect(() => {
+    const d = new Date();
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+    setDateStr(`${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} – ${days[d.getDay()]}`);
+  }, []);
 
   return (
-    <>
-      <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
-
-      <header
-        className="sticky top-0 z-30"
-        style={{
-          backgroundColor: "var(--bg)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <div className="max-w-[1200px] mx-auto px-5">
-
-          {/* Top bar */}
-          <div className="flex items-center justify-between py-5">
-            <div className="w-48 hidden md:block">
-              <p className="text-xs font-sans" style={{ color: "var(--text-muted)" }}>
-                {formatDate(new Date())}
-              </p>
-            </div>
-
-            <Logo size="md" />
-
-            <div className="w-48 flex items-center justify-end gap-4">
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube"
-                className="hover:opacity-75 transition-opacity"
-                style={{ color: "var(--red)" }}
-              >
-                <Youtube size={26} strokeWidth={1.8} />
-              </a>
-              <a
-                href="https://x.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="X (Twitter)"
-                className="hover:opacity-60 transition-opacity"
-                style={{ color: "var(--text-main)" }}
-              >
-                <XIcon className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-
-          {/* Nav bar */}
-          <nav
-            className="flex items-center justify-between py-3"
-            style={{ borderTop: "1px solid var(--border)" }}
-          >
-            {/* Left */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setMenuOpen(true)}
-                className="hover:opacity-60 transition-opacity"
-                aria-label="Open menu"
-                style={{ color: "var(--text-main)" }}
-              >
-                <Menu size={22} strokeWidth={1.8} />
-              </button>
-              <Link
-                href="/search"
-                className="flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-                style={{ color: "var(--text-muted)" }}
-              >
-                <Search size={16} strokeWidth={1.8} />
-                <span className="hidden sm:inline">Search</span>
-              </Link>
-            </div>
-
-            {/* Center nav links */}
-            <div className="flex items-center gap-6 md:gap-8">
-              {NAV_LINKS.map((link) => {
-                const isActive =
-                  link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="relative text-sm transition-colors pb-3 -mb-3"
-                    style={{
-                      color: isActive ? "var(--text-main)" : "var(--text-muted)",
-                      fontWeight: isActive ? 600 : 500,
-                    }}
-                  >
-                    {link.label}
-                    {isActive && (
-                      <span
-                        className="absolute bottom-0 left-0 w-full"
-                        style={{ height: "2px", backgroundColor: "var(--text-main)" }}
-                      />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Right */}
-            <div>
-              <Link
-                href="/subscribe"
-                className="hidden sm:inline-flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-full transition-all duration-200"
-                style={{
-                  border: "1px solid var(--text-main)",
-                  color: "var(--text-main)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = "var(--text-main)";
-                  (e.currentTarget as HTMLElement).style.color = "var(--bg)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-                  (e.currentTarget as HTMLElement).style.color = "var(--text-main)";
-                }}
-              >
-                Subscribe
-              </Link>
-            </div>
-          </nav>
+    <header style={{ padding: "25px 0 0" }}>
+      {/* Top bar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        {/* Date */}
+        <div style={{ fontSize: "0.875rem", color: "var(--text-muted)", width: 200 }}>
+          {dateStr}
         </div>
-      </header>
-    </>
+
+        {/* Brand */}
+        <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "clamp(2rem, 5vw, 3.2rem)",
+            fontWeight: 400,
+            lineHeight: 1,
+            letterSpacing: "-0.5px",
+            color: "var(--text-main)",
+          }}>
+            Opinionated Kalam
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6, fontSize: "0.75rem", fontFamily: "'Inter', sans-serif" }}>
+            by{" "}
+            <span style={{
+              backgroundColor: "var(--text-main)",
+              color: "white",
+              padding: "2px 7px",
+              borderRadius: 6,
+              fontWeight: 600,
+              fontSize: "0.68rem",
+              letterSpacing: "0.5px",
+            }}>
+              dense
+            </span>
+          </div>
+        </div>
+
+        {/* Socials */}
+        <div style={{ display: "flex", gap: 15, alignItems: "center", width: 200, justifyContent: "flex-end" }}>
+          {/* YouTube */}
+          <a href="#" aria-label="YouTube" style={{ color: "var(--red)", display: "flex" }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+            </svg>
+          </a>
+          {/* X / Twitter */}
+          <a href="#" aria-label="X" style={{ color: "var(--text-main)", display: "flex" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      {/* Nav bar */}
+      <nav style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "12px 0",
+        borderTop: "1px solid var(--border)",
+        borderBottom: "1px solid var(--border)",
+        marginBottom: 40,
+      }}>
+        {/* Left: Hamburger + Search */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <button
+            onClick={onMenuOpen}
+            aria-label="Open menu"
+            style={{
+              fontSize: "1.7rem",
+              lineHeight: 0.6,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-main)",
+              padding: "0 4px",
+            }}
+          >
+            ≡
+          </button>
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              color: "var(--text-main)",
+            }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            Search
+          </button>
+        </div>
+
+        {/* Center: Tabs */}
+        <div style={{ display: "flex", gap: 30, fontSize: "0.92rem", fontWeight: 500 }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "0.92rem",
+                fontWeight: activeTab === tab.id ? 700 : 500,
+                color: "var(--text-main)",
+                position: "relative",
+                padding: "0 0 14px",
+                fontFamily: "'Inter', sans-serif",
+              }}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <span style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  width: "100%",
+                  height: 2,
+                  backgroundColor: "var(--text-main)",
+                  borderRadius: 1,
+                }} />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Right */}
+        <div style={{ fontSize: "0.9rem", cursor: "pointer" }}>
+          About Us
+        </div>
+      </nav>
+    </header>
   );
 }

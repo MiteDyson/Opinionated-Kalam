@@ -1,153 +1,182 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { X, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  onTabChange: (tab: string) => void;
 }
 
-const menuSections = [
-  {
-    label: "Topics",
-    items: [
-      { label: "Geopolitics",  href: "/category/geopolitics" },
-      { label: "Automotive",   href: "/category/automotive" },
-      { label: "Scandals",     href: "/category/scandals" },
-      { label: "Crime",        href: "/category/crime" },
-      { label: "Explainers",   href: "/category/explainers" },
-      { label: "Economy",      href: "/category/economy" },
-    ],
-  },
-  {
-    label: "Formats",
-    items: [
-      { label: "Long Reads",   href: "/articles" },
-      { label: "Short Reads",  href: "/shorts" },
-      { label: "Video Essays", href: "/videos" },
-      { label: "Podcasts",     href: "/podcasts" },
-    ],
-  },
-  {
-    label: "About",
-    items: [
-      { label: "About Us",      href: "/about" },
-      { label: "Contact",       href: "/contact" },
-      { label: "Write for Us",  href: "/write-for-us" },
-    ],
-  },
-];
+export default function SideMenu({ isOpen, onClose, onTabChange }: SideMenuProps) {
+  const [tabsOpen, setTabsOpen] = useState(true);
+  const [genreOpen, setGenreOpen] = useState(true);
 
-export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
-  const [openSection, setOpenSection] = useState<string | null>("Topics");
-
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [isOpen]);
+  const navigate = (tab: string) => {
+    onTabChange(tab);
+    onClose();
+  };
 
   return (
     <>
       {/* Overlay */}
       <div
         onClick={onClose}
-        className="fixed inset-0 z-40 transition-all duration-300"
         style={{
-          background: "rgba(0,0,0,0.4)",
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          zIndex: 99,
           opacity: isOpen ? 1 : 0,
           visibility: isOpen ? "visible" : "hidden",
+          transition: "opacity 0.3s ease, visibility 0.3s ease",
         }}
       />
 
       {/* Drawer */}
-      <aside
-        className="fixed top-0 left-0 h-full z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out"
+      <div
         style={{
-          width: 300,
+          position: "fixed",
+          top: 0,
+          left: isOpen ? 0 : -350,
+          width: 310,
+          height: "100vh",
           backgroundColor: "var(--bg)",
-          transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+          zIndex: 100,
+          padding: "36px 28px",
+          boxShadow: "5px 0 20px rgba(0,0,0,0.12)",
+          transition: "left 0.3s ease",
+          overflowY: "auto",
         }}
       >
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 pt-6 pb-5"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
-          <span className="font-serif text-xl" style={{ color: "var(--text-main)" }}>
-            Menu
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 36 }}>
           <button
             onClick={onClose}
-            className="p-1 rounded-md transition-colors hover:bg-black/5"
-            aria-label="Close menu"
+            style={{
+              fontSize: "1.8rem",
+              lineHeight: 0.7,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-main)",
+            }}
           >
-            <X size={22} />
+            ≡
           </button>
+          <span style={{ fontWeight: 600, fontSize: "1.05rem" }}>Menu</span>
         </div>
 
-        {/* Sections */}
-        <nav className="flex-1 overflow-y-auto px-6 py-5 space-y-1">
-          {menuSections.map((section) => (
-            <div key={section.label}>
-              <button
-                onClick={() =>
-                  setOpenSection(openSection === section.label ? null : section.label)
-                }
-                className="flex items-center justify-between w-full py-2.5 text-sm font-semibold uppercase tracking-widest transition-colors"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {section.label}
-                <ChevronRight
-                  size={13}
-                  className="transition-transform duration-200"
-                  style={{
-                    transform: openSection === section.label ? "rotate(90deg)" : "rotate(0deg)",
-                  }}
-                />
-              </button>
-
-              <div
-                className="overflow-hidden transition-all duration-300"
-                style={{
-                  maxHeight: openSection === section.label ? "400px" : "0px",
-                  opacity: openSection === section.label ? 1 : 0,
-                }}
-              >
-                <ul className="pl-3 pb-3 space-y-1">
-                  {section.items.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onClose}
-                        className="block py-1.5 text-sm transition-colors"
-                        style={{ color: "var(--text-main)" }}
-                        onMouseEnter={(e) =>
-                          ((e.target as HTMLElement).style.color = "var(--red)")
-                        }
-                        onMouseLeave={(e) =>
-                          ((e.target as HTMLElement).style.color = "var(--text-main)")
-                        }
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="px-6 py-5" style={{ borderTop: "1px solid var(--border)" }}>
-          <div className="flex gap-4 text-xs" style={{ color: "var(--text-muted)" }}>
-            <Link href="/terms" className="hover:underline">Terms</Link>
-            <Link href="/privacy" className="hover:underline">Privacy</Link>
-          </div>
+        {/* Tabs group */}
+        <div style={{ marginBottom: 28 }}>
+          <button
+            onClick={() => setTabsOpen(!tabsOpen)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontWeight: 600,
+              fontSize: "1rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-main)",
+              marginBottom: 12,
+              width: "100%",
+              textAlign: "left",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              style={{ width: 14, height: 14, transition: "transform 0.2s", transform: tabsOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+            >
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+            Tabs
+          </button>
+          {tabsOpen && (
+            <ul style={{ listStyle: "none", paddingLeft: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+              {[
+                { id: "home", label: "Home" },
+                { id: "recent", label: "Recent Uploads" },
+                { id: "videos", label: "Videos" },
+                { id: "shorts", label: "Short Reads" },
+              ].map((item) => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => navigate(item.id)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "0.92rem",
+                      color: "var(--text-main)",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-main)")}
+                  >
+                    {item.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </aside>
+
+        {/* Genre group */}
+        <div>
+          <button
+            onClick={() => setGenreOpen(!genreOpen)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontWeight: 600,
+              fontSize: "1rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-main)",
+              marginBottom: 12,
+              width: "100%",
+              textAlign: "left",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              style={{ width: 14, height: 14, transition: "transform 0.2s", transform: genreOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+            >
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+            Genre
+          </button>
+          {genreOpen && (
+            <ul style={{ listStyle: "none", paddingLeft: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+              {["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers"].map((genre) => (
+                <li key={genre}>
+                  <a
+                    href="#"
+                    style={{ fontSize: "0.92rem", color: "var(--text-main)" }}
+                    onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "var(--red)")}
+                    onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "var(--text-main)")}
+                  >
+                    {genre}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </>
   );
 }
