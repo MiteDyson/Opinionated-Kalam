@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import DenseLogo from "./DenseLogo";
 
 interface HeaderProps {
   onMenuOpen: () => void;
@@ -53,7 +52,7 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
         <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
           {dateStr}
         </div>
-        <DenseLogo size={30} />
+        <img src="/logo.png" alt="dense" style={{ height: 36, width: 36, borderRadius: 6, display: "block" }} />
         <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "flex-end" }}>
           <a href="#" aria-label="YouTube" style={{
             display: "flex", alignItems: "center", justifyContent: "center",

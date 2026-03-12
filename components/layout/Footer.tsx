@@ -1,4 +1,3 @@
-import DenseLogo from "@/components/layout/DenseLogo";
 
 export default function Footer() {
   return (
@@ -31,7 +30,7 @@ export default function Footer() {
             Opinionated Kalam
           </div>
           {/* Dense logo — inverted for dark footer */}
-          <DenseLogo size={30} variant="footer" />
+          <img src="/logo.png" alt="dense" style={{ height: 36, width: 36, borderRadius: 6, display: "inline-block" }} />
           <p style={{ color: "#666", fontSize: "0.78rem", marginTop: 4, fontFamily: "'Inter', sans-serif" }}>
             © 2026 Opinionated Kalam. All Rights Reserved.
           </p>

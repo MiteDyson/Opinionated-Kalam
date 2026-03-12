@@ -70,7 +70,7 @@ export default function SideMenu({ isOpen, onClose, onTabChange }: SideMenuProps
         {/* Nav */}
         <div style={{ flex: 1, overflowY: "auto", padding: "4px 28px 20px" }}>
           {/* Tabs */}
-          <div style={{ marginBottom: 4 }}>
+          {/* <div style={{ marginBottom: 4 }}>
             <button style={groupBtn} onClick={() => setTabsOpen(!tabsOpen)}>
               <Chevron open={tabsOpen} /> Tabs
             </button>
@@ -93,7 +93,7 @@ export default function SideMenu({ isOpen, onClose, onTabChange }: SideMenuProps
                 ))}
               </ul>
             )}
-          </div>
+          </div> */}
 
           {/* Genre */}
           <div>
