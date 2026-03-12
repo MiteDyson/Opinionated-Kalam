@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const ACCENT  = "#1B2A47";
@@ -8,48 +8,152 @@ const SURFACE = "#1a1a1a";
 
 const ALL_TAGS = ["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers", "India", "Economy", "Science", "Technology", "Culture"];
 
-// Minimal rich-text toolbar (no Tiptap dep needed until installed)
-// When @tiptap packages are installed, swap EditorArea for the TiptapEditor component below
-function SimpleEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/* ── Quill editor — loaded from CDN, no npm install needed ── */
+function QuillEditor({ onChange }: { onChange: (html: string) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const quillRef     = useRef<any>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // Load Quill CSS
+    if (!document.getElementById("quill-css")) {
+      const link = document.createElement("link");
+      link.id   = "quill-css";
+      link.rel  = "stylesheet";
+      link.href = "https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css";
+      document.head.appendChild(link);
+    }
+
+    // Load Quill JS
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js";
+    script.async = true;
+    script.onload = () => setReady(true);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !containerRef.current || quillRef.current) return;
+
+    const Quill = (window as any).Quill;
+    if (!Quill) return;
+
+    quillRef.current = new Quill(containerRef.current, {
+      theme: "snow",
+      placeholder: "Write your article content here...",
+      modules: {
+        toolbar: [
+          [{ header: [2, 3, false] }],
+          ["bold", "italic", "underline", "strike"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["blockquote", "code-block"],
+          ["link", "image"],
+          [{ align: [] }],
+          ["clean"],
+        ],
+      },
+    });
+
+    // Emit HTML on every change
+    quillRef.current.on("text-change", () => {
+      const html = quillRef.current.root.innerHTML;
+      onChange(html === "<p><br></p>" ? "" : html);
+    });
+
+    // Handle image — base64 embed (no upload server needed)
+    const toolbar = quillRef.current.getModule("toolbar");
+    toolbar.addHandler("image", () => {
+      const input = document.createElement("input");
+      input.setAttribute("type", "file");
+      input.setAttribute("accept", "image/*");
+      input.click();
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          const range = quillRef.current.getSelection(true);
+          quillRef.current.insertEmbed(range.index, "image", base64);
+          quillRef.current.setSelection(range.index + 1);
+        };
+        reader.readAsDataURL(file);
+      };
+    });
+  }, [ready, onChange]);
+
   return (
-    <div style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, overflow: "hidden" }}>
-      {/* Toolbar */}
-      <div style={{ display: "flex", gap: 4, padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.1)", flexWrap: "wrap" }}>
-        {[
-          { label: "B",  cmd: "bold",          style: { fontWeight: 700 } },
-          { label: "I",  cmd: "italic",        style: { fontStyle: "italic" } },
-          { label: "H2", cmd: "h2",            style: {} },
-          { label: "H3", cmd: "h3",            style: {} },
-          { label: "UL", cmd: "insertUnorderedList", style: {} },
-          { label: "OL", cmd: "insertOrderedList",   style: {} },
-        ].map(t => (
-          <button key={t.cmd} onMouseDown={(e) => { e.preventDefault(); document.execCommand(t.cmd); }}
-            style={{
-              padding: "4px 10px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.12)",
-              backgroundColor: "transparent", color: "#ccc", cursor: "pointer",
-              fontSize: "0.78rem", fontFamily: "'Inter', sans-serif", ...t.style,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+    <>
+      <style>{`
+        /* Dark theme for Quill */
+        .ql-toolbar.ql-snow {
+          background: #1e1e1e !important;
+          border-color: rgba(255,255,255,0.1) !important;
+          border-radius: 8px 8px 0 0;
+        }
+        .ql-toolbar.ql-snow .ql-stroke { stroke: #aaa !important; }
+        .ql-toolbar.ql-snow .ql-fill  { fill: #aaa !important; }
+        .ql-toolbar.ql-snow .ql-picker-label { color: #aaa !important; }
+        .ql-toolbar.ql-snow button:hover .ql-stroke,
+        .ql-toolbar.ql-snow button.ql-active .ql-stroke { stroke: white !important; }
+        .ql-toolbar.ql-snow button:hover .ql-fill,
+        .ql-toolbar.ql-snow button.ql-active .ql-fill  { fill: white !important; }
+        .ql-toolbar.ql-snow .ql-picker-options {
+          background: #2a2a2a !important;
+          border-color: rgba(255,255,255,0.1) !important;
+        }
+        .ql-toolbar.ql-snow .ql-picker-item { color: #ccc !important; }
+        .ql-container.ql-snow {
+          background: #111 !important;
+          border-color: rgba(255,255,255,0.1) !important;
+          border-radius: 0 0 8px 8px;
+          min-height: 340px;
+        }
+        .ql-editor {
+          color: #e8e8e8 !important;
+          font-family: 'Inter', sans-serif !important;
+          font-size: 0.95rem !important;
+          line-height: 1.8 !important;
+          min-height: 340px;
+        }
+        .ql-editor.ql-blank::before {
+          color: #444 !important;
+          font-style: normal !important;
+        }
+        .ql-editor h2 { font-family: 'DM Serif Display', serif !important; color: white !important; }
+        .ql-editor h3 { color: white !important; }
+        .ql-editor blockquote {
+          border-left: 4px solid #d38b88 !important;
+          color: #aaa !important;
+        }
+        .ql-editor img { max-width: 100%; border-radius: 6px; margin: 12px 0; }
+        .ql-snow .ql-tooltip { background: #2a2a2a !important; border-color: rgba(255,255,255,0.1) !important; color: #ccc !important; }
+        .ql-snow .ql-tooltip input[type=text] { background: #111 !important; color: #e8e8e8 !important; border-color: rgba(255,255,255,0.2) !important; }
+      `}</style>
+
+      {!ready && (
+        <div style={{
+          minHeight: 340, backgroundColor: "#111", borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.1)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#555", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
+        }}>
+          Loading editor...
+        </div>
+      )}
+
+      <div style={{ display: ready ? "block" : "none" }}>
+        <div ref={containerRef} />
       </div>
-      <div
-        contentEditable
-        suppressContentEditableWarning
-        onInput={(e) => onChange((e.target as HTMLElement).innerHTML)}
-        dangerouslySetInnerHTML={{ __html: value }}
-        style={{
-          minHeight: 320, padding: "16px", outline: "none",
-          backgroundColor: "#111", color: "#e8e8e8",
-          fontSize: "0.95rem", fontFamily: "'Inter', sans-serif",
-          lineHeight: 1.75,
-        }}
-      />
-    </div>
+    </>
   );
 }
 
+/* ── Main page ── */
 export default function NewArticlePage() {
   const router = useRouter();
   const [title, setTitle]       = useState("");
@@ -63,9 +167,8 @@ export default function NewArticlePage() {
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (tag: string) =>
     setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
 
   const addCustomTag = () => {
     const t = tagInput.trim();
@@ -74,7 +177,8 @@ export default function NewArticlePage() {
   };
 
   const handleSave = async (publishNow = false) => {
-    if (!title.trim() || !content.trim()) { setError("Title and content are required"); return; }
+    if (!title.trim())   { setError("Title is required"); return; }
+    if (!content.trim()) { setError("Content is required"); return; }
     setSaving(true); setError("");
     const res = await fetch("/api/articles", {
       method: "POST",
@@ -100,19 +204,20 @@ export default function NewArticlePage() {
   const label: React.CSSProperties = {
     display: "block", fontFamily: "'Inter', sans-serif",
     fontSize: "0.8rem", fontWeight: 600, color: "#888",
-    textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6,
+    textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6,
   };
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f0f0f", color: "#e8e8e8" }}>
-      {/* Header */}
-      <div style={{ backgroundColor: SURFACE, borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+      {/* Top bar */}
+      <div style={{ backgroundColor: SURFACE, borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <button onClick={() => router.push("/admin")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", fontFamily: "'Inter', sans-serif" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
-          <span style={{ color: "rgba(255,255,255,0.2)" }}>|</span>
+          <span style={{ color: "rgba(255,255,255,0.15)" }}>|</span>
           <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", color: "white" }}>New Article</span>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -127,6 +232,7 @@ export default function NewArticlePage() {
             padding: "8px 18px", borderRadius: 7, border: "none",
             backgroundColor: ACCENT, color: "white", cursor: "pointer",
             fontSize: "0.85rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
+            opacity: saving ? 0.7 : 1,
           }}>
             {saving ? "Publishing..." : "Publish"}
           </button>
@@ -182,7 +288,8 @@ export default function NewArticlePage() {
         {/* Title */}
         <div>
           <span style={label}>Title *</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter article title..."
+          <input value={title} onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter article title..."
             style={{ ...field, fontSize: "1.4rem", padding: "12px 16px", fontFamily: "'DM Serif Display', serif" }}
           />
         </div>
@@ -191,7 +298,7 @@ export default function NewArticlePage() {
         <div>
           <span style={label}>Excerpt / Summary</span>
           <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)}
-            placeholder="A short description shown on cards (1-2 sentences)..."
+            placeholder="A short description shown on cards (1–2 sentences)..."
             rows={3} style={{ ...field, resize: "vertical" }}
           />
         </div>
@@ -224,11 +331,10 @@ export default function NewArticlePage() {
               </button>
             ))}
           </div>
-          {/* Custom tag input */}
           <div style={{ display: "flex", gap: 8 }}>
             <input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-              placeholder="Add custom tag..."
+              placeholder="Add custom tag and press Enter..."
               style={{ ...field, flex: 1 }}
             />
             <button onClick={addCustomTag} style={{
@@ -248,21 +354,22 @@ export default function NewArticlePage() {
                   color: "white", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif",
                 }}>
                   {t}
-                  <button onClick={() => toggleTag(t)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: 0, fontSize: "0.9rem", lineHeight: 1 }}>×</button>
+                  <button onClick={() => toggleTag(t)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: 0, fontSize: "1rem", lineHeight: 1 }}>×</button>
                 </span>
               ))}
             </div>
           )}
         </div>
 
-        {/* Content Editor */}
+        {/* Quill Editor */}
         <div>
           <span style={label}>Content *</span>
-          <SimpleEditor value={content} onChange={setContent} />
-          <p style={{ marginTop: 6, fontSize: "0.75rem", color: "#555", fontFamily: "'Inter', sans-serif" }}>
-            Install @tiptap/react for a full rich-text editor with image embeds, links, and more.
+          <QuillEditor onChange={setContent} />
+          <p style={{ marginTop: 8, fontSize: "0.75rem", color: "#444", fontFamily: "'Inter', sans-serif" }}>
+            Use the toolbar to format text, add headings, lists, links, and embed images directly from your device.
           </p>
         </div>
+
       </div>
     </div>
   );

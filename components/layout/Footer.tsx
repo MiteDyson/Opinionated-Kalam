@@ -1,4 +1,3 @@
-
 export default function Footer() {
   return (
     <footer style={{ backgroundColor: "#151515", color: "#F8F8F8", padding: "60px 0 36px", marginTop: 80 }}>
@@ -6,8 +5,8 @@ export default function Footer() {
         <div style={{ display: "flex", justifyContent: "center", gap: "clamp(40px, 8vw, 100px)", marginBottom: 64, textAlign: "center", flexWrap: "wrap" }}>
           {[
             { title: "Explore", links: ["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers"] },
-            { title: "Learn", links: ["About Us", "Contact Us"] },
-            { title: "Legal", links: ["Terms of Service", "Privacy Policy", "Sitemap"] },
+            { title: "Learn",   links: ["About Us", "Contact Us"] },
+            { title: "Legal",   links: ["Terms of Service", "Privacy Policy", "Sitemap"] },
           ].map((col) => (
             <div key={col.title}>
               <h3 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: "1rem", marginBottom: 20, color: "white" }}>{col.title}</h3>
@@ -29,8 +28,6 @@ export default function Footer() {
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(2rem, 6vw, 3.5rem)", color: "white", lineHeight: 1 }}>
             Opinionated Kalam
           </div>
-          {/* Dense logo — inverted for dark footer */}
-          <img src="/logo.png" alt="dense" style={{ height: 36, width: 36, borderRadius: 6, display: "inline-block" }} />
           <p style={{ color: "#666", fontSize: "0.78rem", marginTop: 4, fontFamily: "'Inter', sans-serif" }}>
             © 2026 Opinionated Kalam. All Rights Reserved.
           </p>

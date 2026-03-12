@@ -30,48 +30,57 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
 
   return (
     <header>
-      {/* Title — full width centred */}
-      <div style={{ textAlign: "center", padding: "22px 0 8px" }}>
-        <div style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: "clamp(1.9rem, 4.5vw, 3rem)",
-          fontWeight: 400, lineHeight: 1,
-          color: "var(--text-main)", letterSpacing: "-0.3px",
-        }}>
-          Opinionated Kalam
-        </div>
-      </div>
-
-      {/* date | dense logo | socials — all on same row, vertically centred */}
+      {/* Row: date | title | socials */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "1fr auto 1fr",
         alignItems: "center",
-        paddingBottom: 14,
+        padding: "22px 0 14px",
       }}>
         <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
           {dateStr}
         </div>
-        <img src="/logo.png" alt="dense" style={{ height: 36, width: 36, borderRadius: 6, display: "block" }} />
+
+        {/* Title — no logo */}
+        <div style={{
+          fontFamily: "'DM Serif Display', serif",
+          fontSize: "clamp(2.2rem, 5vw, 3.6rem)",
+          fontWeight: 400, lineHeight: 1,
+          color: "var(--text-main)", letterSpacing: "-0.5px", textAlign: "center",
+        }}>
+          Opinionated Kalam
+        </div>
+
+        {/* Socials */}
         <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "flex-end" }}>
-          <a href="#" aria-label="YouTube" style={{
+          <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" style={{
             display: "flex", alignItems: "center", justifyContent: "center",
             width: 36, height: 36, borderRadius: "50%",
-            backgroundColor: "var(--red)", color: "white", flexShrink: 0,
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+            backgroundColor: "#FF0000", color: "white", flexShrink: 0, transition: "opacity 0.15s",
+          }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.85")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
             </svg>
           </a>
-          <a href="#" aria-label="X" style={{ display: "flex", color: "var(--text-main)" }}>
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor">
+          <a href="https://www.x.com" target="_blank" rel="noopener noreferrer" aria-label="X" style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 36, height: 36, borderRadius: "50%",
+            backgroundColor: "#000", color: "white", flexShrink: 0, transition: "opacity 0.15s",
+          }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.75")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
           </a>
         </div>
       </div>
 
-      {/* Nav — top border only */}
+      {/* Nav */}
       <nav style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         borderTop: "1px solid var(--border)",
