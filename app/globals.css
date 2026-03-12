@@ -6,31 +6,21 @@
 
 /* ── Design tokens ─────────────────────────────────────── */
 :root {
-  --bg: #ebe7df;
-  --text-main: #1a1a1a;
-  --text-muted: #555555;
-  --terracotta: #d38b88;
-  --red: #d92323;
-  --footer-bg: #151515;
-  --border: #cfcbc3;
-  --admin-bg: #0f0f0f;
-  --admin-surface: #1a1a1a;
-  --admin-border: rgba(255, 255, 255, 0.07);
+  --bg:             #D5D2CB;
+  --text-main:      #1a1a1a;
+  --text-muted:     #555555;
+  --terracotta:     #d38b88;
+  --red:            #d92323;
+  --footer-bg:      #151515;
+  --border:         #bfbcb5;
+  --admin-bg:       #0f0f0f;
+  --admin-surface:  #1a1a1a;
+  --admin-border:   rgba(255, 255, 255, 0.07);
 }
 
 /* ── Base ──────────────────────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg);
   color: var(--text-main);
@@ -38,153 +28,39 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
+h1, h2, h3, h4, h5 { font-family: "DM Serif Display", serif; font-weight: 400; line-height: 1.15; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
 
-h1,
-h2,
-h3,
-h4,
-h5 {
-  font-family: "DM Serif Display", serif;
-  font-weight: 400;
-  line-height: 1.15;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-img {
-  display: block;
-  max-width: 100%;
-}
-
-/* ── Reusable classes ─────────────────────────────────── */
-
-/* Badge pill */
 .read-pill {
   display: inline-block;
   background-color: var(--terracotta);
   color: var(--text-main);
-  padding: 3px 12px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 3px 12px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
   transition: opacity 0.15s;
 }
-.read-pill:hover {
-  opacity: 0.8;
-}
+.read-pill:hover { opacity: 0.8; }
 
-.read-pill-outline {
-  display: inline-block;
-  border: 1px solid var(--text-main);
-  color: var(--text-main);
-  padding: 3px 12px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: all 0.15s;
-}
-.read-pill-outline:hover {
-  background-color: var(--text-main);
-  color: var(--bg);
-}
-
-/* Dense logo box */
 .dense-box {
   display: inline-block;
-  background-color: var(--text-main);
-  color: var(--bg);
-  padding: 2px 6px;
-  border-radius: 5px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  background-color: var(--text-main); color: var(--bg);
+  padding: 2px 6px; border-radius: 5px;
+  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em;
 }
 
-/* Page fade in */
-.fade-in {
-  animation: fadeIn 0.35s ease forwards;
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+.article-body h2 { font-family: "DM Serif Display", serif; font-size: 1.75rem; margin: 2.5rem 0 1rem; }
+.article-body h3 { font-family: "DM Serif Display", serif; font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+.article-body p { font-size: 1rem; line-height: 1.9; margin-bottom: 1.25rem; }
+.article-body a { text-decoration: underline; text-decoration-color: var(--terracotta); text-underline-offset: 3px; }
+.article-body blockquote { border-left: 4px solid var(--terracotta); padding-left: 1.25rem; font-style: italic; margin: 1.5rem 0; color: var(--text-muted); font-size: 1.1rem; }
+.article-body ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+.article-body ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+.article-body li { margin-bottom: 0.4rem; }
+.article-body img { width: 100%; border-radius: 4px; margin: 2rem 0; }
 
-/* Article body rich text */
-.article-body h2 {
-  font-family: "DM Serif Display", serif;
-  font-size: 1.75rem;
-  margin: 2.5rem 0 1rem;
-}
-.article-body h3 {
-  font-family: "DM Serif Display", serif;
-  font-size: 1.4rem;
-  margin: 2rem 0 0.75rem;
-}
-.article-body p {
-  font-size: 1rem;
-  line-height: 1.9;
-  margin-bottom: 1.25rem;
-  color: var(--text-main);
-}
-.article-body a {
-  text-decoration: underline;
-  text-decoration-color: var(--terracotta);
-  text-underline-offset: 3px;
-}
-.article-body a:hover {
-  color: var(--red);
-}
-.article-body blockquote {
-  border-left: 4px solid var(--terracotta);
-  padding-left: 1.25rem;
-  font-style: italic;
-  margin: 1.5rem 0;
-  color: var(--text-muted);
-  font-size: 1.1rem;
-}
-.article-body ul {
-  list-style: disc;
-  padding-left: 1.5rem;
-  margin-bottom: 1.25rem;
-}
-.article-body ol {
-  list-style: decimal;
-  padding-left: 1.5rem;
-  margin-bottom: 1.25rem;
-}
-.article-body li {
-  margin-bottom: 0.4rem;
-}
-.article-body img {
-  width: 100%;
-  border-radius: 2px;
-  margin: 2rem 0;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
