@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
@@ -32,7 +33,7 @@ const PODCASTS = [
   {
     title: "How Volkswagen fooled the American Government for 7 Years?",
     current: "15:00", total: "15:00", progress: 100,
-    desc: "This podcast digs into the unethical doing of the \"once\" world's biggest and one of the wellrespected car manufacturer - Volkswagen. With the intention of saving hundred thousands, how the brand lost millions - we have went through everything.",
+    desc: "This podcast digs into the unethical doing of the once world's biggest car manufacturer - Volkswagen. With the intention of saving hundred thousands, how the brand lost millions.",
     image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
   },
 ];
@@ -44,18 +45,23 @@ const RECENT = [
 ];
 
 const SHORTS = [
-  { title: "Quick Fact: Sunroofs vs. AC Efficiency", excerpt: "In a 40°C climate, a glass roof requires your AC to work 15% harder.", readTime: "2 min read" },
+  { title: "Quick Fact: Sunroofs vs. AC Efficiency", excerpt: "In a 40 degree climate, a glass roof requires your AC to work 15% harder.", readTime: "2 min read" },
   { title: "Timeline: VW Scandal", excerpt: "A quick chronological look at how the EPA caught the cheat devices in 2015.", readTime: "3 min read" },
   { title: "Why Japan Gets 1,500 Earthquakes a Year", excerpt: "A fast explainer on tectonic plate convergence and what it means for daily life.", readTime: "2 min read" },
   { title: "Pak-Afghan Border: Key Facts", excerpt: "The Durand Line, tribal tensions, and why this border has always been volatile.", readTime: "4 min read" },
 ];
+
+/* ── Helpers ── */
+function toSlug(title: string) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
 
 /* ── Shared UI ── */
 function ReadPill({ children = "Read" }: { children?: string }) {
   return (
     <span style={{
       display: "inline-block", padding: "3px 12px", borderRadius: 999,
-      fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase",
+      fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase" as const,
       letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", cursor: "pointer",
       backgroundColor: "var(--terracotta)", color: "var(--text-main)",
     }}>
@@ -69,14 +75,14 @@ function SectionLabel({ children }: { children: string }) {
     <div style={{
       fontFamily: "'Inter', sans-serif", fontWeight: 800,
       fontSize: "20px", letterSpacing: "0.04em",
-      textTransform: "uppercase", color: ACCENT, marginBottom: 14,
+      textTransform: "uppercase" as const, color: ACCENT, marginBottom: 14,
     }}>
       {children} →
     </div>
   );
 }
 
-/* ── Podcast Card — matches screenshot exactly ── */
+/* ── Podcast Card ── */
 function PodcastCard({ p }: { p: typeof PODCASTS[0] }) {
   return (
     <article style={{
@@ -85,37 +91,20 @@ function PodcastCard({ p }: { p: typeof PODCASTS[0] }) {
       padding: 14,
       display: "flex",
       gap: 14,
-      alignItems: "stretch",   // right col stretches to full card height
+      alignItems: "stretch",
     }}>
-      {/* Image — padded from card edges, rounded corners, centred vertically */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        flexShrink: 0,
-      }}>
+      <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
         <img
           src={p.image}
           alt={p.title}
-          style={{
-            width: 130,
-            height: 100,
-            objectFit: "cover",
-            borderRadius: 8,
-            display: "block",
-          }}
+          style={{ width: 130, height: 100, objectFit: "cover", borderRadius: 8, display: "block" }}
         />
       </div>
 
-      {/* Right column — seekbar pinned to bottom via space-between */}
       <div style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        minWidth: 0,
-        gap: 4,
+        flex: 1, display: "flex", flexDirection: "column",
+        justifyContent: "space-between", minWidth: 0, gap: 4,
       }}>
-        {/* Top content: title + times + description */}
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <h3 style={{
             fontFamily: "'DM Serif Display', serif",
@@ -125,21 +114,14 @@ function PodcastCard({ p }: { p: typeof PODCASTS[0] }) {
             {p.title}
           </h3>
 
-          {/* Times (no bg, plain text colour) + Listen button */}
           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <span style={{
-              color: "#FF3131", fontSize: "0.72rem", fontWeight: 700,
-              fontFamily: "'Inter', sans-serif",
-            }}>
+            <span style={{ color: "#FF3131", fontSize: "0.72rem", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
               {p.current}
             </span>
             <span style={{ color: "var(--text-muted)", fontSize: "0.7rem", fontFamily: "'Inter', sans-serif" }}>
               /
             </span>
-            <span style={{
-              color: "var(--text-muted)", fontSize: "0.72rem",
-              fontFamily: "'Inter', sans-serif",
-            }}>
+            <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif" }}>
               {p.total}
             </span>
             <button style={{
@@ -158,7 +140,7 @@ function PodcastCard({ p }: { p: typeof PODCASTS[0] }) {
             lineHeight: 1.55, fontFamily: "'Inter', sans-serif",
             display: "-webkit-box",
             WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
+            WebkitBoxOrient: "vertical" as const,
             overflow: "hidden",
             margin: 0,
           }}>
@@ -166,7 +148,6 @@ function PodcastCard({ p }: { p: typeof PODCASTS[0] }) {
           </p>
         </div>
 
-        {/* Seekbar — pinned to bottom of right col, does NOT extend under image */}
         <div style={{ height: 3, display: "flex", borderRadius: 2, overflow: "hidden" }}>
           <div style={{ width: `${p.progress}%`, backgroundColor: "#FF3131" }} />
           <div style={{ flex: 1, backgroundColor: "#1A1A1A" }} />
@@ -180,43 +161,36 @@ function PodcastCard({ p }: { p: typeof PODCASTS[0] }) {
 function HomeView() {
   return (
     <>
-      {/* Latest Story + Other Stories */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1.8fr 1fr",
-        gap: 0,
-        marginBottom: 48,
-      }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 0, marginBottom: 48 }}>
+
         {/* LEFT: Latest Story */}
         <div style={{ paddingRight: 28, borderRight: "1px solid var(--border)" }}>
           <SectionLabel>Latest Story</SectionLabel>
-          <article style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-            {/* 1280×720 = 16:9 ratio */}
-            <img
-              src={HERO.image}
-              alt={HERO.title}
-              style={{
-                width: "100%",
-                aspectRatio: "16/9",
-                objectFit: "cover",
-                borderRadius: 8,
-              }}
-            />
-            <h2 style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "1.9rem", lineHeight: 1.1, marginTop: 4,
-              color: "var(--text-main)",
-            }}>
-              {HERO.title}
-            </h2>
-            <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
-              {HERO.date} &nbsp;&nbsp; {HERO.author}
-            </div>
-            <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif" }}>
-              {HERO.excerpt}
-            </p>
-            <div style={{ marginTop: 4 }}><ReadPill>Read Further</ReadPill></div>
-          </article>
+          <Link href="/article/indians-are-sunroof-suckers" style={{ textDecoration: "none", color: "inherit" }}>
+            <article style={{ display: "flex", flexDirection: "column", gap: 11, cursor: "pointer" }}>
+              <img
+                src={HERO.image}
+                alt={HERO.title}
+                style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }}
+              />
+              <h2 style={{
+                fontFamily: "'DM Serif Display', serif",
+                fontSize: "1.9rem", lineHeight: 1.1, marginTop: 4,
+                color: "var(--text-main)",
+              }}>
+                {HERO.title}
+              </h2>
+              <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
+                {HERO.date} &nbsp;&nbsp; {HERO.author}
+              </div>
+              <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif" }}>
+                {HERO.excerpt}
+              </p>
+              <div style={{ marginTop: 4 }}>
+                <ReadPill>Read Further</ReadPill>
+              </div>
+            </article>
+          </Link>
         </div>
 
         {/* RIGHT: Other Stories */}
@@ -224,29 +198,31 @@ function HomeView() {
           <SectionLabel>Other Stories</SectionLabel>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {OTHER_STORIES.map((a, i) => (
-              <article key={i} style={{
-                display: "flex", gap: 12, alignItems: "flex-start",
-                paddingBottom: 14, marginBottom: 14,
-                borderBottom: i < OTHER_STORIES.length - 1 ? "1px solid var(--border)" : "none",
-              }}>
-                <img src={a.image} alt={a.title} style={{
-                  width: 80, height: 56, objectFit: "cover",
-                  borderRadius: 6, flexShrink: 0,
-                }} />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <h3 style={{
-                    fontFamily: "'DM Serif Display', serif",
-                    fontSize: "0.95rem", lineHeight: 1.3, color: "var(--text-main)",
-                  }}>
-                    {a.title}
-                  </h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.date}</span>
-                    <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.author}</span>
-                    <ReadPill />
+              <Link key={i} href={`/article/${toSlug(a.title)}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <article style={{
+                  display: "flex", gap: 12, alignItems: "flex-start",
+                  paddingBottom: 14, marginBottom: 14,
+                  borderBottom: i < OTHER_STORIES.length - 1 ? "1px solid var(--border)" : "none",
+                }}>
+                  <img src={a.image} alt={a.title} style={{
+                    width: 80, height: 56, objectFit: "cover",
+                    borderRadius: 6, flexShrink: 0,
+                  }} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                    <h3 style={{
+                      fontFamily: "'DM Serif Display', serif",
+                      fontSize: "0.95rem", lineHeight: 1.3, color: "var(--text-main)",
+                    }}>
+                      {a.title}
+                    </h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.date}</span>
+                      <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.author}</span>
+                      <ReadPill />
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              </Link>
             ))}
           </div>
         </div>
@@ -265,7 +241,7 @@ function HomeView() {
   );
 }
 
-/* ── Recent view — taller cards ── */
+/* ── Recent view ── */
 function RecentView() {
   return (
     <div>
@@ -274,15 +250,17 @@ function RecentView() {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "48px 28px", marginBottom: 60 }}>
         {RECENT.map((a, i) => (
-          <article key={i} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <img src={a.image} alt={a.title} style={{
-              width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8,
-            }} />
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.5rem", lineHeight: 1.2 }}>{a.title}</h2>
-            <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.date} · {a.author}</div>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.75 }}>{a.excerpt}</p>
-            <div><ReadPill /></div>
-          </article>
+          <Link key={i} href={`/article/${toSlug(a.title)}`} style={{ textDecoration: "none", color: "inherit" }}>
+            <article style={{ display: "flex", flexDirection: "column", gap: 14, cursor: "pointer" }}>
+              <img src={a.image} alt={a.title} style={{
+                width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8,
+              }} />
+              <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.5rem", lineHeight: 1.2 }}>{a.title}</h2>
+              <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.date} · {a.author}</div>
+              <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.75 }}>{a.excerpt}</p>
+              <div><ReadPill /></div>
+            </article>
+          </Link>
         ))}
       </div>
     </div>
@@ -297,7 +275,9 @@ function PodcastsView() {
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Podcasts</h1>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 60 }}>
-        {PODCASTS.map((p, i) => <PodcastCard key={i} p={p} />)}
+        {PODCASTS.map((p, i) => (
+          <PodcastCard key={i} p={p} />
+        ))}
       </div>
     </div>
   );
