@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { Article } from "@/models/Article";
-import { auth } from "@/lib/auth";
+import { verifyAdmin } from "@/lib/verifyAdmin";
 
 export async function GET(_: NextRequest, { params }: { params: { slug: string } }) {
   await connectDB();
@@ -15,21 +15,17 @@ export async function GET(_: NextRequest, { params }: { params: { slug: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { slug: string } }) {
-  const session = await auth();
-  if ((session?.user as any)?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const admin = await verifyAdmin(req);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   await connectDB();
   const body = await req.json();
   const article = await (Article as any).findOneAndUpdate({ slug: params.slug }, body, { new: true });
   return NextResponse.json(article);
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { slug: string } }) {
-  const session = await auth();
-  if ((session?.user as any)?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
+  const admin = await verifyAdmin(req);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   await connectDB();
   await (Article as any).findOneAndDelete({ slug: params.slug });
   return NextResponse.json({ success: true });

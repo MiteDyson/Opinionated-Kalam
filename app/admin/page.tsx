@@ -171,6 +171,9 @@ export default function AdminDashboard() {
                 >
                   Edit
                 </Link>
+                <Link href="/admin/users" style={{ color: "#888", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>
+  Manage Admins
+</Link>
               </div>
             </div>
           ))}

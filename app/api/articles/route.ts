@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { Article } from "@/models/Article";
-import { auth } from "@/lib/auth";
+import { verifyAdmin } from "@/lib/verifyAdmin";
 
-export async function GET(req: NextRequest) {
+export async function GET(_: NextRequest, { params }: { params: { slug: string } }) {
   await connectDB();
-  const { searchParams } = new URL(req.url);
-  const type   = searchParams.get("type") ?? "article";
-  const status = searchParams.get("status") ?? "published";
-  const articles = await (Article as any).find({ type, status }).sort({ publishedAt: -1 }).lean();
-  return NextResponse.json(articles);
+  const article = await (Article as any).findOneAndUpdate(
+    { slug: params.slug },
+    { $inc: { views: 1 } },
+    { new: true }
+  ).lean();
+  if (!article) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(article);
 }
 
-export async function POST(req: NextRequest) {
-  const session = await auth();
-  if ((session?.user as any)?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+export async function PATCH(req: NextRequest, { params }: { params: { slug: string } }) {
+  const admin = await verifyAdmin(req);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   await connectDB();
   const body = await req.json();
-  // Auto-generate slug
-  body.slug = body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  body.publishedAt = body.status === "published" ? new Date() : null;
-  const article = await (Article as any).create(body);
-  return NextResponse.json(article, { status: 201 });
+  const article = await (Article as any).findOneAndUpdate({ slug: params.slug }, body, { new: true });
+  return NextResponse.json(article);
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
+  const admin = await verifyAdmin(req);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  await connectDB();
+  await (Article as any).findOneAndDelete({ slug: params.slug });
+  return NextResponse.json({ success: true });
 }
