@@ -1,171 +1,271 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import ImageExt from "@tiptap/extension-image";
+import LinkExt from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import { Mark, mergeAttributes } from "@tiptap/core";
+import Highlight from "@tiptap/extension-highlight";
 
-const ACCENT  = "#1B2A47";
-const SURFACE = "#1a1a1a";
+import { auth } from "@/lib/firebase";
 
-const ALL_TAGS = ["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers", "India", "Economy", "Science", "Technology", "Culture"];
+const ACCENT = "#1B2A47";
+const BG     = "#D5D2CB";
+const TERRA  = "#D38B88";
+const TEXT   = "#1A1A1A";
+const MUTED  = "#555555";
+const WPM    = 200;
 
-/* ── Quill editor — loaded from CDN, no npm install needed ── */
-function QuillEditor({ onChange }: { onChange: (html: string) => void }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const quillRef     = useRef<any>(null);
-  const [ready, setReady] = useState(false);
+const PRESET_TAGS = ["Automotive","Geo Politics","Scandals","Crime","Explainers"];
 
-  useEffect(() => {
-    // Load Quill CSS
-    if (!document.getElementById("quill-css")) {
-      const link = document.createElement("link");
-      link.id   = "quill-css";
-      link.rel  = "stylesheet";
-      link.href = "https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css";
-      document.head.appendChild(link);
-    }
+const FONT_SIZES = ["12","14","16","18","20","24","28","32","36","48"];
+const FONT_FAMILIES = [
+  { label: "Default (Inter)",  value: "Inter, sans-serif" },
+  { label: "DM Serif",         value: "'DM Serif Display', serif" },
+  { label: "Georgia",          value: "Georgia, serif" },
+  { label: "Times New Roman",  value: "'Times New Roman', serif" },
+  { label: "Courier New",      value: "'Courier New', monospace" },
+  { label: "Arial",            value: "Arial, sans-serif" },
+];
+const TEXT_COLORS  = ["#1A1A1A","#D92323","#1B2A47","#D38B88","#555555","#3a7a3e","#8a6a00","#ffffff"];
+const HIGHLIGHT_COLORS = ["#FFF3CD","#D1ECF1","#D4EDDA","#F8D7DA","#E2E3E5","#FFE0F0","#D5D2CB"];
 
-    // Load Quill JS
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js";
-    script.async = true;
-    script.onload = () => setReady(true);
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!ready || !containerRef.current || quillRef.current) return;
-
-    const Quill = (window as any).Quill;
-    if (!Quill) return;
-
-    quillRef.current = new Quill(containerRef.current, {
-      theme: "snow",
-      placeholder: "Write your article content here...",
-      modules: {
-        toolbar: [
-          [{ header: [2, 3, false] }],
-          ["bold", "italic", "underline", "strike"],
-          [{ list: "ordered" }, { list: "bullet" }],
-          ["blockquote", "code-block"],
-          ["link", "image"],
-          [{ align: [] }],
-          ["clean"],
-        ],
-      },
-    });
-
-    // Emit HTML on every change
-    quillRef.current.on("text-change", () => {
-      const html = quillRef.current.root.innerHTML;
-      onChange(html === "<p><br></p>" ? "" : html);
-    });
-
-    // Handle image — base64 embed (no upload server needed)
-    const toolbar = quillRef.current.getModule("toolbar");
-    toolbar.addHandler("image", () => {
-      const input = document.createElement("input");
-      input.setAttribute("type", "file");
-      input.setAttribute("accept", "image/*");
-      input.click();
-      input.onchange = () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const base64 = e.target?.result as string;
-          const range = quillRef.current.getSelection(true);
-          quillRef.current.insertEmbed(range.index, "image", base64);
-          quillRef.current.setSelection(range.index + 1);
-        };
-        reader.readAsDataURL(file);
-      };
-    });
-  }, [ready, onChange]);
-
+/* ── Toolbar button ── */
+function TBtn({ active, onClick, children, title }: {
+  active?: boolean; onClick: () => void; children: React.ReactNode; title?: string;
+}) {
   return (
-    <>
-      <style>{`
-        /* Dark theme for Quill */
-        .ql-toolbar.ql-snow {
-          background: #1e1e1e !important;
-          border-color: rgba(255,255,255,0.1) !important;
-          border-radius: 8px 8px 0 0;
-        }
-        .ql-toolbar.ql-snow .ql-stroke { stroke: #aaa !important; }
-        .ql-toolbar.ql-snow .ql-fill  { fill: #aaa !important; }
-        .ql-toolbar.ql-snow .ql-picker-label { color: #aaa !important; }
-        .ql-toolbar.ql-snow button:hover .ql-stroke,
-        .ql-toolbar.ql-snow button.ql-active .ql-stroke { stroke: white !important; }
-        .ql-toolbar.ql-snow button:hover .ql-fill,
-        .ql-toolbar.ql-snow button.ql-active .ql-fill  { fill: white !important; }
-        .ql-toolbar.ql-snow .ql-picker-options {
-          background: #2a2a2a !important;
-          border-color: rgba(255,255,255,0.1) !important;
-        }
-        .ql-toolbar.ql-snow .ql-picker-item { color: #ccc !important; }
-        .ql-container.ql-snow {
-          background: #111 !important;
-          border-color: rgba(255,255,255,0.1) !important;
-          border-radius: 0 0 8px 8px;
-          min-height: 340px;
-        }
-        .ql-editor {
-          color: #e8e8e8 !important;
-          font-family: 'Inter', sans-serif !important;
-          font-size: 0.95rem !important;
-          line-height: 1.8 !important;
-          min-height: 340px;
-        }
-        .ql-editor.ql-blank::before {
-          color: #444 !important;
-          font-style: normal !important;
-        }
-        .ql-editor h2 { font-family: 'DM Serif Display', serif !important; color: white !important; }
-        .ql-editor h3 { color: white !important; }
-        .ql-editor blockquote {
-          border-left: 4px solid #d38b88 !important;
-          color: #aaa !important;
-        }
-        .ql-editor img { max-width: 100%; border-radius: 6px; margin: 12px 0; }
-        .ql-snow .ql-tooltip { background: #2a2a2a !important; border-color: rgba(255,255,255,0.1) !important; color: #ccc !important; }
-        .ql-snow .ql-tooltip input[type=text] { background: #111 !important; color: #e8e8e8 !important; border-color: rgba(255,255,255,0.2) !important; }
-      `}</style>
-
-      {!ready && (
-        <div style={{
-          minHeight: 340, backgroundColor: "#111", borderRadius: 8,
-          border: "1px solid rgba(255,255,255,0.1)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#555", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
-        }}>
-          Loading editor...
-        </div>
-      )}
-
-      <div style={{ display: ready ? "block" : "none" }}>
-        <div ref={containerRef} />
-      </div>
-    </>
+    <button title={title} onClick={onClick} style={{
+      padding: "5px 7px", borderRadius: 5, border: "none", cursor: "pointer",
+      backgroundColor: active ? ACCENT : "transparent",
+      color: active ? "white" : TEXT,
+      fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", fontWeight: 600,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      minWidth: 28, height: 28, transition: "background 0.12s",
+    }}
+      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "#CFCBC3"; }}
+      onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+    >
+      {children}
+    </button>
   );
 }
 
-/* ── Main page ── */
+function TDivider() {
+  return <div style={{ width: 1, height: 20, backgroundColor: "#CFCBC3", margin: "0 3px", flexShrink: 0 }} />;
+}
+
+/* ── Color picker popover ── */
+function ColorPicker({ colors, onSelect, label, currentColor }: {
+  colors: string[]; onSelect: (c: string) => void; label: string; currentColor?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button title={label} onClick={() => setOpen(o => !o)} style={{
+        padding: "5px 7px", borderRadius: 5, border: "none", cursor: "pointer",
+        backgroundColor: "transparent", display: "flex", flexDirection: "column",
+        alignItems: "center", gap: 2, minWidth: 28, height: 28,
+        transition: "background 0.12s",
+      }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#CFCBC3")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
+      >
+        <span style={{ fontSize: "0.82rem", fontWeight: 700, color: TEXT, lineHeight: 1 }}>A</span>
+        <div style={{ width: 16, height: 3, borderRadius: 2, backgroundColor: currentColor ?? TEXT }} />
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 50,
+          backgroundColor: "white", borderRadius: 8, padding: 8,
+          border: "1px solid #CFCBC3", boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+          display: "flex", flexWrap: "wrap", gap: 4, width: 130,
+        }}>
+          {colors.map(c => (
+            <button key={c} title={c} onClick={() => { onSelect(c); setOpen(false); }} style={{
+              width: 22, height: 22, borderRadius: 4, border: c === "#ffffff" ? "1px solid #CFCBC3" : "none",
+              backgroundColor: c, cursor: "pointer",
+              outline: currentColor === c ? `2px solid ${ACCENT}` : "none",
+              outlineOffset: 1,
+            }} />
+          ))}
+          <input type="color" title="Custom" onChange={(e) => { onSelect(e.target.value); setOpen(false); }}
+            style={{ width: 22, height: 22, borderRadius: 4, border: "1px solid #CFCBC3", cursor: "pointer", padding: 0 }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Highlight picker ── */
+function HighlightPicker({ colors, onSelect, label, currentColor }: {
+  colors: string[]; onSelect: (c: string | null) => void; label: string; currentColor?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button title={label} onClick={() => setOpen(o => !o)} style={{
+        padding: "5px 7px", borderRadius: 5, border: "none", cursor: "pointer",
+        backgroundColor: "transparent", display: "flex", flexDirection: "column",
+        alignItems: "center", gap: 2, minWidth: 28, height: 28,
+        transition: "background 0.12s",
+      }}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#CFCBC3")}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
+      >
+        <span style={{ fontSize: "0.78rem", fontWeight: 700, color: TEXT, lineHeight: 1 }}>H</span>
+        <div style={{ width: 16, height: 3, borderRadius: 2, backgroundColor: currentColor ?? "#FFF3CD" }} />
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 50,
+          backgroundColor: "white", borderRadius: 8, padding: 8,
+          border: "1px solid #CFCBC3", boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+          display: "flex", flexWrap: "wrap", gap: 4, width: 130,
+        }}>
+          {colors.map(c => (
+            <button key={c} title={c} onClick={() => { onSelect(c); setOpen(false); }} style={{
+              width: 22, height: 22, borderRadius: 4, border: "1px solid #CFCBC3",
+              backgroundColor: c, cursor: "pointer",
+              outline: currentColor === c ? `2px solid ${ACCENT}` : "none",
+              outlineOffset: 1,
+            }} />
+          ))}
+          <button title="Remove highlight" onClick={() => { onSelect(null); setOpen(false); }} style={{
+            width: 22, height: 22, borderRadius: 4, border: "1px solid #CFCBC3",
+            backgroundColor: "white", cursor: "pointer", fontSize: "0.7rem", color: "#e05555",
+          }}>✕</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Select dropdown ── */
+function TSelect({ value, onChange, options, width = 90, title }: {
+  value: string; onChange: (v: string) => void;
+  options: { label: string; value: string }[];
+  width?: number; title?: string;
+}) {
+  return (
+    <select title={title} value={value} onChange={(e) => onChange(e.target.value)} style={{
+      padding: "3px 6px", borderRadius: 5, border: "1px solid #CFCBC3",
+      backgroundColor: "white", color: TEXT, fontSize: "0.78rem",
+      fontFamily: "'Inter', sans-serif", cursor: "pointer", height: 28,
+      width, outline: "none",
+    }}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+}
+
 export default function NewArticlePage() {
   const router = useRouter();
-  const [title, setTitle]       = useState("");
-  const [excerpt, setExcerpt]   = useState("");
-  const [content, setContent]   = useState("");
-  const [coverImage, setCover]  = useState("");
-  const [type, setType]         = useState<"article" | "short" | "podcast">("article");
-  const [status, setStatus]     = useState<"draft" | "published">("draft");
-  const [selectedTags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState("");
+  const [title, setTitle]         = useState("");
+  const [excerpt, setExcerpt]     = useState("");
+  const [coverImage, setCover]    = useState("");
+  const [type, setType]           = useState<"article" | "short">("article");
+  const [selectedTags, setTags]   = useState<string[]>([]);
+  const [tagInput, setTagInput]   = useState("");
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState("");
+  const [wordCount, setWordCount] = useState(0);
+  const [fontSize, setFontSize]   = useState("16");
+  const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
+  const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      ImageExt.configure({ inline: false, allowBase64: true }),
+      LinkExt.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: "Start writing your article here..." }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Mark.create({
+        name: "textStyle",
+        addAttributes() {
+          return {
+            color:      { default: null, parseHTML: el => el.style.color || null,      renderHTML: a => a.color      ? { style: `color: ${a.color}` }           : {} },
+            fontSize:   { default: null, parseHTML: el => el.style.fontSize || null,   renderHTML: a => a.fontSize   ? { style: `font-size: ${a.fontSize}` }     : {} },
+            fontFamily: { default: null, parseHTML: el => el.style.fontFamily || null, renderHTML: a => a.fontFamily ? { style: `font-family: ${a.fontFamily}` } : {} },
+          };
+        },
+        parseHTML() { return [{ tag: "span" }]; },
+        renderHTML({ HTMLAttributes }) { return ["span", mergeAttributes(HTMLAttributes), 0]; },
+      }),
+      Highlight.configure({ multicolor: true }),
+    ],
+    content: "",
+    onUpdate: ({ editor }) => {
+      const text = editor.getText();
+      setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
+    },
+    editorProps: { attributes: { class: "tiptap-editor" } },
+  });
+
+  const readTime = Math.max(1, Math.ceil(wordCount / WPM));
+
+  const addImage = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = "image/*"; input.multiple = true;
+    input.onchange = () => {
+      Array.from(input.files ?? []).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => editor?.chain().focus().setImage({ src: e.target?.result as string }).run();
+        reader.readAsDataURL(file);
+      });
+    };
+    input.click();
+  }, [editor]);
+
+  const setLink = useCallback(() => {
+    const url = window.prompt("Enter URL:");
+    if (!url) return;
+    editor?.chain().focus().setLink({ href: url }).run();
+  }, [editor]);
+
+  const applyFontSize = (size: string) => {
+    setFontSize(size);
+    editor?.chain().focus().setMark("textStyle", { fontSize: `${size}px` }).run();
+  };
+
+  const applyFontFamily = (family: string) => {
+    setFontFamily(family);
+    editor?.chain().focus().setMark("textStyle", { fontFamily: family }).run();
+  };
+
+  const copyFormat = () => {
+    if (!editor) return;
+    const marks: Record<string, any> = {};
+    if (editor.isActive("bold"))      marks.bold = true;
+    if (editor.isActive("italic"))    marks.italic = true;
+    if (editor.isActive("underline")) marks.underline = true;
+    if (editor.isActive("textStyle")) marks.textStyle = editor.getAttributes("textStyle");
+    if (editor.isActive("highlight")) marks.highlight = editor.getAttributes("highlight");
+    setCopiedFormat(marks);
+  };
+
+  const pasteFormat = () => {
+    if (!editor || !copiedFormat) return;
+    const chain = editor.chain().focus();
+    if (copiedFormat.bold)      chain.setBold();
+    if (copiedFormat.italic)    chain.setItalic();
+    if (copiedFormat.underline) chain.setUnderline();
+    if (copiedFormat.textStyle?.color) chain.setColor(copiedFormat.textStyle.color);
+    if (copiedFormat.highlight?.color) chain.setHighlight({ color: copiedFormat.highlight.color });
+    chain.run();
+    setCopiedFormat(null);
+  };
 
   const toggleTag = (tag: string) =>
     setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -177,197 +277,284 @@ export default function NewArticlePage() {
   };
 
   const handleSave = async (publishNow = false) => {
-    if (!title.trim())   { setError("Title is required"); return; }
-    if (!content.trim()) { setError("Content is required"); return; }
+    if (!title.trim()) { setError("Title is required."); return; }
+    const content = editor?.getHTML() ?? "";
+    if (!content || content === "<p></p>") { setError("Content is required."); return; }
     setSaving(true); setError("");
-    const res = await fetch("/api/articles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title, excerpt, content, coverImage, type,
-        tags: selectedTags,
-        status: publishNow ? "published" : status,
-        author: "Vineet Mestry",
-      }),
-    });
-    setSaving(false);
-    if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
-    router.push("/admin");
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/articles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          title, excerpt, content, coverImage, type,
+          tags: selectedTags, status: publishNow ? "published" : "draft",
+          author: "Vineet Mestry", readTime,
+        }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
+      router.push("/admin");
+    } finally { setSaving(false); }
   };
 
   const field: React.CSSProperties = {
     width: "100%", padding: "10px 14px", borderRadius: 8,
-    border: "1px solid rgba(255,255,255,0.1)", backgroundColor: "#111",
-    color: "#e8e8e8", fontSize: "0.9rem", fontFamily: "'Inter', sans-serif", outline: "none",
+    border: "1px solid #CFCBC3", backgroundColor: "white",
+    color: TEXT, fontSize: "0.9rem", fontFamily: "'Inter', sans-serif",
+    outline: "none", boxSizing: "border-box",
   };
 
-  const label: React.CSSProperties = {
+  const labelStyle: React.CSSProperties = {
     display: "block", fontFamily: "'Inter', sans-serif",
-    fontSize: "0.8rem", fontWeight: 600, color: "#888",
-    textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 6,
+    fontSize: "0.75rem", fontWeight: 700, color: MUTED,
+    textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 7,
   };
+
+  const currentTextColor = editor?.getAttributes("textStyle")?.color;
+  const currentHighlight = editor?.getAttributes("highlight")?.color;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#0f0f0f", color: "#e8e8e8" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
+      <style>{`
+        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Inter', sans-serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor p { margin: 0 0 1em; }
+        .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: ${TEXT}; margin: 1.4em 0 0.5em; }
+        .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; color: ${TEXT}; margin: 1.2em 0 0.4em; }
+        .tiptap-editor ul, .tiptap-editor ol { padding-left: 1.5em; margin: 0.5em 0 1em; }
+        .tiptap-editor li { margin: 0.3em 0; }
+        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; border-radius: 0 6px 6px 0; }
+        .tiptap-editor code { background: rgba(27,42,71,0.08); color: ${ACCENT}; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+        .tiptap-editor pre { background: #1A1A1A; color: #e8e8e8; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
+        .tiptap-editor pre code { background: none; color: inherit; padding: 0; }
+        .tiptap-editor img { max-width: 100%; border-radius: 8px; margin: 16px 0; display: block; }
+        .tiptap-editor a { color: ${ACCENT}; text-decoration: underline; }
+        .tiptap-editor hr { border: none; border-top: 1px solid #CFCBC3; margin: 2em 0; }
+        .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #bbb; pointer-events: none; float: left; height: 0; }
+      `}</style>
 
       {/* Top bar */}
-      <div style={{ backgroundColor: SURFACE, borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ backgroundColor: TEXT, padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button onClick={() => router.push("/admin")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: "0.88rem", fontFamily: "'Inter', sans-serif" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+          <button onClick={() => router.push("/admin")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
           <span style={{ color: "rgba(255,255,255,0.15)" }}>|</span>
-          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", color: "white" }}>New Article</span>
+          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.2rem", color: "white" }}>New Article</span>
+          {wordCount > 0 && (
+            <span style={{ fontSize: "0.75rem", color: "#888", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(255,255,255,0.07)", padding: "3px 10px", borderRadius: 20 }}>
+              {wordCount.toLocaleString()} words · {readTime} min read
+            </span>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => handleSave(false)} disabled={saving} style={{
-            padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)",
-            backgroundColor: "transparent", color: "#ccc", cursor: "pointer",
-            fontSize: "0.85rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-          }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {error && <span style={{ color: "#ff6b6b", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif" }}>{error}</span>}
+          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>
             Save Draft
           </button>
-          <button onClick={() => handleSave(true)} disabled={saving} style={{
-            padding: "8px 18px", borderRadius: 7, border: "none",
-            backgroundColor: ACCENT, color: "white", cursor: "pointer",
-            fontSize: "0.85rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-            opacity: saving ? 0.7 : 1,
-          }}>
+          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "8px 20px", borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}>
             {saving ? "Publishing..." : "Publish"}
           </button>
         </div>
       </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 32px", display: "flex", flexDirection: "column", gap: 28 }}>
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 24px", display: "flex", flexDirection: "column", gap: 24 }}>
 
-        {error && (
-          <div style={{ padding: "12px 16px", backgroundColor: "rgba(217,35,35,0.15)", border: "1px solid rgba(217,35,35,0.3)", borderRadius: 8, color: "#ff6b6b", fontSize: "0.88rem", fontFamily: "'Inter', sans-serif" }}>
-            {error}
-          </div>
-        )}
-
-        {/* Type + Status */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          <div>
-            <span style={label}>Content Type</span>
-            <div style={{ display: "flex", gap: 8 }}>
-              {(["article", "short", "podcast"] as const).map(t => (
-                <button key={t} onClick={() => setType(t)} style={{
-                  padding: "8px 16px", borderRadius: 7, cursor: "pointer",
-                  border: `1px solid ${type === t ? ACCENT : "rgba(255,255,255,0.12)"}`,
-                  backgroundColor: type === t ? ACCENT : "transparent",
-                  color: type === t ? "white" : "#888",
-                  fontSize: "0.82rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-                  textTransform: "capitalize",
-                }}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <span style={label}>Status</span>
-            <div style={{ display: "flex", gap: 8 }}>
-              {(["draft", "published"] as const).map(s => (
-                <button key={s} onClick={() => setStatus(s)} style={{
-                  padding: "8px 16px", borderRadius: 7, cursor: "pointer",
-                  border: `1px solid ${status === s ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.12)"}`,
-                  backgroundColor: status === s ? "rgba(255,255,255,0.1)" : "transparent",
-                  color: status === s ? "white" : "#888",
-                  fontSize: "0.82rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-                  textTransform: "capitalize",
-                }}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* Type toggle */}
+        <div style={{ display: "flex", gap: 0, backgroundColor: "white", borderRadius: 10, padding: 4, border: "1px solid #CFCBC3", width: "fit-content" }}>
+          {(["article", "short"] as const).map(t => (
+            <button key={t} onClick={() => setType(t)} style={{ padding: "7px 20px", borderRadius: 7, border: "none", cursor: "pointer", backgroundColor: type === t ? ACCENT : "transparent", color: type === t ? "white" : MUTED, fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", transition: "all 0.15s" }}>
+              {t === "article" ? "📄 Article" : "⚡ Short Read"}
+            </button>
+          ))}
         </div>
 
         {/* Title */}
-        <div>
-          <span style={label}>Title *</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter article title..."
-            style={{ ...field, fontSize: "1.4rem", padding: "12px 16px", fontFamily: "'DM Serif Display', serif" }}
-          />
-        </div>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title..."
+          style={{ width: "100%", fontSize: "1.9rem", padding: "14px 0", fontFamily: "'DM Serif Display', serif", border: "none", borderBottom: "2px solid #CFCBC3", borderRadius: 0, backgroundColor: "transparent", color: TEXT, outline: "none", boxSizing: "border-box", fontWeight: 400 }}
+        />
 
         {/* Excerpt */}
         <div>
-          <span style={label}>Excerpt / Summary</span>
-          <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)}
-            placeholder="A short description shown on cards (1–2 sentences)..."
-            rows={3} style={{ ...field, resize: "vertical" }}
-          />
+          <label style={labelStyle}>Excerpt</label>
+          <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="A short summary shown on cards..." rows={2} style={{ ...field, resize: "vertical", lineHeight: 1.6 }} />
         </div>
 
-        {/* Cover Image */}
+        {/* Cover image */}
         <div>
-          <span style={label}>Cover Image URL</span>
-          <input value={coverImage} onChange={(e) => setCover(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
-            style={field}
-          />
-          {coverImage && (
-            <img src={coverImage} alt="preview" style={{ marginTop: 12, width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />
-          )}
+          <label style={labelStyle}>Cover Image URL</label>
+          <input value={coverImage} onChange={(e) => setCover(e.target.value)} placeholder="https://images.unsplash.com/..." style={field} />
+          {coverImage && <img src={coverImage} alt="preview" style={{ marginTop: 10, width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #CFCBC3" }} />}
         </div>
 
-        {/* Tags */}
+        {/* Tags — preset + custom */}
         <div>
-          <span style={label}>Tags (SEO)</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-            {ALL_TAGS.map(tag => (
+          <label style={labelStyle}>Tags</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 10 }}>
+            {PRESET_TAGS.map(tag => {
+              const active = selectedTags.includes(tag);
+              return (
+                <button key={tag} onClick={() => toggleTag(tag)} style={{
+                  padding: "5px 12px", borderRadius: 20, cursor: "pointer",
+                  border: `1.5px solid ${active ? ACCENT : "#CFCBC3"}`,
+                  backgroundColor: active ? ACCENT : "white",
+                  color: active ? "white" : MUTED,
+                  fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
+                  display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s",
+                }}>
+                  {tag}
+                  {active && <span style={{ fontSize: "0.85rem", lineHeight: 1, opacity: 0.7 }}>×</span>}
+                </button>
+              );
+            })}
+            {/* Custom tags added by user */}
+            {selectedTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
               <button key={tag} onClick={() => toggleTag(tag)} style={{
-                padding: "5px 12px", borderRadius: 5, cursor: "pointer",
-                border: `1px solid ${selectedTags.includes(tag) ? ACCENT : "rgba(255,255,255,0.12)"}`,
-                backgroundColor: selectedTags.includes(tag) ? ACCENT : "transparent",
-                color: selectedTags.includes(tag) ? "white" : "#888",
+                padding: "5px 12px", borderRadius: 20, cursor: "pointer",
+                border: `1.5px solid ${TERRA}`,
+                backgroundColor: TERRA, color: TEXT,
                 fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
+                display: "flex", alignItems: "center", gap: 6,
               }}>
                 {tag}
+                <span style={{ fontSize: "0.85rem", lineHeight: 1, opacity: 0.7 }}>×</span>
               </button>
             ))}
           </div>
+          {/* Custom tag input */}
           <div style={{ display: "flex", gap: 8 }}>
-            <input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+            <input
+              value={tagInput} onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-              placeholder="Add custom tag and press Enter..."
-              style={{ ...field, flex: 1 }}
+              placeholder="Add custom tag..."
+              style={{ flex: 1, padding: "8px 14px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", outline: "none" }}
             />
             <button onClick={addCustomTag} style={{
-              padding: "10px 16px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)",
-              backgroundColor: "transparent", color: "#ccc", cursor: "pointer",
-              fontSize: "0.85rem", fontFamily: "'Inter', sans-serif",
+              padding: "8px 16px", borderRadius: 8, border: "1px solid #CFCBC3",
+              backgroundColor: "white", color: TEXT, cursor: "pointer",
+              fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", fontWeight: 600,
             }}>
               Add
             </button>
           </div>
-          {selectedTags.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-              {selectedTags.map(t => (
-                <span key={t} style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "3px 10px", borderRadius: 4, backgroundColor: ACCENT,
-                  color: "white", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif",
-                }}>
-                  {t}
-                  <button onClick={() => toggleTag(t)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", padding: 0, fontSize: "1rem", lineHeight: 1 }}>×</button>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Quill Editor */}
+        {/* Editor */}
         <div>
-          <span style={label}>Content *</span>
-          <QuillEditor onChange={setContent} />
-          <p style={{ marginTop: 8, fontSize: "0.75rem", color: "#444", fontFamily: "'Inter', sans-serif" }}>
-            Use the toolbar to format text, add headings, lists, links, and embed images directly from your device.
-          </p>
+          <label style={labelStyle}>Content</label>
+          <div style={{ backgroundColor: "white", borderRadius: 10, border: "1px solid #CFCBC3", overflow: "visible" }}>
+
+            {/* Toolbar — row 1: text formatting */}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "7px 10px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7", borderRadius: "10px 10px 0 0" }}>
+
+              {/* Font family */}
+              <TSelect title="Font family" value={fontFamily} onChange={applyFontFamily} width={120}
+                options={FONT_FAMILIES.map(f => ({ label: f.label, value: f.value }))} />
+              <TDivider />
+
+              {/* Font size */}
+              <TSelect title="Font size" value={fontSize} onChange={applyFontSize} width={58}
+                options={FONT_SIZES.map(s => ({ label: s, value: s }))} />
+              <TDivider />
+
+              {/* Basic formatting */}
+              <TBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="Bold"><b>B</b></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="Italic"><i>I</i></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="Underline"><u>U</u></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")} title="Strikethrough"><s>S</s></TBtn>
+              <TDivider />
+
+              {/* Text color */}
+              <ColorPicker colors={TEXT_COLORS} label="Text color" currentColor={currentTextColor}
+                onSelect={(c) => editor?.chain().focus().setMark("textStyle", { color: c }).run()} />
+
+              {/* Highlight */}
+              <HighlightPicker colors={HIGHLIGHT_COLORS} label="Highlight" currentColor={currentHighlight}
+                onSelect={(c) => c
+                  ? editor?.chain().focus().setHighlight({ color: c }).run()
+                  : editor?.chain().focus().unsetHighlight().run()
+                } />
+              <TDivider />
+
+              {/* Headings */}
+              <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="Heading 2">H2</TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="Heading 3">H3</TBtn>
+              <TDivider />
+
+              {/* Alignment */}
+              <TBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="Align left">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+              </TBtn>
+              <TBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="Align center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+              </TBtn>
+              <TBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="Align right">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>
+              </TBtn>
+              <TDivider />
+
+              {/* Lists */}
+              <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="Bullet list">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+              </TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered list">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+              </TBtn>
+              <TDivider />
+
+              {/* Blockquote / code */}
+              <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Blockquote">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+              </TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")} title="Code block">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </TBtn>
+              <TBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Divider">—</TBtn>
+              <TDivider />
+
+              {/* Link / image */}
+              <TBtn onClick={setLink} active={editor?.isActive("link")} title="Add link">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </TBtn>
+              <TBtn onClick={addImage} title="Add image(s)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </TBtn>
+              <TDivider />
+
+              {/* Paint format */}
+              <TBtn onClick={copiedFormat ? pasteFormat : copyFormat} active={!!copiedFormat} title={copiedFormat ? "Paste formatting" : "Copy formatting"}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </TBtn>
+
+              {/* Clear formatting */}
+              <TBtn onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()} title="Clear formatting">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+              </TBtn>
+              <TDivider />
+
+              {/* Undo / redo */}
+              <TBtn onClick={() => editor?.chain().focus().undo().run()} title="Undo">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+              </TBtn>
+              <TBtn onClick={() => editor?.chain().focus().redo().run()} title="Redo">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+              </TBtn>
+            </div>
+
+            <EditorContent editor={editor} />
+
+            {/* Word count footer */}
+            <div style={{ borderTop: "1px solid #CFCBC3", padding: "8px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#faf9f7", borderRadius: "0 0 10px 10px" }}>
+              <span style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>
+                {wordCount > 0 ? `${wordCount.toLocaleString()} words` : "Start writing..."}
+              </span>
+              {wordCount > 0 && (
+                <span style={{ fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", color: "white", backgroundColor: ACCENT, padding: "2px 10px", borderRadius: 20, fontWeight: 600 }}>
+                  {readTime} min read
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
       </div>
