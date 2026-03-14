@@ -282,7 +282,8 @@ export default function NewArticlePage() {
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
     setSaving(true); setError("");
     try {
-      const token = await auth.currentUser?.getIdToken();
+      if (!auth.currentUser) { setError("Not signed in — please refresh the page."); setSaving(false); return; }
+      const token = await auth.currentUser.getIdToken(true);
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
