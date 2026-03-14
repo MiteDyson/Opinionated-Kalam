@@ -1,19 +1,15 @@
 import { NextRequest } from "next/server";
-import { adminAuth, adminDB } from "./firebaseAdmin";
+import { adminAuth } from "./firebaseAdmin";
+
+const ADMIN_EMAIL = "opinionatedkalam@gmail.com";
 
 export async function verifyAdmin(req: NextRequest): Promise<{ uid: string } | null> {
   try {
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) return null;
-
     const decoded = await adminAuth.verifyIdToken(token);
-    const uid = decoded.uid;
-
-    // Check Firestore admins collection
-    const doc = await adminDB.collection("admins").doc(uid).get();
-    if (!doc.exists) return null;
-
-    return { uid };
+    if (decoded.email !== ADMIN_EMAIL) return null;
+    return { uid: decoded.uid };
   } catch {
     return null;
   }

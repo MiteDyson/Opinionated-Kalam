@@ -5,53 +5,40 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 
+const ADMIN_EMAIL = "opinionatedkalam@gmail.com";
+
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (loading) return;
+
     if (!user) {
       router.replace("/login");
       return;
     }
 
-    // Check if user is admin by calling a lightweight API endpoint
-    const checkAdmin = async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        const res = await fetch("/api/auth/check-admin", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          router.replace("/"); // Redirect non-admins to homepage
-        }
-      } catch {
-        setIsAdmin(false);
-        router.replace("/");
-      }
-    };
+    if (user.email !== ADMIN_EMAIL) {
+      router.replace("/");
+      return;
+    }
 
-    checkAdmin();
+    setChecked(true);
   }, [user, loading, router]);
 
-  if (loading || isAdmin === null) {
+  if (loading || !checked) {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center",
         justifyContent: "center", backgroundColor: "#0f0f0f",
-        fontFamily: "'Inter', sans-serif", color: "#555",
+        fontFamily: "'Inter', sans-serif", color: "#555", fontSize: "0.9rem",
       }}>
         Checking access...
       </div>
     );
   }
-
-  if (!isAdmin) return null;
 
   return <>{children}</>;
 }
