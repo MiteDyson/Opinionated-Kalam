@@ -1,105 +1,214 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
-import { auth } from "@/lib/firebase";
-
-function toSlug(title: string) {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
+import { useAuth } from "@/context/AuthContext";
 
 const ACCENT   = "#1B2A47";
-const TERRA    = "#D38B88";
-const ALL_TAGS = ["Automotive","Geo Politics","Scandals","Crime","Explainers"];
+const RED      = "#D92323";
+const ALL_TAGS = ["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers"];
 
 interface Article {
-  _id: string; slug: string; title: string; excerpt: string;
-  coverImage: string; author: string; tags: string[];
-  type: string; readTime: string; publishedAt: string;
-  likes: number; episode?: string; duration?: string;
+  _id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  coverImage: string;
+  author: string;
+  tags: string[];
+  type: string;
+  readTime: string;
+  publishedAt: string;
+  likes: number;
+  episode?: string;
+  duration?: string;
   audioUrl?: string;
 }
 
-/* ── Shared UI ── */
-function ReadPill({ children = "Read" }: { children?: string }) {
+/* ── Read Pill ── */
+function ReadPill({ label = "Read" }: { label?: string }) {
   return (
-    <span style={{ display: "inline-block", padding: "3px 12px", borderRadius: 999, fontSize: "0.68rem", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", cursor: "pointer", backgroundColor: TERRA, color: "#1A1A1A" }}>
-      {children}
-    </span>
+    <span style={{
+      display: "inline-block", padding: "2px 10px", borderRadius: 4,
+      fontSize: "0.68rem", fontWeight: 700, fontFamily: "'Inter', sans-serif",
+      backgroundColor: "rgba(27,42,71,0.12)", color: ACCENT,
+    }}>{label}</span>
   );
 }
 
-function SectionLabel({ children }: { children: string }) {
+/* ── Section Label ── */
+function SectionLabel({ children, onClick }: { children: string; onClick?: () => void }) {
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: "20px", letterSpacing: "0.04em", textTransform: "uppercase" as const, color: ACCENT, marginBottom: 14 }}>
+    <button onClick={onClick} style={{
+      background: "none", border: "none", cursor: onClick ? "pointer" : "default",
+      fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: "1rem",
+      letterSpacing: "0.08em", textTransform: "uppercase" as const,
+      color: ACCENT, marginBottom: 18, padding: 0,
+    }}
+      onMouseEnter={(e) => { if (onClick) (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+      onMouseLeave={(e) => { if (onClick) (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+    >
       {children} →
-    </div>
+    </button>
   );
 }
 
-function PodcastCard({ a }: { a: Article }) {
-  const [playing, setPlaying] = useState(false);
+/* ── Podcast Card ── */
+function PodcastCard({ p }: { p: Article }) {
+  const [playing, setPlaying]   = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [current, setCurrent]   = useState("0:00");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = () => {
+    if (!p.audioUrl) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(p.audioUrl);
+      audioRef.current.ontimeupdate = () => {
+        const a = audioRef.current!;
+        if (a.duration) {
+          setProgress((a.currentTime / a.duration) * 100);
+          const m = Math.floor(a.currentTime / 60);
+          const s = Math.floor(a.currentTime % 60).toString().padStart(2, "0");
+          setCurrent(`${m}:${s}`);
+        }
+      };
+    }
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else         { audioRef.current.play();  setPlaying(true); }
+  };
+
+  const skip = (sec: number) => {
+    if (audioRef.current) audioRef.current.currentTime += sec;
+  };
+
   return (
-    <article style={{ backgroundColor: "#CCD8C7", borderRadius: 10, padding: 14, display: "flex", gap: 14 }}>
-      <img src={a.coverImage} alt={a.title} style={{ width: 130, height: 100, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
-        <div>
-          {a.tags[0] && (
-            <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#D92323", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-              {a.tags[0]}{a.episode ? ` → ${a.episode}` : ""}
-            </div>
-          )}
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", lineHeight: 1.25, color: "#1A1A1A", margin: "0 0 6px" }}>{a.title}</h3>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => setPlaying(p => !p)} style={{ width: 30, height: 30, borderRadius: "50%", backgroundColor: "#1A1A1A", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-              {playing
-                ? <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                : <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              }
-            </button>
-            <span style={{ fontSize: "0.72rem", color: "#555", fontFamily: "'Inter', sans-serif" }}>
-              {a.duration ?? "–"} / {a.duration ?? "–"}
-            </span>
+    <article style={{
+      backgroundColor: "var(--bg)", border: "1px solid var(--border)",
+      borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column",
+    }}>
+      {p.coverImage
+        ? <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover" }} />
+        : <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "#CFCBC3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: "2rem" }}>🎙</span>
           </div>
-          <p style={{ fontSize: "0.75rem", color: "#555", lineHeight: 1.55, fontFamily: "'Inter', sans-serif", margin: "6px 0 0", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
-            {a.excerpt}
-          </p>
+      }
+      <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+        <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+          {p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}
         </div>
-        <div style={{ height: 3, display: "flex", borderRadius: 2, overflow: "hidden", marginTop: 8 }}>
-          <div style={{ width: "0%", backgroundColor: "#FF3131" }} />
-          <div style={{ flex: 1, backgroundColor: "#1A1A1A" }} />
+        <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
+          {p.title}
+        </h3>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
+          <button onClick={() => skip(-10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>← 10</button>
+          <button onClick={togglePlay} style={{
+            width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)",
+            border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            {playing
+              ? <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              : <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            }
+          </button>
+          <button onClick={() => skip(10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>10 →</button>
+        </div>
+        <div style={{ height: 2, backgroundColor: "var(--border)", borderRadius: 1, overflow: "hidden" }}>
+          <div style={{ width: `${progress}%`, height: "100%", backgroundColor: RED, transition: "width 0.5s linear" }} />
+        </div>
+        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>
+          {current} / {p.duration ?? "–"}
         </div>
       </div>
     </article>
   );
 }
 
-/* ── Beats view ── */
+/* ── Short Card ── */
+function ShortCard({ s }: { s: Article }) {
+  return (
+    <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+      <article style={{
+        backgroundColor: "var(--bg)", border: "1px solid var(--border)",
+        borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column",
+        cursor: "pointer",
+      }}>
+        <div style={{ padding: "12px 14px 8px" }}>
+          <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+            {s.tags[0] ?? "Short"} &nbsp;·&nbsp; {s.readTime}
+          </div>
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
+            {s.title}
+          </h3>
+        </div>
+        {s.coverImage
+          ? <img src={s.coverImage} alt={s.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover" }} />
+          : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3" }} />
+        }
+      </article>
+    </Link>
+  );
+}
+
+/* ── Article Card (for Recent + Beats) ── */
+function ArticleCard({ a }: { a: Article }) {
+  const date = a.publishedAt
+    ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : "";
+  return (
+    <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+      <article style={{ display: "flex", flexDirection: "column", gap: 12, cursor: "pointer" }}>
+        {a.coverImage
+          ? <img src={a.coverImage} alt={a.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />
+          : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8 }} />
+        }
+        <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
+        <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date} · {a.author}</div>
+        <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
+        <ReadPill />
+      </article>
+    </Link>
+  );
+}
+
+/* ── Skeleton loader ── */
+function Skeleton({ h = 20, w = "100%", radius = 6 }: { h?: number; w?: string | number; radius?: number }) {
+  return (
+    <div style={{
+      height: h, width: w, borderRadius: radius,
+      backgroundColor: "#e8e5e0",
+      animation: "pulse 1.5s ease-in-out infinite",
+    }} />
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Skeleton h={160} radius={8} />
+      <Skeleton h={16} w="80%" />
+      <Skeleton h={12} w="50%" />
+    </div>
+  );
+}
+
+/* ── Beats View ── */
 function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcasts: Article[]; shorts: Article[] }) {
   const [selectedTag, setSelectedTag] = useState(ALL_TAGS[0]);
-
-  const filtered = {
-    articles: articles.filter(a => a.tags.includes(selectedTag)),
-    podcasts: podcasts.filter(a => a.tags.includes(selectedTag)),
-    shorts:   shorts.filter(a => a.tags.includes(selectedTag)),
-  };
-
-  const hasContent = filtered.articles.length + filtered.podcasts.length + filtered.shorts.length > 0;
+  const fa = articles.filter(a => a.tags.includes(selectedTag));
+  const fp = podcasts.filter(p => p.tags.includes(selectedTag));
+  const fs = shorts.filter(s => s.tags.includes(selectedTag));
+  const hasContent = fa.length + fp.length + fs.length > 0;
 
   return (
     <div>
       <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 24 }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", marginBottom: 6 }}>Beats</h1>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "#555", margin: 0 }}>
-          Filter all content by topic
-        </p>
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", marginBottom: 4 }}>Beats</h1>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "#555", margin: 0 }}>Filter all content by topic</p>
       </div>
-
-      {/* Tag selector */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 36 }}>
         {ALL_TAGS.map(tag => (
           <button key={tag} onClick={() => setSelectedTag(tag)} style={{
@@ -107,64 +216,35 @@ function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcas
             border: `2px solid ${selectedTag === tag ? ACCENT : "var(--border)"}`,
             backgroundColor: selectedTag === tag ? ACCENT : "white",
             color: selectedTag === tag ? "white" : "#555",
-            fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif",
-            transition: "all 0.15s",
-          }}>
-            {tag}
-          </button>
+            fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", transition: "all 0.15s",
+          }}>{tag}</button>
         ))}
       </div>
-
       {!hasContent ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>
-          No content tagged "{selectedTag}" yet.
-        </div>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No content tagged "{selectedTag}" yet.</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 48, marginBottom: 60 }}>
-
-          {/* Articles */}
-          {filtered.articles.length > 0 && (
+          {fa.length > 0 && (
             <section>
               <SectionLabel>Articles</SectionLabel>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "32px 24px" }}>
-                {filtered.articles.map(a => (
-                  <Link key={a._id} href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                    <article style={{ display: "flex", flexDirection: "column", gap: 10, cursor: "pointer" }}>
-                      {a.coverImage && <img src={a.coverImage} alt={a.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />}
-                      <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h3>
-                      <p style={{ fontSize: "0.83rem", color: "#555", lineHeight: 1.6, margin: 0 }}>{a.excerpt}</p>
-                      <ReadPill />
-                    </article>
-                  </Link>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px,1fr))", gap: 24 }}>
+                {fa.map(a => <ArticleCard key={a._id} a={a} />)}
               </div>
             </section>
           )}
-
-          {/* Podcasts */}
-          {filtered.podcasts.length > 0 && (
+          {fp.length > 0 && (
             <section>
               <SectionLabel>Podcasts</SectionLabel>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {filtered.podcasts.map(a => <PodcastCard key={a._id} a={a} />)}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
+                {fp.map(p => <PodcastCard key={p._id} p={p} />)}
               </div>
             </section>
           )}
-
-          {/* Short Reads */}
-          {filtered.shorts.length > 0 && (
+          {fs.length > 0 && (
             <section>
               <SectionLabel>Short Reads</SectionLabel>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-                {filtered.shorts.map(a => (
-                  <Link key={a._id} href={`/shorts/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                    <article style={{ display: "flex", flexDirection: "column", gap: 10, padding: 20, border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", height: "100%" }}>
-                      <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h3>
-                      <p style={{ fontSize: "0.82rem", color: "#555", lineHeight: 1.6, margin: 0 }}>{a.excerpt}</p>
-                      <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: "auto", paddingTop: 6, fontFamily: "'Inter', sans-serif" }}>{a.readTime}</div>
-                    </article>
-                  </Link>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
+                {fs.map(s => <ShortCard key={s._id} s={s} />)}
               </div>
             </section>
           )}
@@ -174,182 +254,257 @@ function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcas
   );
 }
 
+/* ── Home View ── */
+function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
+  articles: Article[]; podcasts: Article[]; shorts: Article[];
+  loading: boolean; onTabChange: (t: string) => void;
+}) {
+  const hero   = articles[0];
+  const others = articles.slice(1, 5);
+
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Skeleton h={240} radius={8} />
+          <Skeleton h={28} w="70%" />
+          <Skeleton h={14} w="40%" />
+          <Skeleton h={14} />
+          <Skeleton h={14} w="90%" />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ display: "flex", gap: 12 }}>
+              <Skeleton h={60} w={90} radius={6} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                <Skeleton h={14} />
+                <Skeleton h={12} w="60%" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Skeleton h={20} w={180} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 16 }}>
+          {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+
+      {/* Latest Story + Other Stories */}
+      {(hero || others.length > 0) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 0, marginBottom: 48, borderBottom: "1px solid var(--border)", paddingBottom: 40 }}>
+
+          {/* LEFT — Latest Story */}
+          <div style={{ paddingRight: 32, borderRight: "1px solid var(--border)" }}>
+            <SectionLabel onClick={() => onTabChange("recent")}>Latest Story</SectionLabel>
+            {hero ? (
+              <Link href={`/article/${hero.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <article style={{ cursor: "pointer" }}>
+                  {hero.coverImage
+                    ? <img src={hero.coverImage} alt={hero.title} referrerPolicy="no-referrer" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, marginBottom: 14 }} />
+                    : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8, marginBottom: 14 }} />
+                  }
+                  <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", lineHeight: 1.1, marginBottom: 8, color: "var(--text-main)" }}>{hero.title}</h2>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginBottom: 10 }}>
+                    {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""} &nbsp; {hero.author}
+                  </div>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", marginBottom: 16 }}>{hero.excerpt}</p>
+                  <ReadPill label="Read Further" />
+                </article>
+              </Link>
+            ) : (
+              <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>No articles yet.</p>
+            )}
+          </div>
+
+          {/* RIGHT — Other Stories */}
+          <div style={{ paddingLeft: 32 }}>
+            <SectionLabel onClick={() => onTabChange("recent")}>Other Stories</SectionLabel>
+            {others.length === 0 ? (
+              <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>No other stories yet.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {others.map((a, i) => (
+                  <Link key={a._id} href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                    <article style={{
+                      display: "flex", gap: 14, alignItems: "flex-start",
+                      padding: "14px 0",
+                      borderBottom: i < others.length - 1 ? "1px solid var(--border)" : "none",
+                    }}>
+                      {a.coverImage
+                        ? <img src={a.coverImage} alt={a.title} referrerPolicy="no-referrer" style={{ width: 90, height: 64, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
+                        : <div style={{ width: 90, height: 64, backgroundColor: "#CFCBC3", borderRadius: 6, flexShrink: 0 }} />
+                      }
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", lineHeight: 1.3, color: "var(--text-main)", margin: "0 0 8px" }}>{a.title}</h3>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
+                            {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""} &nbsp; {a.author}
+                          </span>
+                          <ReadPill />
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Latest Podcasts — 4 col grid */}
+      {podcasts.length > 0 && (
+        <section style={{ marginBottom: 48 }}>
+          <SectionLabel onClick={() => onTabChange("podcasts")}>Latest Podcasts</SectionLabel>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            {podcasts.slice(0, 4).map(p => <PodcastCard key={p._id} p={p} />)}
+          </div>
+        </section>
+      )}
+
+      <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "48px 0 40px" }} />
+
+      {/* Short Reads — 4 col grid */}
+      {shorts.length > 0 && (
+        <section style={{ marginBottom: 60 }}>
+          <SectionLabel onClick={() => onTabChange("shorts")}>Short Reads</SectionLabel>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            {shorts.slice(0, 4).map(s => <ShortCard key={s._id} s={s} />)}
+          </div>
+        </section>
+      )}
+
+      {articles.length === 0 && podcasts.length === 0 && shorts.length === 0 && (
+        <div style={{ textAlign: "center", padding: "80px 0", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>
+          <div style={{ fontSize: "2rem", marginBottom: 12 }}>✍️</div>
+          <div style={{ fontSize: "1rem", marginBottom: 6 }}>No content published yet.</div>
+          <div style={{ fontSize: "0.85rem" }}>Go to the admin panel to publish your first article.</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function RecentView({ articles, loading }: { articles: Article[]; loading: boolean }) {
+  return (
+    <div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+      <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 32 }}>
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Recent Stories</h1>
+      </div>
+      {loading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: "48px 28px" }}>
+          {[1,2,3].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : articles.length === 0 ? (
+        <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No articles yet.</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))", gap: "48px 28px", marginBottom: 60 }}>
+          {articles.map(a => <ArticleCard key={a._id} a={a} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PodcastsView({ podcasts, loading }: { podcasts: Article[]; loading: boolean }) {
+  return (
+    <div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+      <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 32 }}>
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Podcasts</h1>
+      </div>
+      {loading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
+          {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : podcasts.length === 0 ? (
+        <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No podcasts yet.</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20, marginBottom: 60 }}>
+          {podcasts.map(p => <PodcastCard key={p._id} p={p} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShortsView({ shorts, loading }: { shorts: Article[]; loading: boolean }) {
+  return (
+    <div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+      <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 32 }}>
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Short Reads</h1>
+      </div>
+      {loading ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
+          {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : shorts.length === 0 ? (
+        <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No short reads yet.</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20, marginBottom: 60 }}>
+          {shorts.map(s => <ShortCard key={s._id} s={s} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Root ── */
 export default function HomePage() {
-  const searchParams = useSearchParams();
-  const initialTab   = searchParams?.get("tab") ?? "home";
-
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState("home");
   const [menuOpen, setMenuOpen]   = useState(false);
-
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [podcasts, setPodcasts] = useState<Article[]>([]);
-  const [shorts,   setShorts]   = useState<Article[]>([]);
-  const [loading,  setLoading]  = useState(true);
+  const [articles, setArticles]   = useState<Article[]>([]);
+  const [podcasts, setPodcasts]   = useState<Article[]>([]);
+  const [shorts,   setShorts]     = useState<Article[]>([]);
+  const [loading,  setLoading]    = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const uid = auth.currentUser?.uid ?? "";
+        const uid = user?.uid ?? "";
         const uidQ = uid ? `&uid=${uid}` : "";
         const [artRes, podRes, shrRes] = await Promise.all([
           fetch(`/api/articles?type=article&status=published${uidQ}`),
           fetch(`/api/articles?type=podcast&status=published${uidQ}`),
           fetch(`/api/articles?type=short&status=published${uidQ}`),
         ]);
-        const [art, pod, shr] = await Promise.all([artRes.json(), podRes.json(), shrRes.json()]);
+        const [art, pod, shr] = await Promise.all([
+          artRes.ok ? artRes.json() : [],
+          podRes.ok ? podRes.json() : [],
+          shrRes.ok ? shrRes.json() : [],
+        ]);
         setArticles(Array.isArray(art) ? art : []);
         setPodcasts(Array.isArray(pod) ? pod : []);
         setShorts(Array.isArray(shr) ? shr : []);
       } catch (e) {
-        console.error(e);
+        console.error("Failed to fetch content:", e);
       } finally {
         setLoading(false);
       }
     };
     fetchAll();
-  }, []);
-
-  const hero        = articles[0];
-  const otherStories = articles.slice(1, 5);
+  }, [user]);
 
   const renderTab = () => {
-    if (loading) return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
-        <div style={{ fontFamily: "'Inter', sans-serif", color: "#aaa", fontSize: "0.9rem" }}>Loading...</div>
-      </div>
-    );
-
     switch (activeTab) {
-      case "home": return (
-        <>
-          {/* Latest Story + Other Stories */}
-          {hero && (
-            <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 0, marginBottom: 48 }}>
-              <div style={{ paddingRight: 28, borderRight: "1px solid var(--border)" }}>
-                <SectionLabel>Latest Story</SectionLabel>
-                <Link href={`/article/${hero.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <article style={{ display: "flex", flexDirection: "column", gap: 11, cursor: "pointer" }}>
-                    {hero.coverImage && <img src={hero.coverImage} alt={hero.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />}
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.9rem", lineHeight: 1.1, margin: "4px 0 0", color: "var(--text-main)" }}>{hero.title}</h2>
-                    <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
-                      {new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} &nbsp;&nbsp; {hero.author}
-                    </div>
-                    <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", margin: 0 }}>{hero.excerpt}</p>
-                    <div style={{ marginTop: 4 }}><ReadPill>Read Further</ReadPill></div>
-                  </article>
-                </Link>
-              </div>
-
-              <div style={{ paddingLeft: 24 }}>
-                <SectionLabel>Other Stories</SectionLabel>
-                <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                  {otherStories.map(a => (
-                    <Link key={a._id} href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                      <article style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                        {a.coverImage && <img src={a.coverImage} alt={a.title} style={{ width: 80, height: 56, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />}
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-                          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.3, color: "var(--text-main)", margin: 0 }}>{a.title}</h3>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
-                              {new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                            </span>
-                            <ReadPill />
-                          </div>
-                        </div>
-                      </article>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {podcasts.length > 0 && (
-            <>
-              <hr style={{ border: "none", borderTop: "1px solid var(--border)", marginBottom: 40 }} />
-              <section style={{ marginBottom: 60 }}>
-                <SectionLabel>Latest Podcasts</SectionLabel>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {podcasts.slice(0, 2).map(p => <PodcastCard key={p._id} a={p} />)}
-                </div>
-              </section>
-            </>
-          )}
-        </>
-      );
-
-      case "recent": return (
-        <div>
-          <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 32 }}>
-            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Recent Stories</h1>
-          </div>
-          {articles.length === 0 ? (
-            <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No articles yet.</p>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "48px 28px", marginBottom: 60 }}>
-              {articles.map(a => (
-                <Link key={a._id} href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <article style={{ display: "flex", flexDirection: "column", gap: 14, cursor: "pointer" }}>
-                    {a.coverImage && <img src={a.coverImage} alt={a.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />}
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.5rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
-                    <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
-                      {new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} · {a.author}
-                    </div>
-                    <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
-                    <ReadPill />
-                  </article>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-
-      case "podcasts": return (
-        <div>
-          <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 32 }}>
-            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Podcasts</h1>
-          </div>
-          {podcasts.length === 0 ? (
-            <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No podcasts yet.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 60 }}>
-              {podcasts.map(p => <PodcastCard key={p._id} a={p} />)}
-            </div>
-          )}
-        </div>
-      );
-
-      case "shorts": return (
-        <div>
-          <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 32 }}>
-            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Short Reads</h1>
-          </div>
-          {shorts.length === 0 ? (
-            <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No short reads yet.</p>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 24, marginBottom: 60 }}>
-              {shorts.map(s => (
-                <Link key={s._id} href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <article style={{ display: "flex", flexDirection: "column", gap: 10, padding: 20, border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", height: "100%" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--text-main)")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border)")}
-                  >
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.2rem", lineHeight: 1.2, margin: 0 }}>{s.title}</h2>
-                    <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>{s.excerpt}</p>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "auto", paddingTop: 6, fontFamily: "'Inter', sans-serif" }}>{s.readTime}</div>
-                  </article>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-
-      case "beats": return <BeatsView articles={articles} podcasts={podcasts} shorts={shorts} />;
-
-      default: return null;
+      case "home":     return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
+      case "recent":   return <RecentView articles={articles} loading={loading} />;
+      case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} />;
+      case "shorts":   return <ShortsView shorts={shorts} loading={loading} />;
+      case "beats":    return <BeatsView articles={articles} podcasts={podcasts} shorts={shorts} />;
+      default:         return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
     }
   };
 
@@ -358,8 +513,8 @@ export default function HomePage() {
       <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={setActiveTab} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
         <Header onMenuOpen={() => setMenuOpen(true)} activeTab={activeTab} onTabChange={setActiveTab} />
-        <main key={activeTab} style={{ animation: "fadeIn 0.3s ease forwards" }}>
-          <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}`}</style>
+        <main key={activeTab} style={{ animation: "fadeIn 0.25s ease forwards" }}>
+          <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
           {renderTab()}
         </main>
       </div>

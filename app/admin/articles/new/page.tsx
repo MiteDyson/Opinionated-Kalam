@@ -13,6 +13,7 @@ import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 
 import { auth } from "@/lib/firebase";
+import { uploadToImageKit } from "@/lib/imagekit";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -179,6 +180,8 @@ export default function NewArticlePage() {
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
   const [wordCount, setWordCount] = useState(0);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
   const [fontSize, setFontSize]   = useState("16");
   const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
@@ -218,12 +221,20 @@ export default function NewArticlePage() {
   const addImage = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file"; input.accept = "image/*"; input.multiple = true;
-    input.onchange = () => {
-      Array.from(input.files ?? []).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => editor?.chain().focus().setImage({ src: e.target?.result as string }).run();
-        reader.readAsDataURL(file);
-      });
+    input.onchange = async () => {
+      const files = Array.from(input.files ?? []);
+      if (!files.length) return;
+      setImgUploading(true);
+      try {
+        for (const file of files) {
+          const url = await uploadToImageKit(file, "articles");
+          editor?.chain().focus().setImage({ src: url }).run();
+        }
+      } catch (err: any) {
+        setError("Image upload failed: " + err.message);
+      } finally {
+        setImgUploading(false);
+      }
     };
     input.click();
   }, [editor]);
@@ -517,7 +528,7 @@ export default function NewArticlePage() {
               <TBtn onClick={setLink} active={editor?.isActive("link")} title="Add link">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
               </TBtn>
-              <TBtn onClick={addImage} title="Add image(s)">
+              <TBtn onClick={imgUploading ? () => {} : addImage} active={imgUploading} title={imgUploading ? "Uploading..." : "Add image(s)"}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               </TBtn>
               <TDivider />

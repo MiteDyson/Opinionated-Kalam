@@ -184,7 +184,7 @@ export default function ArticlePage() {
         <div style={{ maxWidth: 780, margin: "0 auto 80px" }}>
 
           {/* Back */}
-          <button onClick={() => router.back()} style={{
+          <button onClick={() => router.push("/")} style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             fontSize: "0.88rem", fontWeight: 600, color: "var(--text-muted)",
             background: "none", border: "none", cursor: "pointer", marginBottom: 32,

@@ -141,11 +141,12 @@ export default function NewPodcastPage() {
             />
           </div>
           <div>
-            <label style={labelStyle}>Duration</label>
+            <label style={labelStyle}>Duration <span style={{ fontSize: "0.7rem", color: "#aaa", fontWeight: 400 }}>(auto-detected)</span></label>
             <input
-              value={duration} onChange={(e) => setDuration(e.target.value)}
-              placeholder="25:06"
-              style={field}
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="Auto-detected when audio loads..."
+              style={{ ...field, color: duration ? TEXT : "#aaa" }}
             />
           </div>
         </div>
@@ -187,7 +188,24 @@ export default function NewPodcastPage() {
           />
           {audioUrl && (
             <div style={{ marginTop: 10 }}>
-              <audio controls src={audioUrl} style={{ width: "100%", borderRadius: 8 }} />
+              <audio
+                controls
+                src={audioUrl}
+                style={{ width: "100%", borderRadius: 8 }}
+                onLoadedMetadata={(e) => {
+                  const secs = Math.floor((e.target as HTMLAudioElement).duration);
+                  if (!isNaN(secs) && secs > 0) {
+                    const m = Math.floor(secs / 60);
+                    const s = (secs % 60).toString().padStart(2, "0");
+                    setDuration(`${m}:${s}`);
+                  }
+                }}
+              />
+              {duration && (
+                <p style={{ fontSize: "0.75rem", color: "#3a7a3e", fontFamily: "'Inter', sans-serif", marginTop: 4 }}>
+                  Duration auto-detected: {duration}
+                </p>
+              )}
             </div>
           )}
           <p style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "'Inter', sans-serif", marginTop: 6 }}>
