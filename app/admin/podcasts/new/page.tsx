@@ -18,7 +18,6 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 export default function NewPodcastPage() {
   const router = useRouter();
   const [title, setTitle]       = useState("");
-  const [excerpt, setExcerpt]   = useState("");
   const [coverImage, setCover]  = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [episode, setEpisode]   = useState("EP01");
@@ -36,7 +35,7 @@ export default function NewPodcastPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, excerpt, coverImage, audioUrl, episode, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: "Vineet Mestry" }),
+        body: JSON.stringify({ title, coverImage, audioUrl, episode, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: "Vineet Mestry" }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");
@@ -67,34 +66,16 @@ export default function NewPodcastPage() {
 
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: 22 }}>
 
-        {/* Title */}
+        {/* 1. Episode Title */}
         <div>
           <label style={labelStyle}>Episode Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter episode title…" style={{ ...field, fontSize: "1.1rem", fontFamily: "'DM Serif Display', serif" }} />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter episode title…" style={{ ...field, fontSize: "1.05rem", fontFamily: "'DM Serif Display', serif" }} />
         </div>
 
-        {/* Episode + Duration */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Episode Number</label>
-            <input value={episode} onChange={(e) => setEpisode(e.target.value)} placeholder="EP01" style={field} />
-          </div>
-          <div>
-            <label style={labelStyle}>Duration <span style={{ fontSize: "0.65rem", color: "#aaa", fontWeight: 400, textTransform: "none" }}>(auto-detected)</span></label>
-            <input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="Auto-detected when audio loads…" style={{ ...field, color: duration ? TEXT : "#aaa" }} />
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label style={labelStyle}>Description</label>
-          <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="What's this episode about?" rows={3} style={{ ...field, resize: "vertical", lineHeight: 1.6 }} />
-        </div>
-
-        {/* Cover image with upload / link toggle */}
+        {/* 2. Cover Image */}
         <ImageUpload value={coverImage} onChange={setCover} label="Cover Image" folder="podcasts" />
 
-        {/* Audio URL */}
+        {/* 3. Audio File URL */}
         <div>
           <label style={labelStyle}>Audio File URL</label>
           <input value={audioUrl} onChange={(e) => setAudioUrl(e.target.value)} placeholder="https://storage.example.com/episode.mp3" style={field} />
@@ -122,7 +103,13 @@ export default function NewPodcastPage() {
           </p>
         </div>
 
-        {/* Tags */}
+        {/* 4. Episode Number */}
+        <div>
+          <label style={labelStyle}>Episode Number</label>
+          <input value={episode} onChange={(e) => setEpisode(e.target.value)} placeholder="EP01" style={field} />
+        </div>
+
+        {/* 5. Tags */}
         <TagSelector selected={tags} onChange={setTags} />
 
         {/* Preview card */}

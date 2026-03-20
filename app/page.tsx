@@ -79,171 +79,200 @@ function SectionLabel({ children, onClick }: { children: string; onClick?: () =>
   );
 }
 
-// ── Podcast Card ────────────────────────────────────────────────
-function PodcastCard({ p, showTag = true }: { p: Article; showTag?: boolean }) {
-  const [playing,  setPlaying]  = useState(false);
+// ── Podcast Card (Merged UI + Audio Logic + Page Link) ──────────
+function PodcastCard({ 
+  p, 
+  showTag = true, 
+  activeSlug, 
+  setActiveSlug 
+}: { 
+  p: Article; 
+  showTag?: boolean;
+  activeSlug: string | null;
+  setActiveSlug: (slug: string | null) => void;
+}) {
   const [progress, setProgress] = useState(0);
-  const [current,  setCurrent]  = useState("0:00");
+  const [current, setCurrent]   = useState("0:00");
   const [totalDur, setTotalDur] = useState(p.duration ?? "0:00");
+  
   const audioRef   = useRef<HTMLAudioElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
+  const isPlaying  = activeSlug === p.slug;
 
-  const fmt = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  const initAudio = (): HTMLAudioElement | null => {
-    if (!p.audioUrl) return null;
-    if (audioRef.current) return audioRef.current;
+  // Init Audio & Handle Time Updates
+  useEffect(() => {
+    if (!p.audioUrl) return;
     const audio = new Audio(p.audioUrl);
     audioRef.current = audio;
+    
     audio.ontimeupdate = () => {
       if (audio.duration) {
         setProgress((audio.currentTime / audio.duration) * 100);
-        setCurrent(fmt(audio.currentTime));
+        const m = Math.floor(audio.currentTime / 60);
+        const s = Math.floor(audio.currentTime % 60).toString().padStart(2, "0");
+        setCurrent(`${m}:${s}`);
       }
     };
+    
     audio.onloadedmetadata = () => {
-      if (!isNaN(audio.duration)) setTotalDur(fmt(audio.duration));
+      if (!isNaN(audio.duration)) {
+        const m = Math.floor(audio.duration / 60);
+        const s = Math.floor(audio.duration % 60).toString().padStart(2, "0");
+        setTotalDur(`${m}:${s}`);
+      }
     };
-    audio.onended = () => setPlaying(false);
-    return audio;
-  };
+    
+    audio.onended = () => setActiveSlug(null);
+    return () => { audio.pause(); audio.src = ""; };
+  }, [p.audioUrl, setActiveSlug]);
 
-  const togglePlay = () => {
-    const audio = initAudio();
+  // Handle Play/Pause based on global state
+  useEffect(() => {
+    const audio = audioRef.current;
     if (!audio) return;
-    if (playing) { audio.pause(); setPlaying(false); }
-    else         { audio.play();  setPlaying(true);  }
+    if (isPlaying) audio.play().catch(() => {});
+    else audio.pause();
+  }, [isPlaying]);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!p.audioUrl) return;
+    setActiveSlug(isPlaying ? null : p.slug);
   };
 
-  const skip = (sec: number) => {
-    const audio = initAudio();
-    if (audio) audio.currentTime = Math.max(0, audio.currentTime + sec);
+  const skip = (e: React.MouseEvent, sec: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime + sec);
+    }
   };
 
   const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const audio = initAudio();
+    e.preventDefault();
+    e.stopPropagation();
+    const audio = audioRef.current;
     if (!audio || !seekBarRef.current) return;
-    const rect    = seekBarRef.current.getBoundingClientRect();
-    const ratio   = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const rect  = seekBarRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     audio.currentTime = ratio * (audio.duration || 0);
     setProgress(ratio * 100);
   };
 
   return (
-    <article style={{
-      backgroundColor: POD_BG,
-      border: "1px solid rgba(27,42,71,0.1)",
-      borderRadius: 12,
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "column",
-    }}>
-      {/* Padded image with curved corners */}
-      <div style={{ padding: "10px 10px 0" }}>
-        {p.coverImage ? (
-          <img
-            src={p.coverImage}
-            alt={p.title}
-            style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }}
-          />
-        ) : (
-          <div style={{
-            width: "100%", aspectRatio: "4/3",
-            backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontSize: "2rem" }}>🎙</span>
+    <Link href={`/podcasts/${p.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+      <article style={{
+        backgroundColor: POD_BG,
+        border: "1px solid rgba(27,42,71,0.1)",
+        borderRadius: 12,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}>
+        {/* Padded image with curved corners */}
+        <div style={{ padding: "10px 10px 0" }}>
+          {p.coverImage ? (
+            <img
+              src={p.coverImage}
+              alt={p.title}
+              style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }}
+            />
+          ) : (
+            <div style={{
+              width: "100%", aspectRatio: "4/3",
+              backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ fontSize: "2rem" }}>🎙</span>
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+          {/* Tag — red */}
+          {showTag && (
+            <div style={{
+              fontSize: "0.6rem", fontWeight: 800, color: RED,
+              fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em",
+            }}>
+              {p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}
+            </div>
+          )}
+
+          {/* Title */}
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
+            {p.title}
+          </h3>
+
+          {/* Playback controls */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
+            <button
+              onClick={(e) => skip(e, -10)}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
+            >
+              ← 10
+            </button>
+            <button
+              onClick={togglePlay}
+              style={{
+                width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                transition: "transform 0.15s",
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1.1)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1)")}
+            >
+              {isPlaying ? (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                  <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                </svg>
+              ) : (
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={(e) => skip(e, 10)}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
+            >
+              10 →
+            </button>
           </div>
-        )}
-      </div>
 
-      <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-        {/* Tag — red */}
-        {showTag && (
-          <div style={{
-            fontSize: "0.6rem", fontWeight: 800, color: RED,
-            fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em",
-          }}>
-            {p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}
-          </div>
-        )}
-
-        {/* Title */}
-        <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
-          {p.title}
-        </h3>
-
-        {/* Playback controls */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
-          <button
-            onClick={() => skip(-10)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
-          >
-            ← 10
-          </button>
-          <button
-            onClick={togglePlay}
+          {/* Clickable seekbar */}
+          <div
+            ref={seekBarRef}
+            onClick={handleSeekClick}
+            title="Click to seek"
             style={{
-              width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)",
-              border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              transition: "transform 0.15s",
+              height: 5,
+              backgroundColor: "rgba(27,42,71,0.15)",
+              borderRadius: 3,
+              cursor: "pointer",
+              position: "relative",
+              overflow: "hidden",
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1.1)")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1)")}
           >
-            {playing ? (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-              </svg>
-            ) : (
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-            )}
-          </button>
-          <button
-            onClick={() => skip(10)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
-          >
-            10 →
-          </button>
-        </div>
+            <div style={{
+              width: `${progress}%`,
+              height: "100%",
+              backgroundColor: RED,
+              borderRadius: 3,
+              transition: "width 0.3s linear",
+              pointerEvents: "none",
+            }} />
+          </div>
 
-        {/* Clickable seekbar */}
-        <div
-          ref={seekBarRef}
-          onClick={handleSeekClick}
-          title="Click to seek"
-          style={{
-            height: 5,
-            backgroundColor: "rgba(27,42,71,0.15)",
-            borderRadius: 3,
-            cursor: "pointer",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{
-            width: `${progress}%`,
-            height: "100%",
-            backgroundColor: RED,
-            borderRadius: 3,
-            transition: "width 0.3s linear",
-            pointerEvents: "none",
-          }} />
+          {/* Timestamp */}
+          <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>
+            {current} / {totalDur}
+          </div>
         </div>
-
-        {/* Timestamp */}
-        <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>
-          {current} / {totalDur}
-        </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 
@@ -271,24 +300,16 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
           (e.currentTarget as HTMLElement).style.boxShadow = "none";
         }}
       >
-        {/* Padded image with curved corners */}
         <div style={{ padding: "10px 10px 0" }}>
           {s.coverImage ? (
-            <img
-              src={s.coverImage}
-              alt={s.title}
-              style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block" }}
-            />
+            <img src={s.coverImage} alt={s.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block" }} />
           ) : (
             <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "rgba(211,139,136,0.15)", borderRadius: 8 }} />
           )}
         </div>
         <div style={{ padding: "10px 14px 14px" }}>
           {showTag && (
-            <div style={{
-              fontSize: "0.6rem", fontWeight: 800, color: RED,
-              fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6,
-            }}>
+            <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
               {s.tags[0] ?? "Short"} &nbsp;·&nbsp; {s.readTime}
             </div>
           )}
@@ -303,9 +324,7 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
 
 // ── Article Card (Recent + Beats) ───────────────────────────────
 function ArticleCard({ a }: { a: Article }) {
-  const date = a.publishedAt
-    ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
-    : "";
+  const date = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
   return (
     <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
       <article style={{ display: "flex", flexDirection: "column", gap: 12, cursor: "pointer" }}>
@@ -338,7 +357,7 @@ function SkeletonCard() {
 }
 
 // ── Beats View ──────────────────────────────────────────────────
-function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcasts: Article[]; shorts: Article[] }) {
+function BeatsView({ articles, podcasts, shorts, activeSlug, setActiveSlug }: { articles: Article[]; podcasts: Article[]; shorts: Article[]; activeSlug: string | null; setActiveSlug: (s: string | null) => void }) {
   const [selectedTag, setSelectedTag] = useState(ALL_TAGS[0]);
   const fa = articles.filter(a => a.tags.includes(selectedTag));
   const fp = podcasts.filter(p => p.tags.includes(selectedTag));
@@ -382,7 +401,7 @@ function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcas
             <section>
               <SectionLabel>Podcasts</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
-                {fp.map(p => <PodcastCard key={p._id} p={p} />)}
+                {fp.map(p => <PodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
               </div>
             </section>
           )}
@@ -401,9 +420,10 @@ function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcas
 }
 
 // ── Home View ───────────────────────────────────────────────────
-function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
+function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug, setActiveSlug }: {
   articles: Article[]; podcasts: Article[]; shorts: Article[];
   loading: boolean; onTabChange: (t: string) => void;
+  activeSlug: string | null; setActiveSlug: (s: string | null) => void;
 }) {
   const hero   = articles[0];
   const others = articles.slice(1, 5);
@@ -455,7 +475,6 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
                   ) : (
                     <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8, marginBottom: 14 }} />
                   )}
-                  {/* tag data present in article object; label intentionally not rendered on home */}
                   <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", lineHeight: 1.1, marginBottom: 8, color: "var(--text-main)" }}>
                     {hero.title}
                   </h2>
@@ -494,8 +513,6 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.7")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
                     >
-                      {/* tag data present in article object; label intentionally not rendered on home */}
-
                       {/* Thumbnail + headline */}
                       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         {a.coverImage ? (
@@ -543,7 +560,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
         <section style={{ marginBottom: 48 }}>
           <SectionLabel onClick={() => onTabChange("podcasts")}>Latest Podcasts</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {podcasts.slice(0, 4).map(p => <PodcastCard key={p._id} p={p} showTag={false} />)}
+            {podcasts.slice(0, 4).map(p => <PodcastCard key={p._id} p={p} showTag={false} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
           </div>
         </section>
       )}
@@ -594,7 +611,7 @@ function RecentView({ articles, loading }: { articles: Article[]; loading: boole
   );
 }
 
-function PodcastsView({ podcasts, loading }: { podcasts: Article[]; loading: boolean }) {
+function PodcastsView({ podcasts, loading, activeSlug, setActiveSlug }: { podcasts: Article[]; loading: boolean; activeSlug: string | null; setActiveSlug: (s: string | null) => void }) {
   return (
     <div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
@@ -609,7 +626,7 @@ function PodcastsView({ podcasts, loading }: { podcasts: Article[]; loading: boo
         <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No podcasts yet.</p>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20, marginBottom: 60 }}>
-          {podcasts.map(p => <PodcastCard key={p._id} p={p} />)}
+          {podcasts.map(p => <PodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
         </div>
       )}
     </div>
@@ -646,12 +663,13 @@ export default function HomePage() {
   const [podcasts,  setPodcasts]  = useState<Article[]>([]);
   const [shorts,    setShorts]    = useState<Article[]>([]);
   const [loading,   setLoading]   = useState(true);
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const uid  = user?.uid ?? "";
+        const uid = (user as any)?.uid ?? "";
         const uidQ = uid ? `&uid=${uid}` : "";
         const [artRes, podRes, shrRes] = await Promise.all([
           fetch(`/api/articles?type=article&status=published${uidQ}`),
@@ -677,12 +695,12 @@ export default function HomePage() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "home":     return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
+      case "home":     return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
       case "recent":   return <RecentView  articles={articles} loading={loading} />;
-      case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} />;
+      case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
       case "shorts":   return <ShortsView  shorts={shorts} loading={loading} />;
-      case "beats":    return <BeatsView   articles={articles} podcasts={podcasts} shorts={shorts} />;
-      default:         return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
+      case "beats":    return <BeatsView   articles={articles} podcasts={podcasts} shorts={shorts} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
+      default:         return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
     }
   };
 

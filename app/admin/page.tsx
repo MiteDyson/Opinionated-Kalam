@@ -346,13 +346,13 @@ export default function AdminDashboard() {
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
 
               <div style={{ display: "flex", gap: 5 }}>
-                <Link href={`/admin/articles/${a.slug}/edit`} title="Edit"
+                <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
                   style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(27,42,71,0.08)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
                 ><IconEdit /></Link>
 
-                <Link href={a.type === "short" ? `/shorts/${a.slug}` : `/article/${a.slug}`} title="View"
+                <Link href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`} title="View"
                   style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; }}
