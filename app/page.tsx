@@ -40,19 +40,16 @@ function ReadPill({ label = "Read" }: { label?: string }) {
     <span style={{
       display: "inline-block",
       padding: "3px 12px",
-      borderRadius: 4,
+      borderRadius: 999,
       fontSize: "0.68rem",
       fontWeight: 700,
       fontFamily: "'Inter', sans-serif",
       backgroundColor: READ_PILL_BG,
       color: READ_PILL_TX,
-      letterSpacing: "0.03em",
-    }}>
-      {label}
-    </span>
+      whiteSpace: "nowrap",
+    }}>{label}</span>
   );
 }
-
 // ── Section Label ───────────────────────────────────────────────
 function SectionLabel({ children, onClick }: { children: string; onClick?: () => void }) {
   return (
@@ -336,7 +333,9 @@ function ArticleCard({ a }: { a: Article }) {
         <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
         <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date} · {a.author}</div>
         <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
-        <ReadPill />
+       <div style={{ alignSelf: "flex-start" }}>
+  <ReadPill />
+</div>
       </article>
     </Link>
   );
