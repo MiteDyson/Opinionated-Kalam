@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import TagSelector from "@/components/admin/TagSelector";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -21,7 +22,8 @@ export default function NewPodcastPage() {
   const [episode, setEpisode]   = useState("EP01");
   const [duration, setDuration] = useState("");
   const [selectedTags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput]   = useState("");
+  const [showTagInput, setShowTagInput] = useState(false);
   const [status, setStatus]     = useState<"draft" | "published">("draft");
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
@@ -118,16 +120,12 @@ export default function NewPodcastPage() {
 
         {/* Title */}
         <div>
-          <input
-            value={title} onChange={(e) => setTitle(e.target.value)}
-            placeholder="Podcast episode title..."
-            style={{
-              ...field, fontSize: "1.8rem", padding: "14px 0",
-              fontFamily: "'DM Serif Display', serif",
-              border: "none", borderBottom: "2px solid #CFCBC3",
-              borderRadius: 0, backgroundColor: "transparent",
-            }}
+          <div>
+          <label style={labelStyle}>Title *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Podcast episode title..."
+            style={{ ...field, fontSize: "1.5rem", fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
           />
+        </div>
         </div>
 
         {/* Episode + Duration */}
@@ -213,40 +211,7 @@ export default function NewPodcastPage() {
           </p>
         </div>
 
-        {/* Tags */}
-        <div>
-          <label style={labelStyle}>Tags</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 10 }}>
-            {ALL_TAGS.map(tag => (
-              <button key={tag} onClick={() => toggleTag(tag)} style={{
-                padding: "5px 12px", borderRadius: 20, cursor: "pointer",
-                border: `1.5px solid ${selectedTags.includes(tag) ? ACCENT : "#CFCBC3"}`,
-                backgroundColor: selectedTags.includes(tag) ? ACCENT : "white",
-                color: selectedTags.includes(tag) ? "white" : MUTED,
-                fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-                transition: "all 0.15s",
-              }}>
-                {tag}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              value={tagInput} onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-              placeholder="Custom tag..."
-              style={{ ...field, flex: 1 }}
-            />
-            <button onClick={addCustomTag} style={{
-              padding: "10px 16px", borderRadius: 8,
-              border: "1px solid #CFCBC3", backgroundColor: "white",
-              color: TEXT, cursor: "pointer",
-              fontSize: "0.83rem", fontFamily: "'Inter', sans-serif",
-            }}>
-              Add
-            </button>
-          </div>
-        </div>
+        <TagSelector selectedTags={selectedTags} onToggle={toggleTag} onAdd={addCustomTag} tagInput={tagInput} setTagInput={setTagInput} />
 
         {/* Podcast preview card */}
         {(title || coverImage) && (

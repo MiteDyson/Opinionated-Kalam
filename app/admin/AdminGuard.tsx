@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
 
 const ADMIN_EMAIL = "opinionatedkalam@gmail.com";
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -22,13 +20,11 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
     if (user.email !== ADMIN_EMAIL) {
       router.replace("/");
-      return;
     }
-
-    setChecked(true);
   }, [user, loading, router]);
 
-  if (loading || !checked) {
+  // Still waiting for Firebase auth to initialize
+  if (loading) {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center",
@@ -38,6 +34,11 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         Checking access...
       </div>
     );
+  }
+
+  // Auth resolved but no valid admin user yet — show nothing while redirect happens
+  if (!user || user.email !== ADMIN_EMAIL) {
+    return null;
   }
 
   return <>{children}</>;

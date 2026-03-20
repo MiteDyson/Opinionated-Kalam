@@ -11,6 +11,12 @@ const ACCENT   = "#1B2A47";
 const RED      = "#D92323";
 const ALL_TAGS = ["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers"];
 
+// ── Design tokens ──────────────────────────────────────────────
+const POD_BG       = "#e1dfe8";
+const SHORT_BG     = "#fae8c1";
+const READ_PILL_BG = "#f2e3e1";
+const READ_PILL_TX = "#a94438";
+
 interface Article {
   _id: string;
   slug: string;
@@ -28,26 +34,43 @@ interface Article {
   audioUrl?: string;
 }
 
-/* ── Read Pill ── */
+// ── Read Pill ───────────────────────────────────────────────────
 function ReadPill({ label = "Read" }: { label?: string }) {
   return (
     <span style={{
-      display: "inline-block", padding: "2px 10px", borderRadius: 4,
-      fontSize: "0.68rem", fontWeight: 700, fontFamily: "'Inter', sans-serif",
-      backgroundColor: "rgba(27,42,71,0.12)", color: ACCENT,
-    }}>{label}</span>
+      display: "inline-block",
+      padding: "3px 12px",
+      borderRadius: 4,
+      fontSize: "0.68rem",
+      fontWeight: 700,
+      fontFamily: "'Inter', sans-serif",
+      backgroundColor: READ_PILL_BG,
+      color: READ_PILL_TX,
+      letterSpacing: "0.03em",
+    }}>
+      {label}
+    </span>
   );
 }
 
-/* ── Section Label ── */
+// ── Section Label ───────────────────────────────────────────────
 function SectionLabel({ children, onClick }: { children: string; onClick?: () => void }) {
   return (
-    <button onClick={onClick} style={{
-      background: "none", border: "none", cursor: onClick ? "pointer" : "default",
-      fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: "1rem",
-      letterSpacing: "0.08em", textTransform: "uppercase" as const,
-      color: ACCENT, marginBottom: 18, padding: 0,
-    }}
+    <button
+      onClick={onClick}
+      style={{
+        background: "none",
+        border: "none",
+        cursor: onClick ? "pointer" : "default",
+        fontFamily: "'Inter', sans-serif",
+        fontWeight: 800,
+        fontSize: "1rem",
+        letterSpacing: "0.08em",
+        textTransform: "uppercase" as const,
+        color: ACCENT,
+        marginBottom: 18,
+        padding: 0,
+      }}
       onMouseEnter={(e) => { if (onClick) (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
       onMouseLeave={(e) => { if (onClick) (e.currentTarget as HTMLElement).style.opacity = "1"; }}
     >
@@ -56,104 +79,229 @@ function SectionLabel({ children, onClick }: { children: string; onClick?: () =>
   );
 }
 
-/* ── Podcast Card ── */
-function PodcastCard({ p }: { p: Article }) {
-  const [playing, setPlaying]   = useState(false);
+// ── Podcast Card ────────────────────────────────────────────────
+function PodcastCard({ p, showTag = true }: { p: Article; showTag?: boolean }) {
+  const [playing,  setPlaying]  = useState(false);
   const [progress, setProgress] = useState(0);
-  const [current, setCurrent]   = useState("0:00");
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [current,  setCurrent]  = useState("0:00");
+  const [totalDur, setTotalDur] = useState(p.duration ?? "0:00");
+  const audioRef   = useRef<HTMLAudioElement | null>(null);
+  const seekBarRef = useRef<HTMLDivElement>(null);
+
+  const fmt = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const initAudio = (): HTMLAudioElement | null => {
+    if (!p.audioUrl) return null;
+    if (audioRef.current) return audioRef.current;
+    const audio = new Audio(p.audioUrl);
+    audioRef.current = audio;
+    audio.ontimeupdate = () => {
+      if (audio.duration) {
+        setProgress((audio.currentTime / audio.duration) * 100);
+        setCurrent(fmt(audio.currentTime));
+      }
+    };
+    audio.onloadedmetadata = () => {
+      if (!isNaN(audio.duration)) setTotalDur(fmt(audio.duration));
+    };
+    audio.onended = () => setPlaying(false);
+    return audio;
+  };
 
   const togglePlay = () => {
-    if (!p.audioUrl) return;
-    if (!audioRef.current) {
-      audioRef.current = new Audio(p.audioUrl);
-      audioRef.current.ontimeupdate = () => {
-        const a = audioRef.current!;
-        if (a.duration) {
-          setProgress((a.currentTime / a.duration) * 100);
-          const m = Math.floor(a.currentTime / 60);
-          const s = Math.floor(a.currentTime % 60).toString().padStart(2, "0");
-          setCurrent(`${m}:${s}`);
-        }
-      };
-    }
-    if (playing) { audioRef.current.pause(); setPlaying(false); }
-    else         { audioRef.current.play();  setPlaying(true); }
+    const audio = initAudio();
+    if (!audio) return;
+    if (playing) { audio.pause(); setPlaying(false); }
+    else         { audio.play();  setPlaying(true);  }
   };
 
   const skip = (sec: number) => {
-    if (audioRef.current) audioRef.current.currentTime += sec;
+    const audio = initAudio();
+    if (audio) audio.currentTime = Math.max(0, audio.currentTime + sec);
+  };
+
+  const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = initAudio();
+    if (!audio || !seekBarRef.current) return;
+    const rect    = seekBarRef.current.getBoundingClientRect();
+    const ratio   = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * (audio.duration || 0);
+    setProgress(ratio * 100);
   };
 
   return (
     <article style={{
-      backgroundColor: "var(--bg)", border: "1px solid var(--border)",
-      borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column",
+      backgroundColor: POD_BG,
+      border: "1px solid rgba(27,42,71,0.1)",
+      borderRadius: 12,
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
     }}>
-      {p.coverImage
-        ? <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover" }} />
-        : <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "#CFCBC3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* Padded image with curved corners */}
+      <div style={{ padding: "10px 10px 0" }}>
+        {p.coverImage ? (
+          <img
+            src={p.coverImage}
+            alt={p.title}
+            style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }}
+          />
+        ) : (
+          <div style={{
+            width: "100%", aspectRatio: "4/3",
+            backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
             <span style={{ fontSize: "2rem" }}>🎙</span>
           </div>
-      }
+        )}
+      </div>
+
       <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-        <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-          {p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}
-        </div>
+        {/* Tag — red */}
+        {showTag && (
+          <div style={{
+            fontSize: "0.6rem", fontWeight: 800, color: RED,
+            fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em",
+          }}>
+            {p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}
+          </div>
+        )}
+
+        {/* Title */}
         <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
           {p.title}
         </h3>
+
+        {/* Playback controls */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
-          <button onClick={() => skip(-10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>← 10</button>
-          <button onClick={togglePlay} style={{
-            width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)",
-            border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>
-            {playing
-              ? <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-              : <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            }
+          <button
+            onClick={() => skip(-10)}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
+          >
+            ← 10
           </button>
-          <button onClick={() => skip(10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>10 →</button>
+          <button
+            onClick={togglePlay}
+            style={{
+              width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              transition: "transform 0.15s",
+            }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1.1)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1)")}
+          >
+            {playing ? (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+              </svg>
+            ) : (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            )}
+          </button>
+          <button
+            onClick={() => skip(10)}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
+          >
+            10 →
+          </button>
         </div>
-        <div style={{ height: 2, backgroundColor: "var(--border)", borderRadius: 1, overflow: "hidden" }}>
-          <div style={{ width: `${progress}%`, height: "100%", backgroundColor: RED, transition: "width 0.5s linear" }} />
+
+        {/* Clickable seekbar */}
+        <div
+          ref={seekBarRef}
+          onClick={handleSeekClick}
+          title="Click to seek"
+          style={{
+            height: 5,
+            backgroundColor: "rgba(27,42,71,0.15)",
+            borderRadius: 3,
+            cursor: "pointer",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{
+            width: `${progress}%`,
+            height: "100%",
+            backgroundColor: RED,
+            borderRadius: 3,
+            transition: "width 0.3s linear",
+            pointerEvents: "none",
+          }} />
         </div>
+
+        {/* Timestamp */}
         <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>
-          {current} / {p.duration ?? "–"}
+          {current} / {totalDur}
         </div>
       </div>
     </article>
   );
 }
 
-/* ── Short Card ── */
-function ShortCard({ s }: { s: Article }) {
+// ── Short Card ──────────────────────────────────────────────────
+function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
   return (
     <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{
-        backgroundColor: "var(--bg)", border: "1px solid var(--border)",
-        borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column",
-        cursor: "pointer",
-      }}>
-        <div style={{ padding: "12px 14px 8px" }}>
-          <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
-            {s.tags[0] ?? "Short"} &nbsp;·&nbsp; {s.readTime}
-          </div>
+      <article
+        style={{
+          backgroundColor: SHORT_BG,
+          border: "1px solid rgba(211,139,136,0.2)",
+          borderRadius: 12,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          cursor: "pointer",
+          transition: "transform 0.18s, box-shadow 0.18s",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+          (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+          (e.currentTarget as HTMLElement).style.boxShadow = "none";
+        }}
+      >
+        {/* Padded image with curved corners */}
+        <div style={{ padding: "10px 10px 0" }}>
+          {s.coverImage ? (
+            <img
+              src={s.coverImage}
+              alt={s.title}
+              style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block" }}
+            />
+          ) : (
+            <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "rgba(211,139,136,0.15)", borderRadius: 8 }} />
+          )}
+        </div>
+        <div style={{ padding: "10px 14px 14px" }}>
+          {showTag && (
+            <div style={{
+              fontSize: "0.6rem", fontWeight: 800, color: RED,
+              fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6,
+            }}>
+              {s.tags[0] ?? "Short"} &nbsp;·&nbsp; {s.readTime}
+            </div>
+          )}
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
             {s.title}
           </h3>
         </div>
-        {s.coverImage
-          ? <img src={s.coverImage} alt={s.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover" }} />
-          : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3" }} />
-        }
       </article>
     </Link>
   );
 }
 
-/* ── Article Card (for Recent + Beats) ── */
+// ── Article Card (Recent + Beats) ───────────────────────────────
 function ArticleCard({ a }: { a: Article }) {
   const date = a.publishedAt
     ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
@@ -161,10 +309,11 @@ function ArticleCard({ a }: { a: Article }) {
   return (
     <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
       <article style={{ display: "flex", flexDirection: "column", gap: 12, cursor: "pointer" }}>
-        {a.coverImage
-          ? <img src={a.coverImage} alt={a.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />
-          : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8 }} />
-        }
+        {a.coverImage ? (
+          <img src={a.coverImage} alt={a.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8 }} />
+        ) : (
+          <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8 }} />
+        )}
         <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
         <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date} · {a.author}</div>
         <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
@@ -174,17 +323,10 @@ function ArticleCard({ a }: { a: Article }) {
   );
 }
 
-/* ── Skeleton loader ── */
+// ── Skeleton ────────────────────────────────────────────────────
 function Skeleton({ h = 20, w = "100%", radius = 6 }: { h?: number; w?: string | number; radius?: number }) {
-  return (
-    <div style={{
-      height: h, width: w, borderRadius: radius,
-      backgroundColor: "#e8e5e0",
-      animation: "pulse 1.5s ease-in-out infinite",
-    }} />
-  );
+  return <div style={{ height: h, width: w, borderRadius: radius, backgroundColor: "#e8e5e0", animation: "pulse 1.5s ease-in-out infinite" }} />;
 }
-
 function SkeletonCard() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -195,7 +337,7 @@ function SkeletonCard() {
   );
 }
 
-/* ── Beats View ── */
+// ── Beats View ──────────────────────────────────────────────────
 function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcasts: Article[]; shorts: Article[] }) {
   const [selectedTag, setSelectedTag] = useState(ALL_TAGS[0]);
   const fa = articles.filter(a => a.tags.includes(selectedTag));
@@ -217,11 +359,15 @@ function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcas
             backgroundColor: selectedTag === tag ? ACCENT : "white",
             color: selectedTag === tag ? "white" : "#555",
             fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", transition: "all 0.15s",
-          }}>{tag}</button>
+          }}>
+            {tag}
+          </button>
         ))}
       </div>
       {!hasContent ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>No content tagged "{selectedTag}" yet.</div>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>
+          No content tagged "{selectedTag}" yet.
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 48, marginBottom: 60 }}>
           {fa.length > 0 && (
@@ -254,7 +400,7 @@ function BeatsView({ articles, podcasts, shorts }: { articles: Article[]; podcas
   );
 }
 
-/* ── Home View ── */
+// ── Home View ───────────────────────────────────────────────────
 function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
   articles: Article[]; podcasts: Article[]; shorts: Article[];
   loading: boolean; onTabChange: (t: string) => void;
@@ -267,20 +413,13 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Skeleton h={240} radius={8} />
-          <Skeleton h={28} w="70%" />
-          <Skeleton h={14} w="40%" />
-          <Skeleton h={14} />
-          <Skeleton h={14} w="90%" />
+          <Skeleton h={240} radius={8} /><Skeleton h={28} w="70%" /><Skeleton h={14} w="40%" /><Skeleton h={14} /><Skeleton h={14} w="90%" />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {[1,2,3,4].map(i => (
             <div key={i} style={{ display: "flex", gap: 12 }}>
               <Skeleton h={60} w={90} radius={6} />
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                <Skeleton h={14} />
-                <Skeleton h={12} w="60%" />
-              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}><Skeleton h={14} /><Skeleton h={12} w="60%" /></div>
             </div>
           ))}
         </div>
@@ -298,25 +437,36 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
     <>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
 
-      {/* Latest Story + Other Stories */}
+      {/* ── Latest Story + Recent Stories ── */}
       {(hero || others.length > 0) && (
-        <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 0, marginBottom: 48, borderBottom: "1px solid var(--border)", paddingBottom: 40 }}>
-
-          {/* LEFT — Latest Story */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 0,
+          marginBottom: 48, borderBottom: "1px solid var(--border)", paddingBottom: 40,
+        }}>
+          {/* LEFT — hero */}
           <div style={{ paddingRight: 32, borderRight: "1px solid var(--border)" }}>
             <SectionLabel onClick={() => onTabChange("recent")}>Latest Story</SectionLabel>
             {hero ? (
               <Link href={`/article/${hero.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <article style={{ cursor: "pointer" }}>
-                  {hero.coverImage
-                    ? <img src={hero.coverImage} alt={hero.title} referrerPolicy="no-referrer" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, marginBottom: 14 }} />
-                    : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8, marginBottom: 14 }} />
-                  }
-                  <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", lineHeight: 1.1, marginBottom: 8, color: "var(--text-main)" }}>{hero.title}</h2>
+                  {hero.coverImage ? (
+                    <img src={hero.coverImage} alt={hero.title} referrerPolicy="no-referrer"
+                      style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, marginBottom: 14 }} />
+                  ) : (
+                    <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8, marginBottom: 14 }} />
+                  )}
+                  {/* tag data present in article object; label intentionally not rendered on home */}
+                  <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", lineHeight: 1.1, marginBottom: 8, color: "var(--text-main)" }}>
+                    {hero.title}
+                  </h2>
                   <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginBottom: 10 }}>
-                    {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""} &nbsp; {hero.author}
+                    {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""}
+                    &nbsp;·&nbsp; {hero.author}
+                    {hero.readTime && <> &nbsp;·&nbsp; {hero.readTime}</>}
                   </div>
-                  <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", marginBottom: 16 }}>{hero.excerpt}</p>
+                  <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", marginBottom: 16 }}>
+                    {hero.excerpt}
+                  </p>
                   <ReadPill label="Read Further" />
                 </article>
               </Link>
@@ -325,31 +475,58 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
             )}
           </div>
 
-          {/* RIGHT — Other Stories */}
+          {/* RIGHT — Recent Stories (improved) */}
           <div style={{ paddingLeft: 32 }}>
-            <SectionLabel onClick={() => onTabChange("recent")}>Other Stories</SectionLabel>
+            <SectionLabel onClick={() => onTabChange("recent")}>Recent Stories</SectionLabel>
             {others.length === 0 ? (
               <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>No other stories yet.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {others.map((a, i) => (
                   <Link key={a._id} href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                    <article style={{
-                      display: "flex", gap: 14, alignItems: "flex-start",
-                      padding: "14px 0",
-                      borderBottom: i < others.length - 1 ? "1px solid var(--border)" : "none",
-                    }}>
-                      {a.coverImage
-                        ? <img src={a.coverImage} alt={a.title} referrerPolicy="no-referrer" style={{ width: 90, height: 64, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
-                        : <div style={{ width: 90, height: 64, backgroundColor: "#CFCBC3", borderRadius: 6, flexShrink: 0 }} />
-                      }
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", lineHeight: 1.3, color: "var(--text-main)", margin: "0 0 8px" }}>{a.title}</h3>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
-                            {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""} &nbsp; {a.author}
-                          </span>
-                          <ReadPill />
+                    <article
+                      style={{
+                        padding: "14px 0",
+                        borderBottom: i < others.length - 1 ? "1px solid var(--border)" : "none",
+                        transition: "opacity 0.15s",
+                        display: "flex", flexDirection: "column", gap: 7,
+                      }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.7")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
+                    >
+                      {/* tag data present in article object; label intentionally not rendered on home */}
+
+                      {/* Thumbnail + headline */}
+                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        {a.coverImage ? (
+                          <img src={a.coverImage} alt={a.title} referrerPolicy="no-referrer"
+                            style={{ width: 80, height: 54, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
+                        ) : (
+                          <div style={{ width: 80, height: 54, backgroundColor: "#CFCBC3", borderRadius: 6, flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h3 style={{
+                            fontFamily: "'DM Serif Display', serif", fontSize: "1rem",
+                            lineHeight: 1.3, color: "var(--text-main)", margin: "0 0 7px",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical" as const,
+                            overflow: "hidden",
+                          }}>
+                            {a.title}
+                          </h3>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
+                              {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
+                            </span>
+                            {a.readTime && (
+                              <>
+                                <span style={{ fontSize: "0.6rem", color: "var(--border)" }}>·</span>
+                                <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.readTime}</span>
+                              </>
+                            )}
+                            <ReadPill />
+                          </div>
                         </div>
                       </div>
                     </article>
@@ -361,24 +538,24 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
         </div>
       )}
 
-      {/* Latest Podcasts — 4 col grid */}
+      {/* ── Podcasts ── */}
       {podcasts.length > 0 && (
         <section style={{ marginBottom: 48 }}>
           <SectionLabel onClick={() => onTabChange("podcasts")}>Latest Podcasts</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {podcasts.slice(0, 4).map(p => <PodcastCard key={p._id} p={p} />)}
+            {podcasts.slice(0, 4).map(p => <PodcastCard key={p._id} p={p} showTag={false} />)}
           </div>
         </section>
       )}
 
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "48px 0 40px" }} />
 
-      {/* Short Reads — 4 col grid */}
+      {/* ── Short Reads ── */}
       {shorts.length > 0 && (
         <section style={{ marginBottom: 60 }}>
           <SectionLabel onClick={() => onTabChange("shorts")}>Short Reads</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {shorts.slice(0, 4).map(s => <ShortCard key={s._id} s={s} />)}
+            {shorts.slice(0, 4).map(s => <ShortCard key={s._id} s={s} showTag={false} />)}
           </div>
         </section>
       )}
@@ -394,6 +571,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange }: {
   );
 }
 
+// ── Sub-views ───────────────────────────────────────────────────
 function RecentView({ articles, loading }: { articles: Article[]; loading: boolean }) {
   return (
     <div>
@@ -460,20 +638,20 @@ function ShortsView({ shorts, loading }: { shorts: Article[]; loading: boolean }
   );
 }
 
-/* ── Root ── */
+// ── Root ────────────────────────────────────────────────────────
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("home");
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [articles, setArticles]   = useState<Article[]>([]);
-  const [podcasts, setPodcasts]   = useState<Article[]>([]);
-  const [shorts,   setShorts]     = useState<Article[]>([]);
-  const [loading,  setLoading]    = useState(true);
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [articles,  setArticles]  = useState<Article[]>([]);
+  const [podcasts,  setPodcasts]  = useState<Article[]>([]);
+  const [shorts,    setShorts]    = useState<Article[]>([]);
+  const [loading,   setLoading]   = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const uid = user?.uid ?? "";
+        const uid  = user?.uid ?? "";
         const uidQ = uid ? `&uid=${uid}` : "";
         const [artRes, podRes, shrRes] = await Promise.all([
           fetch(`/api/articles?type=article&status=published${uidQ}`),
@@ -487,7 +665,7 @@ export default function HomePage() {
         ]);
         setArticles(Array.isArray(art) ? art : []);
         setPodcasts(Array.isArray(pod) ? pod : []);
-        setShorts(Array.isArray(shr) ? shr : []);
+        setShorts(Array.isArray(shr)   ? shr : []);
       } catch (e) {
         console.error("Failed to fetch content:", e);
       } finally {
@@ -499,12 +677,12 @@ export default function HomePage() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "home":     return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
-      case "recent":   return <RecentView articles={articles} loading={loading} />;
+      case "home":     return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
+      case "recent":   return <RecentView  articles={articles} loading={loading} />;
       case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} />;
-      case "shorts":   return <ShortsView shorts={shorts} loading={loading} />;
-      case "beats":    return <BeatsView articles={articles} podcasts={podcasts} shorts={shorts} />;
-      default:         return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
+      case "shorts":   return <ShortsView  shorts={shorts} loading={loading} />;
+      case "beats":    return <BeatsView   articles={articles} podcasts={podcasts} shorts={shorts} />;
+      default:         return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
     }
   };
 

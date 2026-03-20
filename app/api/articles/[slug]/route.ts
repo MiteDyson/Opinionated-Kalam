@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const uid = searchParams.get("uid") ?? "";
 
     const article = await Article.findOneAndUpdate(
-      { slug: params.slug, status: "published" },
+      { slug: params.slug },  // allow draft loading for admin edit
       { $inc: { views: 1 } },
       { new: true }
     ).lean() as any;

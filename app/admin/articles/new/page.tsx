@@ -13,7 +13,7 @@ import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 
 import { auth } from "@/lib/firebase";
-import { uploadToImageKit } from "@/lib/imagekit";
+import TagSelector from "@/components/admin/TagSelector";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -180,8 +180,6 @@ export default function NewArticlePage() {
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
   const [wordCount, setWordCount] = useState(0);
-  const [coverUploading, setCoverUploading] = useState(false);
-  const [imgUploading, setImgUploading] = useState(false);
   const [fontSize, setFontSize]   = useState("16");
   const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
@@ -221,20 +219,12 @@ export default function NewArticlePage() {
   const addImage = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file"; input.accept = "image/*"; input.multiple = true;
-    input.onchange = async () => {
-      const files = Array.from(input.files ?? []);
-      if (!files.length) return;
-      setImgUploading(true);
-      try {
-        for (const file of files) {
-          const url = await uploadToImageKit(file, "articles");
-          editor?.chain().focus().setImage({ src: url }).run();
-        }
-      } catch (err: any) {
-        setError("Image upload failed: " + err.message);
-      } finally {
-        setImgUploading(false);
-      }
+    input.onchange = () => {
+      Array.from(input.files ?? []).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => editor?.chain().focus().setImage({ src: e.target?.result as string }).run();
+        reader.readAsDataURL(file);
+      });
     };
     input.click();
   }, [editor]);
@@ -382,9 +372,13 @@ export default function NewArticlePage() {
         </div>
 
         {/* Title */}
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title..."
-          style={{ width: "100%", fontSize: "1.9rem", padding: "14px 0", fontFamily: "'DM Serif Display', serif", border: "none", borderBottom: "2px solid #CFCBC3", borderRadius: 0, backgroundColor: "transparent", color: TEXT, outline: "none", boxSizing: "border-box", fontWeight: 400 }}
-        />
+        {/* Title */}
+        <div>
+          <label style={labelStyle}>Title *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title..."
+            style={{ ...field, fontSize: "1.6rem", fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}
+          />
+        </div>
 
         {/* Excerpt */}
         <div>
@@ -392,64 +386,31 @@ export default function NewArticlePage() {
           <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="A short summary shown on cards..." rows={2} style={{ ...field, resize: "vertical", lineHeight: 1.6 }} />
         </div>
 
-        {/* Cover image */}
+        {/* Cover image — URL or upload */}
         <div>
-          <label style={labelStyle}>Cover Image URL</label>
-          <input value={coverImage} onChange={(e) => setCover(e.target.value)} placeholder="https://images.unsplash.com/..." style={field} />
-          {coverImage && <img src={coverImage} alt="preview" style={{ marginTop: 10, width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #CFCBC3" }} />}
+          <label style={labelStyle}>Cover Image</label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input value={coverImage} onChange={(e) => setCover(e.target.value)} placeholder="Paste URL or upload..."
+              style={{ ...field, flex: 1 }} />
+            <label style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: coverUploading ? "#f5f3f0" : "white", cursor: coverUploading ? "not-allowed" : "pointer", fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", color: TEXT, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              {coverUploading ? "Uploading..." : "Upload"}
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                const file = e.target.files?.[0]; if (!file) return;
+                setCoverUploading(true);
+                try {
+                  const { uploadToImageKit } = await import("@/lib/imagekit");
+                  const url = await uploadToImageKit(file, "covers"); setCover(url);
+                } catch (err: any) { setError("Cover upload failed: " + err.message); }
+                finally { setCoverUploading(false); }
+              }} />
+            </label>
+          </div>
+          {coverImage && <img src={coverImage} alt="preview" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #CFCBC3" }} />}
         </div>
 
-        {/* Tags — preset + custom */}
-        <div>
-          <label style={labelStyle}>Tags</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 10 }}>
-            {PRESET_TAGS.map(tag => {
-              const active = selectedTags.includes(tag);
-              return (
-                <button key={tag} onClick={() => toggleTag(tag)} style={{
-                  padding: "5px 12px", borderRadius: 20, cursor: "pointer",
-                  border: `1.5px solid ${active ? ACCENT : "#CFCBC3"}`,
-                  backgroundColor: active ? ACCENT : "white",
-                  color: active ? "white" : MUTED,
-                  fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-                  display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s",
-                }}>
-                  {tag}
-                  {active && <span style={{ fontSize: "0.85rem", lineHeight: 1, opacity: 0.7 }}>×</span>}
-                </button>
-              );
-            })}
-            {/* Custom tags added by user */}
-            {selectedTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
-              <button key={tag} onClick={() => toggleTag(tag)} style={{
-                padding: "5px 12px", borderRadius: 20, cursor: "pointer",
-                border: `1.5px solid ${TERRA}`,
-                backgroundColor: TERRA, color: TEXT,
-                fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif",
-                display: "flex", alignItems: "center", gap: 6,
-              }}>
-                {tag}
-                <span style={{ fontSize: "0.85rem", lineHeight: 1, opacity: 0.7 }}>×</span>
-              </button>
-            ))}
-          </div>
-          {/* Custom tag input */}
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              value={tagInput} onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-              placeholder="Add custom tag..."
-              style={{ flex: 1, padding: "8px 14px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", outline: "none" }}
-            />
-            <button onClick={addCustomTag} style={{
-              padding: "8px 16px", borderRadius: 8, border: "1px solid #CFCBC3",
-              backgroundColor: "white", color: TEXT, cursor: "pointer",
-              fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", fontWeight: 600,
-            }}>
-              Add
-            </button>
-          </div>
-        </div>
+        {/* Tags */}
+        <TagSelector selectedTags={selectedTags} onToggle={toggleTag} onAdd={addCustomTag} tagInput={tagInput} setTagInput={setTagInput} />
 
         {/* Editor */}
         <div>
@@ -528,7 +489,7 @@ export default function NewArticlePage() {
               <TBtn onClick={setLink} active={editor?.isActive("link")} title="Add link">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
               </TBtn>
-              <TBtn onClick={imgUploading ? () => {} : addImage} active={imgUploading} title={imgUploading ? "Uploading..." : "Add image(s)"}>
+              <TBtn onClick={addImage} title="Add image(s)">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               </TBtn>
               <TDivider />

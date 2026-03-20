@@ -23,13 +23,14 @@ interface HeaderProps {
 
 export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderProps) {
   const { user, logout } = useAuth();
-  const [dateStr, setDateStr]       = useState("");
+  const [dateStr, setDateStr]         = useState("");
+  const [searchOpen, setSearchOpen]   = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isAdmin = user?.email === ADMIN_EMAIL;
   const displayName = user?.displayName?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "";
-  const [searchOpen, setSearchOpen] = useState(false);
+
   useEffect(() => {
     const d = new Date();
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -96,7 +97,7 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
         padding: "12px 0", marginBottom: 32, marginTop: 10,
         position: "relative",
       }}>
-        {/* Left — hamburger + search inline */}
+        {/* Left — hamburger + search (expands in place) */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={onMenuOpen} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-main)", padding: 0, display: "flex" }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -106,18 +107,41 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
             </svg>
           </button>
 
-          {/* Search icon — click to toggle */}
-          <button onClick={() => { setSearchOpen(o => !o); setSearchQuery(""); }} style={{
-            display: "flex", alignItems: "center", gap: 5,
-            background: "none", border: "none", cursor: "pointer",
-            fontSize: "0.85rem", color: searchOpen ? RED : "var(--text-main)",
-            fontFamily: "'Inter', sans-serif",
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {/* Search — icon becomes input on click, no layout shift */}
+          <div style={{ position: "relative", width: searchOpen ? 180 : 28, transition: "width 0.2s ease" }}>
+            <svg
+              onClick={() => { setSearchOpen(o => !o); setSearchQuery(""); }}
+              style={{ position: "absolute", left: searchOpen ? 8 : 0, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: searchOpen ? "var(--text-muted)" : "var(--text-main)", zIndex: 1, pointerEvents: searchOpen ? "none" : "all" }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
-            Search
-          </button>
+            {searchOpen && (
+              <input
+                autoFocus
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); } }}
+                onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                placeholder="Search..."
+                style={{
+                  width: "100%", padding: "5px 24px 5px 28px",
+                  borderRadius: 6, border: "1px solid var(--border)",
+                  backgroundColor: "white", fontSize: "0.82rem",
+                  fontFamily: "'Inter', sans-serif", outline: "none",
+                  color: "var(--text-main)",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = ACCENT)}
+              />
+            )}
+            {searchOpen && searchQuery && (
+              <button onClick={() => setSearchQuery("")} style={{
+                position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--text-muted)", fontSize: "1rem", lineHeight: 1, padding: 0,
+              }}>×</button>
+            )}
+          </div>
         </div>
 
         {/* Center — tabs */}
@@ -178,11 +202,11 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
                     <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginTop: 2 }}>{user.email}</div>
                   </div>
                   {[
-                    { label: "Saved Articles", icon: "🔖", href: "/saved" },
-                    { label: "My Subscriptions", icon: "📬", href: "/subscriptions" },
+                    { label: "Saved Articles", href: "/saved" },
+                    { label: "My Subscriptions", href: "/subscriptions" },
                   ].map((item) => (
                     <a key={item.label} href={item.href} style={{
-                      display: "flex", alignItems: "center", gap: 10,
+                      display: "flex", alignItems: "center",
                       padding: "10px 14px", textDecoration: "none", color: "var(--text-main)",
                       fontSize: "0.85rem", fontFamily: "'Inter', sans-serif",
                       borderBottom: "1px solid var(--border)",
@@ -191,7 +215,7 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
                     >
-                      <span>{item.icon}</span> {item.label}
+                      {item.label}
                     </a>
                   ))}
                   <button onClick={() => { logout(); setDropdownOpen(false); }} style={{
@@ -224,42 +248,10 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
 
 
       </nav>
-      {/* Search bar — appears below nav when open */}
-      {searchOpen && (
-        <div style={{ marginBottom: 20, animation: "slideDown 0.18s ease" }}>
-          <style>{`@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
-          <div style={{ position: "relative" }}>
-            <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              autoFocus
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); } }}
-              placeholder="Search articles, podcasts, short reads..."
-              style={{
-                width: "100%", padding: "11px 16px 11px 42px",
-                borderRadius: 8, border: "1px solid var(--border)",
-                backgroundColor: "white", fontSize: "0.92rem",
-                fontFamily: "'Inter', sans-serif", outline: "none",
-                color: "var(--text-main)", boxSizing: "border-box",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = ACCENT)}
-              onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} style={{
-                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer",
-                color: "var(--text-muted)", fontSize: "1.1rem", lineHeight: 1,
-              }}>×</button>
-            )}
-          </div>
-          {searchQuery.trim().length > 1 && (
-            <SearchResults query={searchQuery} onClose={() => { setSearchOpen(false); setSearchQuery(""); }} />
-          )}
+      {/* Search results dropdown — appears below nav */}
+      {searchOpen && searchQuery.trim().length > 1 && (
+        <div style={{ marginBottom: 16 }}>
+          <SearchResults query={searchQuery} onClose={() => { setSearchOpen(false); setSearchQuery(""); }} />
         </div>
       )}
     </header>
