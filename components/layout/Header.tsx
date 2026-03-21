@@ -317,27 +317,51 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
   );
 }
 
-/* ── Search Results ── */
-const ALL_CONTENT = [
-  { type: "article", slug: "indians-are-sunroof-suckers",                                          title: "Indians are Sunroof-Suckers?",                                tag: "Automotive"   },
-  { type: "article", slug: "how-volkswagen-fooled-the-american-government-for-7-years",            title: "How Volkswagen fooled the American Government for 7 Years?", tag: "Scandals"     },
-  { type: "article", slug: "pakistan-vs-afghanistan-war-might-change-pak-forever-officials-worry", title: "Pakistan vs Afghanistan War",                                  tag: "Geo Politics" },
-  { type: "article", slug: "why-is-japan-so-prone-to-earthquakes-explained",                       title: "Why is Japan so Prone to Earthquakes? Explained",             tag: "Explainers"   },
-  { type: "short",   slug: "quick-fact-sunroofs-vs-ac-efficiency",                                 title: "Quick Fact: Sunroofs vs. AC Efficiency",                      tag: "Automotive"   },
-  { type: "short",   slug: "timeline-vw-scandal",                                                  title: "Timeline: VW Scandal",                                        tag: "Scandals"     },
-  { type: "short",   slug: "why-japan-gets-1-500-earthquakes-a-year",                              title: "Why Japan Gets 1,500 Earthquakes a Year",                     tag: "Explainers"   },
-  { type: "short",   slug: "pak-afghan-border-key-facts",                                          title: "Pak-Afghan Border: Key Facts",                                 tag: "Geo Politics" },
-];
-
+/* ── Search Results — live from API ── */
 function SearchResults({ query, onClose }: { query: string; onClose: () => void }) {
-  const q       = query.toLowerCase();
-  const results = ALL_CONTENT.filter(
-    c => c.title.toLowerCase().includes(q) || c.tag.toLowerCase().includes(q)
-  ).slice(0, 6);
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (query.trim().length < 2) return;
+    setLoading(true);
+    const q = query.toLowerCase();
+
+    // Fetch all published content types in parallel, then filter client-side
+    Promise.all([
+      fetch("/api/articles?type=article&status=published").then(r => r.ok ? r.json() : []),
+      fetch("/api/articles?type=short&status=published").then(r => r.ok ? r.json() : []),
+      fetch("/api/articles?type=podcast&status=published").then(r => r.ok ? r.json() : []),
+    ])
+      .then(([articles, shorts, podcasts]) => {
+        const all = [
+          ...(Array.isArray(articles) ? articles : []),
+          ...(Array.isArray(shorts)   ? shorts   : []),
+          ...(Array.isArray(podcasts) ? podcasts : []),
+        ];
+        const filtered = all.filter(
+          (c: any) =>
+            c.title?.toLowerCase().includes(q) ||
+            (c.tags ?? []).some((t: string) => t.toLowerCase().includes(q)) ||
+            c.excerpt?.toLowerCase().includes(q)
+        ).slice(0, 6);
+        setResults(filtered);
+      })
+      .catch(() => setResults([]))
+      .finally(() => setLoading(false));
+  }, [query]);
 
   const typeIcon = (t: string) => t === "article" ? "📄" : t === "podcast" ? "🎙" : "⚡";
-  const typeHref = (c: typeof ALL_CONTENT[0]) =>
-    c.type === "article" ? `/article/${c.slug}` : `/shorts/${c.slug}`;
+  const typeHref = (c: any) =>
+    c.type === "podcast" ? `/podcasts/${c.slug}` :
+    c.type === "short"   ? `/shorts/${c.slug}`   :
+                           `/article/${c.slug}`;
+
+  if (loading) return (
+    <div style={{ padding: "12px 14px", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>
+      Searching…
+    </div>
+  );
 
   if (!results.length) return (
     <div style={{ padding: "12px 14px", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>
@@ -348,7 +372,7 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
   return (
     <>
       {results.map((r, i) => (
-        <a key={i} href={typeHref(r)} onClick={onClose} style={{
+        <a key={r._id ?? i} href={typeHref(r)} onClick={onClose} style={{
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px", textDecoration: "none", color: "inherit",
           borderBottom: i < results.length - 1 ? "1px solid var(--border)" : "none",
@@ -363,7 +387,7 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
               {r.title}
             </div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: "var(--text-muted)", marginTop: 1 }}>
-              {r.tag} · {r.type}
+              {(r.tags ?? [])[0] ?? r.type} · {r.type}
             </div>
           </div>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
