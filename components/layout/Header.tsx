@@ -119,7 +119,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
         display: "grid",
         gridTemplateColumns: "1fr auto 1fr",
         alignItems: "center",
-        borderBottom: "1px solid var(--border)",
         padding: "10px 0",
         marginBottom: 32,
         position: "relative",
