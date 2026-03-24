@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
@@ -50,6 +51,7 @@ function ReadPill({ label = "Read" }: { label?: string }) {
     }}>{label}</span>
   );
 }
+
 // ── Section Label ───────────────────────────────────────────────
 function SectionLabel({ children, onClick }: { children: string; onClick?: () => void }) {
   return (
@@ -76,14 +78,14 @@ function SectionLabel({ children, onClick }: { children: string; onClick?: () =>
   );
 }
 
-// ── Podcast Card (Merged UI + Audio Logic + Page Link) ──────────
-function PodcastCard({ 
-  p, 
-  showTag = true, 
-  activeSlug, 
-  setActiveSlug 
-}: { 
-  p: Article; 
+// ── Podcast Card ────────────────────────────────────────────────
+function PodcastCard({
+  p,
+  showTag = true,
+  activeSlug,
+  setActiveSlug,
+}: {
+  p: Article;
   showTag?: boolean;
   activeSlug: string | null;
   setActiveSlug: (slug: string | null) => void;
@@ -91,17 +93,16 @@ function PodcastCard({
   const [progress, setProgress] = useState(0);
   const [current, setCurrent]   = useState("0:00");
   const [totalDur, setTotalDur] = useState(p.duration ?? "0:00");
-  
+
   const audioRef   = useRef<HTMLAudioElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
   const isPlaying  = activeSlug === p.slug;
 
-  // Init Audio & Handle Time Updates
   useEffect(() => {
     if (!p.audioUrl) return;
     const audio = new Audio(p.audioUrl);
     audioRef.current = audio;
-    
+
     audio.ontimeupdate = () => {
       if (audio.duration) {
         setProgress((audio.currentTime / audio.duration) * 100);
@@ -110,7 +111,7 @@ function PodcastCard({
         setCurrent(`${m}:${s}`);
       }
     };
-    
+
     audio.onloadedmetadata = () => {
       if (!isNaN(audio.duration)) {
         const m = Math.floor(audio.duration / 60);
@@ -118,12 +119,11 @@ function PodcastCard({
         setTotalDur(`${m}:${s}`);
       }
     };
-    
+
     audio.onended = () => setActiveSlug(null);
     return () => { audio.pause(); audio.src = ""; };
   }, [p.audioUrl, setActiveSlug]);
 
-  // Handle Play/Pause based on global state
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -167,103 +167,52 @@ function PodcastCard({
         display: "flex",
         flexDirection: "column",
       }}>
-        {/* Padded image with curved corners */}
         <div style={{ padding: "10px 10px 0" }}>
           {p.coverImage ? (
-            <img
-              src={p.coverImage}
-              alt={p.title}
-              style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }}
-            />
+            <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }} />
           ) : (
-            <div style={{
-              width: "100%", aspectRatio: "4/3",
-              backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
+            <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: "2rem" }}>🎙</span>
             </div>
           )}
         </div>
 
         <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {/* Tag — red */}
           {showTag && (
-            <div style={{
-              fontSize: "0.6rem", fontWeight: 800, color: RED,
-              fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em",
-            }}>
+            <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>
               {p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}
             </div>
           )}
 
-          {/* Title */}
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>
             {p.title}
           </h3>
 
-          {/* Playback controls */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
-            <button
-              onClick={(e) => skip(e, -10)}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
-            >
+            <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>
               ← 10
             </button>
             <button
               onClick={togglePlay}
-              style={{
-                width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)",
-                border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                transition: "transform 0.15s",
-              }}
+              style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "transform 0.15s" }}
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1.1)")}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = "scale(1)")}
             >
               {isPlaying ? (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                  <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-                </svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
               ) : (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               )}
             </button>
-            <button
-              onClick={(e) => skip(e, 10)}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}
-            >
+            <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>
               10 →
             </button>
           </div>
 
-          {/* Clickable seekbar */}
-          <div
-            ref={seekBarRef}
-            onClick={handleSeekClick}
-            title="Click to seek"
-            style={{
-              height: 5,
-              backgroundColor: "rgba(27,42,71,0.15)",
-              borderRadius: 3,
-              cursor: "pointer",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{
-              width: `${progress}%`,
-              height: "100%",
-              backgroundColor: RED,
-              borderRadius: 3,
-              transition: "width 0.3s linear",
-              pointerEvents: "none",
-            }} />
+          <div ref={seekBarRef} onClick={handleSeekClick} title="Click to seek" style={{ height: 5, backgroundColor: "rgba(27,42,71,0.15)", borderRadius: 3, cursor: "pointer", position: "relative", overflow: "hidden" }}>
+            <div style={{ width: `${progress}%`, height: "100%", backgroundColor: RED, borderRadius: 3, transition: "width 0.3s linear", pointerEvents: "none" }} />
           </div>
 
-          {/* Timestamp */}
           <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>
             {current} / {totalDur}
           </div>
@@ -278,24 +227,9 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
   return (
     <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
       <article
-        style={{
-          backgroundColor: SHORT_BG,
-          border: "1px solid rgba(211,139,136,0.2)",
-          borderRadius: 12,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          cursor: "pointer",
-          transition: "transform 0.18s, box-shadow 0.18s",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-          (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-          (e.currentTarget as HTMLElement).style.boxShadow = "none";
-        }}
+        style={{ backgroundColor: SHORT_BG, border: "1px solid rgba(211,139,136,0.2)", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer", transition: "transform 0.18s, box-shadow 0.18s" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
       >
         <div style={{ padding: "10px 10px 0" }}>
           {s.coverImage ? (
@@ -319,7 +253,7 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
   );
 }
 
-// ── Article Card (Recent + Beats) ───────────────────────────────
+// ── Article Card ────────────────────────────────────────────────
 function ArticleCard({ a }: { a: Article }) {
   const date = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
   return (
@@ -333,9 +267,9 @@ function ArticleCard({ a }: { a: Article }) {
         <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
         <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date} · {a.author}</div>
         <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
-       <div style={{ alignSelf: "flex-start" }}>
-  <ReadPill />
-</div>
+        <div style={{ alignSelf: "flex-start" }}>
+          <ReadPill />
+        </div>
       </article>
     </Link>
   );
@@ -356,32 +290,68 @@ function SkeletonCard() {
 }
 
 // ── Beats View ──────────────────────────────────────────────────
-function BeatsView({ articles, podcasts, shorts, activeSlug, setActiveSlug }: { articles: Article[]; podcasts: Article[]; shorts: Article[]; activeSlug: string | null; setActiveSlug: (s: string | null) => void }) {
-  const [selectedTag, setSelectedTag] = useState(ALL_TAGS[0]);
-  const fa = articles.filter(a => a.tags.includes(selectedTag));
-  const fp = podcasts.filter(p => p.tags.includes(selectedTag));
-  const fs = shorts.filter(s => s.tags.includes(selectedTag));
+function BeatsView({
+  articles,
+  podcasts,
+  shorts,
+  activeSlug,
+  setActiveSlug,
+  initialTag,
+}: {
+  articles: Article[];
+  podcasts: Article[];
+  shorts: Article[];
+  activeSlug: string | null;
+  setActiveSlug: (s: string | null) => void;
+  initialTag?: string;
+}) {
+  const [selectedTag, setSelectedTag] = useState(initialTag ?? ALL_TAGS[0]);
+
+  useEffect(() => {
+    if (initialTag && ALL_TAGS.includes(initialTag)) {
+      setSelectedTag(initialTag);
+    }
+  }, [initialTag]);
+
+  const fa = articles.filter((a) => a.tags.includes(selectedTag));
+  const fp = podcasts.filter((p) => p.tags.includes(selectedTag));
+  const fs = shorts.filter((s) => s.tags.includes(selectedTag));
   const hasContent = fa.length + fp.length + fs.length > 0;
 
   return (
     <div>
-      <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 24 }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", marginBottom: 4 }}>Beats</h1>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "#555", margin: 0 }}>Filter all content by topic</p>
+      {/* Title ABOVE the divider line */}
+      <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 12 }}>
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", marginBottom: 0 }}>Beats</h1>
       </div>
+      {/* Description BELOW the divider line */}
+      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "#555", margin: "0 0 24px" }}>
+        Filter all content by topic
+      </p>
+
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 36 }}>
-        {ALL_TAGS.map(tag => (
-          <button key={tag} onClick={() => setSelectedTag(tag)} style={{
-            padding: "8px 18px", borderRadius: 999, cursor: "pointer",
-            border: `2px solid ${selectedTag === tag ? ACCENT : "var(--border)"}`,
-            backgroundColor: selectedTag === tag ? ACCENT : "white",
-            color: selectedTag === tag ? "white" : "#555",
-            fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", transition: "all 0.15s",
-          }}>
+        {ALL_TAGS.map((tag) => (
+          <button
+            key={tag}
+            onClick={() => setSelectedTag(tag)}
+            style={{
+              padding: "8px 18px",
+              borderRadius: 999,
+              cursor: "pointer",
+              border: `2px solid ${selectedTag === tag ? ACCENT : "var(--border)"}`,
+              backgroundColor: selectedTag === tag ? ACCENT : "white",
+              color: selectedTag === tag ? "white" : "#555",
+              fontSize: "0.83rem",
+              fontWeight: 700,
+              fontFamily: "'Inter', sans-serif",
+              transition: "all 0.15s",
+            }}
+          >
             {tag}
           </button>
         ))}
       </div>
+
       {!hasContent ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>
           No content tagged "{selectedTag}" yet.
@@ -392,7 +362,7 @@ function BeatsView({ articles, podcasts, shorts, activeSlug, setActiveSlug }: { 
             <section>
               <SectionLabel>Articles</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px,1fr))", gap: 24 }}>
-                {fa.map(a => <ArticleCard key={a._id} a={a} />)}
+                {fa.map((a) => <ArticleCard key={a._id} a={a} />)}
               </div>
             </section>
           )}
@@ -400,7 +370,7 @@ function BeatsView({ articles, podcasts, shorts, activeSlug, setActiveSlug }: { 
             <section>
               <SectionLabel>Podcasts</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
-                {fp.map(p => <PodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
+                {fp.map((p) => <PodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
               </div>
             </section>
           )}
@@ -408,7 +378,7 @@ function BeatsView({ articles, podcasts, shorts, activeSlug, setActiveSlug }: { 
             <section>
               <SectionLabel>Short Reads</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20 }}>
-                {fs.map(s => <ShortCard key={s._id} s={s} />)}
+                {fs.map((s) => <ShortCard key={s._id} s={s} />)}
               </div>
             </section>
           )}
@@ -419,11 +389,24 @@ function BeatsView({ articles, podcasts, shorts, activeSlug, setActiveSlug }: { 
 }
 
 // ── Home View ───────────────────────────────────────────────────
-function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug, setActiveSlug }: {
-  articles: Article[]; podcasts: Article[]; shorts: Article[];
-  loading: boolean; onTabChange: (t: string) => void;
-  activeSlug: string | null; setActiveSlug: (s: string | null) => void;
+function HomeView({
+  articles,
+  podcasts,
+  shorts,
+  loading,
+  onTabChange,
+  activeSlug,
+  setActiveSlug,
+}: {
+  articles: Article[];
+  podcasts: Article[];
+  shorts: Article[];
+  loading: boolean;
+  onTabChange: (t: string) => void;
+  activeSlug: string | null;
+  setActiveSlug: (s: string | null) => void;
 }) {
+  const router = useRouter();
   const hero   = articles[0];
   const others = articles.slice(1, 5);
 
@@ -458,19 +441,18 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
 
       {/* ── Latest Story + Recent Stories ── */}
       {(hero || others.length > 0) && (
-        <div style={{
-          display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 0,
-          marginBottom: 48, borderBottom: "1px solid var(--border)", paddingBottom: 40,
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 0, marginBottom: 48, borderBottom: "1px solid var(--border)", paddingBottom: 40 }}>
           {/* LEFT — hero */}
           <div style={{ paddingRight: 32, borderRight: "1px solid var(--border)" }}>
-            <SectionLabel onClick={() => onTabChange("recent")}>Latest Story</SectionLabel>
+            {/* "Latest Story" navigates directly to the hero article */}
+            <SectionLabel onClick={hero ? () => router.push(`/article/${hero.slug}`) : undefined}>
+              Latest Story
+            </SectionLabel>
             {hero ? (
               <Link href={`/article/${hero.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <article style={{ cursor: "pointer" }}>
                   {hero.coverImage ? (
-                    <img src={hero.coverImage} alt={hero.title} referrerPolicy="no-referrer"
-                      style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, marginBottom: 14 }} />
+                    <img src={hero.coverImage} alt={hero.title} referrerPolicy="no-referrer" style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, marginBottom: 14 }} />
                   ) : (
                     <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#CFCBC3", borderRadius: 8, marginBottom: 14 }} />
                   )}
@@ -493,7 +475,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
             )}
           </div>
 
-          {/* RIGHT — Recent Stories (improved) */}
+          {/* RIGHT — Recent Stories */}
           <div style={{ paddingLeft: 32 }}>
             <SectionLabel onClick={() => onTabChange("recent")}>Recent Stories</SectionLabel>
             {others.length === 0 ? (
@@ -503,32 +485,18 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
                 {others.map((a, i) => (
                   <Link key={a._id} href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
                     <article
-                      style={{
-                        padding: "14px 0",
-                        borderBottom: i < others.length - 1 ? "1px solid var(--border)" : "none",
-                        transition: "opacity 0.15s",
-                        display: "flex", flexDirection: "column", gap: 7,
-                      }}
+                      style={{ padding: "14px 0", borderBottom: i < others.length - 1 ? "1px solid var(--border)" : "none", transition: "opacity 0.15s", display: "flex", flexDirection: "column", gap: 7 }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.7")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
                     >
-                      {/* Thumbnail + headline */}
                       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         {a.coverImage ? (
-                          <img src={a.coverImage} alt={a.title} referrerPolicy="no-referrer"
-                            style={{ width: 80, height: 54, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
+                          <img src={a.coverImage} alt={a.title} referrerPolicy="no-referrer" style={{ width: 80, height: 54, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
                         ) : (
                           <div style={{ width: 80, height: 54, backgroundColor: "#CFCBC3", borderRadius: 6, flexShrink: 0 }} />
                         )}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <h3 style={{
-                            fontFamily: "'DM Serif Display', serif", fontSize: "1rem",
-                            lineHeight: 1.3, color: "var(--text-main)", margin: "0 0 7px",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical" as const,
-                            overflow: "hidden",
-                          }}>
+                          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", lineHeight: 1.3, color: "var(--text-main)", margin: "0 0 7px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
                             {a.title}
                           </h3>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -536,8 +504,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
                               {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
                             </span>
                             {a.readTime && (
-                              <>
-                                <span style={{ fontSize: "0.6rem", color: "var(--border)" }}>·</span>
+                              <><span style={{ fontSize: "0.6rem", color: "var(--border)" }}>·</span>
                                 <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.readTime}</span>
                               </>
                             )}
@@ -559,7 +526,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
         <section style={{ marginBottom: 48 }}>
           <SectionLabel onClick={() => onTabChange("podcasts")}>Latest Podcasts</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {podcasts.slice(0, 4).map(p => <PodcastCard key={p._id} p={p} showTag={false} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
+            {podcasts.slice(0, 4).map((p) => <PodcastCard key={p._id} p={p} showTag={false} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
           </div>
         </section>
       )}
@@ -571,7 +538,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
         <section style={{ marginBottom: 60 }}>
           <SectionLabel onClick={() => onTabChange("shorts")}>Short Reads</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {shorts.slice(0, 4).map(s => <ShortCard key={s._id} s={s} showTag={false} />)}
+            {shorts.slice(0, 4).map((s) => <ShortCard key={s._id} s={s} showTag={false} />)}
           </div>
         </section>
       )}
@@ -663,7 +630,18 @@ export default function HomePage() {
   const [shorts,    setShorts]    = useState<Article[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [urlTag, setUrlTag] = useState<string | undefined>(undefined);
   const { user } = useAuth();
+
+  // Read ?tab= and ?tag= from URL on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    const tag = params.get("tag") ?? undefined;
+    if (tab) setActiveTab(tab);
+    if (tag) setUrlTag(tag);
+  }, []);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -694,12 +672,12 @@ export default function HomePage() {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "home":     return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
-      case "recent":   return <RecentView  articles={articles} loading={loading} />;
+      case "home":     return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
+      case "recent":   return <RecentView articles={articles} loading={loading} />;
       case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
-      case "shorts":   return <ShortsView  shorts={shorts} loading={loading} />;
-      case "beats":    return <BeatsView   articles={articles} podcasts={podcasts} shorts={shorts} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
-      default:         return <HomeView    articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
+      case "shorts":   return <ShortsView shorts={shorts} loading={loading} />;
+      case "beats":    return <BeatsView articles={articles} podcasts={podcasts} shorts={shorts} activeSlug={activeSlug} setActiveSlug={setActiveSlug} initialTag={urlTag} />;
+      default:         return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
     }
   };
 

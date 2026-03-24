@@ -4,5 +4,5 @@ import { verifyAdmin } from "@/lib/verifyAdmin";
 export async function GET(req: NextRequest) {
   const admin = await verifyAdmin(req);
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, isMain: admin.isMain, email: admin.email });
 }
