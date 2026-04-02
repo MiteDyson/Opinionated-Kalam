@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
 
-const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "opinionatedkalam@gmail.com";
+const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL ;
 
 function getAdminModel() {
   if (mongoose.models.Admin) return mongoose.models.Admin;

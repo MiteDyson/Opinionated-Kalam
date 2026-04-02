@@ -13,7 +13,7 @@ import {
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "opinionatedkalam@gmail.com";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ;
 const MAX_USERNAME = 15;
 
 type Mode = "login" | "register" | "forgot" | "set-username";

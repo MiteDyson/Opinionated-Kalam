@@ -320,11 +320,9 @@ function BeatsView({
 
   return (
     <div>
-      {/* Title ABOVE the divider line */}
       <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 12 }}>
         <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", marginBottom: 0 }}>Beats</h1>
       </div>
-      {/* Description BELOW the divider line */}
       <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "#555", margin: "0 0 24px" }}>
         Filter all content by topic
       </p>
@@ -439,12 +437,9 @@ function HomeView({
     <>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
 
-      {/* ── Latest Story + Recent Stories ── */}
       {(hero || others.length > 0) && (
         <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 0, marginBottom: 48, borderBottom: "1px solid var(--border)", paddingBottom: 40 }}>
-          {/* LEFT — hero */}
           <div style={{ paddingRight: 32, borderRight: "1px solid var(--border)" }}>
-            {/* "Latest Story" navigates directly to the hero article */}
             <SectionLabel onClick={hero ? () => router.push(`/article/${hero.slug}`) : undefined}>
               Latest Story
             </SectionLabel>
@@ -475,7 +470,6 @@ function HomeView({
             )}
           </div>
 
-          {/* RIGHT — Recent Stories */}
           <div style={{ paddingLeft: 32 }}>
             <SectionLabel onClick={() => onTabChange("recent")}>Recent Stories</SectionLabel>
             {others.length === 0 ? (
@@ -521,7 +515,6 @@ function HomeView({
         </div>
       )}
 
-      {/* ── Podcasts ── */}
       {podcasts.length > 0 && (
         <section style={{ marginBottom: 48 }}>
           <SectionLabel onClick={() => onTabChange("podcasts")}>Latest Podcasts</SectionLabel>
@@ -533,7 +526,6 @@ function HomeView({
 
       <hr style={{ border: "none", borderTop: "1px solid var(--border)", margin: "48px 0 40px" }} />
 
-      {/* ── Short Reads ── */}
       {shorts.length > 0 && (
         <section style={{ marginBottom: 60 }}>
           <SectionLabel onClick={() => onTabChange("shorts")}>Short Reads</SectionLabel>
@@ -632,6 +624,8 @@ export default function HomePage() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [urlTag, setUrlTag] = useState<string | undefined>(undefined);
   const { user } = useAuth();
+
+ 
 
   // Read ?tab= and ?tag= from URL on mount
   useEffect(() => {

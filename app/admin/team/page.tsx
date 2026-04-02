@@ -9,7 +9,7 @@ const BG     = "#D5D2CB";
 const TERRA  = "#D38B88";
 const TEXT   = "#1A1A1A";
 const MUTED  = "#555555";
-const MAIN_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "opinionatedkalam@gmail.com";
+const MAIN_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ;
 
 interface TeamMember {
   _id: string;

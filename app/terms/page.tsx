@@ -5,7 +5,7 @@ import Footer from "@/components/layout/Footer";
 
 const BRAND = "Opinionated Kalam";
 const EFFECTIVE = "March 21, 2026";
-const EMAIL = "opinionatedkalam@gmail.com";
+const EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 // TODO: update SITE when domain is confirmed
 const SITE = "opinionatedkalam.com";
 const ACCENT = "#1B2A47";

@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "");
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const payload = decodeToken(token);
-  if (!payload || payload.email !== "opinionatedkalam@gmail.com") {
+  if (!payload || payload.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

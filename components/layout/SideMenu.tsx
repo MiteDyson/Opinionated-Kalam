@@ -97,48 +97,7 @@ export default function SideMenu({ isOpen, onClose, onTabChange }: SideMenuProps
         {/* Nav items */}
         <div style={{ flex: 1, overflowY: "auto", padding: "4px 28px 20px" }}>
 
-          {/* Beats — collapsible */}
-          <div>
-            <button
-              onClick={() => setBeatsOpen((o) => !o)}
-              style={{ ...itemStyle, display: "flex", alignItems: "center", gap: 4 }}
-            >
-              <span>Beats</span>
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                style={{
-                  transform: beatsOpen ? "rotate(90deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s",
-                  flexShrink: 0,
-                  marginTop: 1,
-                }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            {beatsOpen && (
-              <div style={{ paddingLeft: 16, display: "flex", flexDirection: "column" }}>
-                {BEATS_TAGS.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => navigateToBeat(tag)}
-                    style={{ ...itemStyle, fontSize: "0.92rem", color: "#555", padding: "7px 0" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = ACCENT)}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555")}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
+         
           {/* Saved */}
           <a
             href="/saved"

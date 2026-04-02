@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const payload = decodeToken(token);
-    if (!payload || payload.email !== "opinionatedkalam@gmail.com") {
+    if (!payload || payload.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     await connectDB();
@@ -81,7 +81,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const payload = decodeToken(token);
-    if (!payload || payload.email !== "opinionatedkalam@gmail.com") {
+    if (!payload || payload.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     await connectDB();
