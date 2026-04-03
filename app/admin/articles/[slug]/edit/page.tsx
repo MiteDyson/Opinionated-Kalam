@@ -13,6 +13,7 @@ import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 import { auth } from "@/lib/firebase";
 import { uploadToImageKit } from "@/lib/imagekit";
+import AudioUpload from "@/components/admin/AudioUpload";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -249,63 +250,13 @@ export default function EditArticlePage() {
             </div>
 
             {/* Audio — "Listen to Article" */}
-            <div>
-              <label style={labelStyle}>
-                Audio File URL
-                <span style={{ marginLeft: 8, fontSize: "0.65rem", fontWeight: 400, color: "#aaa", textTransform: "none", letterSpacing: 0 }}>
-                  optional — enables "Listen to Article" player
-                </span>
-              </label>
-              <input
-                value={audioUrl}
-                onChange={(e) => setAudioUrl(e.target.value)}
-                placeholder="https://storage.example.com/article-audio.mp3"
-                style={field}
-                onFocus={(e) => (e.target.style.borderColor = ACCENT)}
-                onBlur={(e) => (e.target.style.borderColor = "#CFCBC3")}
-              />
-              {audioUrl && (
-                <div style={{ marginTop: 10 }}>
-                  <audio
-                    controls
-                    src={audioUrl}
-                    style={{ width: "100%", borderRadius: 8 }}
-                    onLoadedMetadata={(e) => {
-                      const secs = Math.floor((e.target as HTMLAudioElement).duration);
-                      if (!isNaN(secs) && secs > 0) {
-                        const m = Math.floor(secs / 60);
-                        const s = (secs % 60).toString().padStart(2, "0");
-                        setAudioDuration(`${m}:${s}`);
-                      }
-                    }}
-                  />
-                  {audioDuration && (
-                    <p style={{ fontSize: "0.75rem", color: "#3a7a3e", fontFamily: "'Inter', sans-serif", marginTop: 5 }}>
-                      ✓ Duration: {audioDuration}
-                    </p>
-                  )}
-                </div>
-              )}
-              {/* Player preview */}
-              {audioUrl && (
-                <div style={{ marginTop: 10, padding: "14px 18px", backgroundColor: "white", borderRadius: 10, border: "1px solid #e8e5e0", display: "flex", alignItems: "center", gap: 14, opacity: 0.7 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "#1A1A1A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  </div>
-                  <div style={{ flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "#888", marginBottom: 3 }}>Listen to Article</div>
-                    <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", fontStyle: "italic", color: "#1A1A1A" }}>{readTime} minutes</div>
-                  </div>
-                  <div style={{ flex: 1, height: 4, backgroundColor: "#e0ddd8", borderRadius: 2 }} />
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", color: "#555" }}>0:00 / {audioDuration || "—"}</div>
-                  <div style={{ padding: "4px 10px", borderRadius: 7, border: "1px solid #e0ddd8", backgroundColor: "#f5f4f2", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 700, color: "#333" }}>1X</div>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                </div>
-              )}
-              <p style={{ fontSize: "0.72rem", color: "#aaa", fontFamily: "'Inter', sans-serif", marginTop: 6 }}>
-                Upload to ImageKit, Firebase Storage, Cloudinary, or S3 and paste the URL here.
-              </p>
-            </div>
+            <AudioUpload
+              value={audioUrl}
+              onChange={setAudioUrl}
+              onDurationDetected={setAudioDuration}
+              label="Audio File"
+              folder="audio"
+            />
 
             {/* Tags */}
             <div>
