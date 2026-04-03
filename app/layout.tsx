@@ -5,6 +5,10 @@ import { AuthProvider } from "@/context/AuthContext";
 export const metadata: Metadata = {
   title: "Opinionated Kalam",
   description: "Independent journalism powered by research, fact-checking, and strong perspectives.",
+ icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],}
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
