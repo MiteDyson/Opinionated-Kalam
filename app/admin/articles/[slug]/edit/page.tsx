@@ -32,6 +32,13 @@ function TBtn({ active, onClick, children, title }: { active?: boolean; onClick:
 }
 function TDivider() { return <div style={{ width: 1, height: 20, backgroundColor: "#CFCBC3", margin: "0 3px", flexShrink: 0 }} />; }
 
+// Skeleton for loading state
+function Skeleton({ h = 40, w = "100%" }: { h?: number; w?: string }) {
+  return (
+    <div style={{ height: h, width: w, borderRadius: 8, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
+  );
+}
+
 export default function EditArticlePage() {
   const router = useRouter();
   const params = useParams();
@@ -40,6 +47,8 @@ export default function EditArticlePage() {
   const [title, setTitle]         = useState("");
   const [excerpt, setExcerpt]     = useState("");
   const [coverImage, setCover]    = useState("");
+  const [audioUrl, setAudioUrl]   = useState("");
+  const [audioDuration, setAudioDuration] = useState("");
   const [selectedTags, setTags]   = useState<string[]>([]);
   const [tagInput, setTagInput]   = useState("");
   const [saving, setSaving]       = useState(false);
@@ -78,6 +87,7 @@ export default function EditArticlePage() {
     editorProps: { attributes: { class: "tiptap-editor" } },
   });
 
+  // Load article data
   useEffect(() => {
     if (!slug || !editor) return;
     const load = async () => {
@@ -89,6 +99,8 @@ export default function EditArticlePage() {
         setTitle(data.title ?? "");
         setExcerpt(data.excerpt ?? "");
         setCover(data.coverImage ?? "");
+        setAudioUrl(data.audioUrl ?? "");
+        setAudioDuration(data.duration ?? "");
         setTags(data.tags ?? []);
         setArticleStatus(data.status ?? "draft");
         if (data.content) editor.commands.setContent(data.content);
@@ -143,6 +155,8 @@ export default function EditArticlePage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           title, excerpt, content, coverImage, tags: selectedTags,
+          audioUrl: audioUrl.trim() || undefined,
+          duration: audioDuration || undefined,
           status: newStatus,
           publishedAt: newStatus === "published" ? new Date() : null,
           readTime,
@@ -157,15 +171,10 @@ export default function EditArticlePage() {
   const field: React.CSSProperties = { width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, fontSize: "0.9rem", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
   const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 7 };
 
-  if (loadingArticle) return (
-    <div style={{ minHeight: "100vh", backgroundColor: BG, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif", color: MUTED }}>
-      Loading article...
-    </div>
-  );
-
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Inter', sans-serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
         .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; margin: 1.4em 0 0.5em; }
@@ -186,20 +195,22 @@ export default function EditArticlePage() {
           </button>
           <span style={{ color: "rgba(255,255,255,0.15)" }}>|</span>
           <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.2rem", color: "white" }}>Edit Article</span>
-          <span style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: 4, backgroundColor: articleStatus === "published" ? "rgba(76,140,80,0.2)" : "rgba(255,200,0,0.2)", color: articleStatus === "published" ? "#3a7a3e" : "#8a6a00", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>
-            {articleStatus}
-          </span>
+          {!loadingArticle && (
+            <span style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: 4, backgroundColor: articleStatus === "published" ? "rgba(76,140,80,0.2)" : "rgba(255,200,0,0.2)", color: articleStatus === "published" ? "#3a7a3e" : "#8a6a00", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>
+              {articleStatus}
+            </span>
+          )}
           {wordCount > 0 && <span style={{ fontSize: "0.75rem", color: "#888", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(255,255,255,0.07)", padding: "3px 10px", borderRadius: 20 }}>{wordCount.toLocaleString()} words · {readTime} min read</span>}
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {error && <span style={{ color: "#ff6b6b", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif" }}>{error}</span>}
-          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>
+          <button onClick={() => handleSave(false)} disabled={saving || loadingArticle} style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>
             Save Draft
           </button>
-          <button onClick={() => handleSave()} disabled={saving} style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>
+          <button onClick={() => handleSave()} disabled={saving || loadingArticle} style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>
             Save
           </button>
-          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "8px 20px", borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}>
+          <button onClick={() => handleSave(true)} disabled={saving || loadingArticle} style={{ padding: "8px 20px", borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.83rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}>
             {saving ? "Saving..." : articleStatus === "published" ? "Update" : "Publish"}
           </button>
         </div>
@@ -207,72 +218,158 @@ export default function EditArticlePage() {
 
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "40px 24px", display: "flex", flexDirection: "column", gap: 24 }}>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title..."
-          style={{ width: "100%", fontSize: "1.9rem", padding: "14px 0", fontFamily: "'DM Serif Display', serif", border: "none", borderBottom: "2px solid #CFCBC3", borderRadius: 0, backgroundColor: "transparent", color: TEXT, outline: "none", boxSizing: "border-box", fontWeight: 400 }}
-        />
+        {loadingArticle ? (
+          <>
+            <Skeleton h={52} />
+            <Skeleton h={72} />
+            <Skeleton h={180} />
+            <Skeleton h={46} />
+            <Skeleton h={46} />
+            <Skeleton h={36} w="60%" />
+            <Skeleton h={400} />
+          </>
+        ) : (
+          <>
+            {/* Title */}
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title..."
+              style={{ width: "100%", fontSize: "1.9rem", padding: "14px 0", fontFamily: "'DM Serif Display', serif", border: "none", borderBottom: "2px solid #CFCBC3", borderRadius: 0, backgroundColor: "transparent", color: TEXT, outline: "none", boxSizing: "border-box", fontWeight: 400 }}
+            />
 
-        <div>
-          <label style={labelStyle}>Excerpt</label>
-          <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="A short summary..." rows={2} style={{ ...field, resize: "vertical", lineHeight: 1.6 }} />
-        </div>
-
-        <div>
-          <label style={labelStyle}>Cover Image URL</label>
-          <input value={coverImage} onChange={(e) => setCover(e.target.value)} placeholder="https://..." style={field} />
-          {coverImage && <img src={coverImage} alt="preview" style={{ marginTop: 10, width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #CFCBC3" }} />}
-        </div>
-
-        <div>
-          <label style={labelStyle}>Tags</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 10 }}>
-            {PRESET_TAGS.map(tag => {
-              const active = selectedTags.includes(tag);
-              return (
-                <button key={tag} onClick={() => toggleTag(tag)} style={{ padding: "5px 12px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${active ? ACCENT : "#CFCBC3"}`, backgroundColor: active ? ACCENT : "white", color: active ? "white" : MUTED, fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}>
-                  {tag}{active && <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>×</span>}
-                </button>
-              );
-            })}
-            {selectedTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
-              <button key={tag} onClick={() => toggleTag(tag)} style={{ padding: "5px 12px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${TERRA}`, backgroundColor: TERRA, color: TEXT, fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
-                {tag}<span style={{ fontSize: "0.85rem", opacity: 0.7 }}>×</span>
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }} placeholder="Add custom tag..." style={{ flex: 1, padding: "8px 14px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", outline: "none" }} />
-            <button onClick={addCustomTag} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, cursor: "pointer", fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Add</button>
-          </div>
-        </div>
-
-        <div>
-          <label style={labelStyle}>Content</label>
-          <div style={{ backgroundColor: "white", borderRadius: 10, border: "1px solid #CFCBC3" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "7px 10px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7", borderRadius: "10px 10px 0 0" }}>
-              <TBtn onClick={() => editor?.chain().focus().toggleBold().run()}      active={editor?.isActive("bold")}      title="Bold"><b>B</b></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleItalic().run()}    active={editor?.isActive("italic")}    title="Italic"><i>I</i></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="Underline"><u>U</u></TBtn>
-              <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="H2">H2</TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="H3">H3</TBtn>
-              <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()}  active={editor?.isActive("bulletList")}  title="Bullet list">• List</TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered">1. List</TBtn>
-              <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Quote">"</TBtn>
-              <TBtn onClick={setLink} active={editor?.isActive("link")} title="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></TBtn>
-              <TBtn onClick={imgUploading ? () => {} : addImage} title="Image"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></TBtn>
-              <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().undo().run()} title="Undo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().redo().run()} title="Redo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></TBtn>
+            {/* Excerpt */}
+            <div>
+              <label style={labelStyle}>Excerpt</label>
+              <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="A short summary..." rows={2} style={{ ...field, resize: "vertical", lineHeight: 1.6 }} />
             </div>
-            <EditorContent editor={editor} />
-            <div style={{ borderTop: "1px solid #CFCBC3", padding: "8px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#faf9f7", borderRadius: "0 0 10px 10px" }}>
-              <span style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>{wordCount > 0 ? `${wordCount.toLocaleString()} words` : "Start writing..."}</span>
-              {wordCount > 0 && <span style={{ fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", color: "white", backgroundColor: ACCENT, padding: "2px 10px", borderRadius: 20, fontWeight: 600 }}>{readTime} min read</span>}
+
+            {/* Cover Image */}
+            <div>
+              <label style={labelStyle}>Cover Image URL</label>
+              <input value={coverImage} onChange={(e) => setCover(e.target.value)} placeholder="https://..." style={field} />
+              {coverImage && <img src={coverImage} alt="preview" style={{ marginTop: 10, width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #CFCBC3" }} />}
             </div>
-          </div>
-        </div>
+
+            {/* Audio — "Listen to Article" */}
+            <div>
+              <label style={labelStyle}>
+                Audio File URL
+                <span style={{ marginLeft: 8, fontSize: "0.65rem", fontWeight: 400, color: "#aaa", textTransform: "none", letterSpacing: 0 }}>
+                  optional — enables "Listen to Article" player
+                </span>
+              </label>
+              <input
+                value={audioUrl}
+                onChange={(e) => setAudioUrl(e.target.value)}
+                placeholder="https://storage.example.com/article-audio.mp3"
+                style={field}
+                onFocus={(e) => (e.target.style.borderColor = ACCENT)}
+                onBlur={(e) => (e.target.style.borderColor = "#CFCBC3")}
+              />
+              {audioUrl && (
+                <div style={{ marginTop: 10 }}>
+                  <audio
+                    controls
+                    src={audioUrl}
+                    style={{ width: "100%", borderRadius: 8 }}
+                    onLoadedMetadata={(e) => {
+                      const secs = Math.floor((e.target as HTMLAudioElement).duration);
+                      if (!isNaN(secs) && secs > 0) {
+                        const m = Math.floor(secs / 60);
+                        const s = (secs % 60).toString().padStart(2, "0");
+                        setAudioDuration(`${m}:${s}`);
+                      }
+                    }}
+                  />
+                  {audioDuration && (
+                    <p style={{ fontSize: "0.75rem", color: "#3a7a3e", fontFamily: "'Inter', sans-serif", marginTop: 5 }}>
+                      ✓ Duration: {audioDuration}
+                    </p>
+                  )}
+                </div>
+              )}
+              {/* Player preview */}
+              {audioUrl && (
+                <div style={{ marginTop: 10, padding: "14px 18px", backgroundColor: "white", borderRadius: 10, border: "1px solid #e8e5e0", display: "flex", alignItems: "center", gap: 14, opacity: 0.7 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 9, backgroundColor: "#1A1A1A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </div>
+                  <div style={{ flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "#888", marginBottom: 3 }}>Listen to Article</div>
+                    <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", fontStyle: "italic", color: "#1A1A1A" }}>{readTime} minutes</div>
+                  </div>
+                  <div style={{ flex: 1, height: 4, backgroundColor: "#e0ddd8", borderRadius: 2 }} />
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", color: "#555" }}>0:00 / {audioDuration || "—"}</div>
+                  <div style={{ padding: "4px 10px", borderRadius: 7, border: "1px solid #e0ddd8", backgroundColor: "#f5f4f2", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 700, color: "#333" }}>1X</div>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </div>
+              )}
+              <p style={{ fontSize: "0.72rem", color: "#aaa", fontFamily: "'Inter', sans-serif", marginTop: 6 }}>
+                Upload to ImageKit, Firebase Storage, Cloudinary, or S3 and paste the URL here.
+              </p>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label style={labelStyle}>Tags</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 10 }}>
+                {PRESET_TAGS.map(tag => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <button key={tag} onClick={() => toggleTag(tag)} style={{ padding: "5px 12px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${active ? ACCENT : "#CFCBC3"}`, backgroundColor: active ? ACCENT : "white", color: active ? "white" : MUTED, fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}>
+                      {tag}{active && <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>×</span>}
+                    </button>
+                  );
+                })}
+                {selectedTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
+                  <button key={tag} onClick={() => toggleTag(tag)} style={{ padding: "5px 12px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${TERRA}`, backgroundColor: TERRA, color: TEXT, fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
+                    {tag}<span style={{ fontSize: "0.85rem", opacity: 0.7 }}>×</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }} placeholder="Add custom tag..." style={{ flex: 1, padding: "8px 14px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", outline: "none" }} />
+                <button onClick={addCustomTag} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, cursor: "pointer", fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Add</button>
+              </div>
+            </div>
+
+            {/* Content Editor */}
+            <div>
+              <label style={labelStyle}>Content</label>
+              <div style={{ backgroundColor: "white", borderRadius: 10, border: "1px solid #CFCBC3" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "7px 10px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7", borderRadius: "10px 10px 0 0" }}>
+                  <TBtn onClick={() => editor?.chain().focus().toggleBold().run()}      active={editor?.isActive("bold")}      title="Bold"><b>B</b></TBtn>
+                  <TBtn onClick={() => editor?.chain().focus().toggleItalic().run()}    active={editor?.isActive("italic")}    title="Italic"><i>I</i></TBtn>
+                  <TBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="Underline"><u>U</u></TBtn>
+                  <TDivider />
+                  <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="H2">H2</TBtn>
+                  <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="H3">H3</TBtn>
+                  <TDivider />
+                  <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()}  active={editor?.isActive("bulletList")}  title="Bullet list">• List</TBtn>
+                  <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered">1. List</TBtn>
+                  <TDivider />
+                  <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Quote">"</TBtn>
+                  <TBtn onClick={setLink} active={editor?.isActive("link")} title="Link">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </TBtn>
+                  <TBtn onClick={imgUploading ? () => {} : addImage} title="Image">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  </TBtn>
+                  <TDivider />
+                  <TBtn onClick={() => editor?.chain().focus().undo().run()} title="Undo">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                  </TBtn>
+                  <TBtn onClick={() => editor?.chain().focus().redo().run()} title="Redo">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+                  </TBtn>
+                </div>
+                <EditorContent editor={editor} />
+                <div style={{ borderTop: "1px solid #CFCBC3", padding: "8px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#faf9f7", borderRadius: "0 0 10px 10px" }}>
+                  <span style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "'Inter', sans-serif" }}>{wordCount > 0 ? `${wordCount.toLocaleString()} words` : "Start writing..."}</span>
+                  {wordCount > 0 && <span style={{ fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", color: "white", backgroundColor: ACCENT, padding: "2px 10px", borderRadius: 20, fontWeight: 600 }}>{readTime} min read</span>}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

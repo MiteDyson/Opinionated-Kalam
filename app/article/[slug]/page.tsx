@@ -26,6 +26,8 @@ interface Article {
   views: number;
   isLiked: boolean;
   isSaved: boolean;
+  audioUrl?: string;
+  duration?: string;
 }
 
 function Tag({ label }: { label: string }) {
@@ -38,6 +40,235 @@ function Tag({ label }: { label: string }) {
     }}>
       {label}
     </span>
+  );
+}
+
+// ── Listen to Article Player ────────────────────────────────────
+function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
+  const audioRef    = useRef<HTMLAudioElement | null>(null);
+  const seekBarRef  = useRef<HTMLDivElement>(null);
+  const [playing, setPlaying]   = useState(false);
+  const [current, setCurrent]   = useState(0);
+  const [total,   setTotal]     = useState(0);
+  const [muted,   setMuted]     = useState(false);
+  const [volume,  setVolume]    = useState(1);
+  const [speed,   setSpeed]     = useState(1);
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const [buffering, setBuffering] = useState(true);
+  const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
+
+  useEffect(() => {
+    const audio = new Audio(src);
+    audioRef.current = audio;
+    audio.volume = volume;
+    audio.onloadedmetadata = () => { setTotal(audio.duration); setBuffering(false); };
+    audio.ontimeupdate = () => setCurrent(audio.currentTime);
+    audio.onended  = () => setPlaying(false);
+    audio.onwaiting = () => setBuffering(true);
+    audio.oncanplay = () => setBuffering(false);
+    return () => { audio.pause(); audio.src = ""; };
+  }, [src]);
+
+  const togglePlay = () => {
+    const a = audioRef.current; if (!a) return;
+    if (playing) { a.pause(); setPlaying(false); }
+    else { a.play().catch(() => {}); setPlaying(true); }
+  };
+
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const a = audioRef.current; const bar = seekBarRef.current;
+    if (!a || !bar || !a.duration) return;
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    a.currentTime = pct * a.duration;
+  };
+
+  const applySpeed = (s: number) => {
+    setSpeed(s);
+    if (audioRef.current) audioRef.current.playbackRate = s;
+    setSpeedOpen(false);
+  };
+
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+    const n = !muted;
+    setMuted(n);
+    audioRef.current.volume = n ? 0 : volume;
+  };
+
+  const setVol = (v: number) => {
+    setVolume(v);
+    if (audioRef.current) audioRef.current.volume = v;
+    if (v > 0) setMuted(false);
+  };
+
+  const fmt = (s: number) => {
+    if (!s || isNaN(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, "0");
+    return `${m}:${sec}`;
+  };
+
+  const fmtTotal = () => {
+    if (total > 0) return fmt(total);
+    if (readTime) {
+      const mins = parseInt(readTime);
+      if (!isNaN(mins)) return `${mins}:00`;
+    }
+    return "—";
+  };
+
+  const pct = total > 0 ? (current / total) * 100 : 0;
+
+  return (
+    <div style={{
+      backgroundColor: "white",
+      borderRadius: 14,
+      padding: "18px 22px",
+      border: "1px solid #e8e5e0",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+      display: "flex",
+      alignItems: "center",
+      gap: 18,
+      marginBottom: 40,
+      position: "relative",
+    }}>
+      <style>{`
+        @keyframes spin-player { to { transform: rotate(360deg); } }
+        .listen-seek:hover { opacity: 0.85; }
+      `}</style>
+
+      {/* Play button */}
+      <button
+        onClick={togglePlay}
+        disabled={buffering}
+        style={{
+          width: 52, height: 52, borderRadius: 12,
+          backgroundColor: buffering ? "#e8e5e0" : "#1A1A1A",
+          border: "none", cursor: buffering ? "not-allowed" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, transition: "background 0.15s, transform 0.1s",
+        }}
+        onMouseEnter={(e) => { if (!buffering) (e.currentTarget as HTMLElement).style.transform = "scale(1.05)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+      >
+        {buffering ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"
+            style={{ animation: "spin-player 0.8s linear infinite" }}>
+            <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="0.9"/>
+            <circle cx="12" cy="12" r="10" strokeOpacity="0.15"/>
+          </svg>
+        ) : playing ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}>
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        )}
+      </button>
+
+      {/* Label */}
+      <div style={{ flexShrink: 0, minWidth: 90 }}>
+        <div style={{
+          fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700,
+          textTransform: "uppercase", letterSpacing: "0.08em", color: "#888", marginBottom: 3,
+        }}>
+          Listen to Article
+        </div>
+        <div style={{
+          fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem",
+          fontStyle: "italic", color: "#1A1A1A", lineHeight: 1,
+        }}>
+          {readTime ?? `${Math.round((total || 0) / 60)} minutes`}
+        </div>
+      </div>
+
+      {/* Seek bar */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+        <div
+          ref={seekBarRef}
+          onClick={seek}
+          className="listen-seek"
+          style={{
+            height: 4, borderRadius: 2, cursor: "pointer",
+            backgroundColor: "#e0ddd8", position: "relative", overflow: "hidden",
+          }}
+        >
+          <div style={{
+            height: "100%", width: `${pct}%`,
+            backgroundColor: "#1A1A1A", borderRadius: 2,
+            transition: "width 0.3s linear", pointerEvents: "none",
+          }} />
+        </div>
+      </div>
+
+      {/* Time */}
+      <div style={{
+        fontFamily: "'Inter', sans-serif", fontSize: "0.8rem",
+        color: "#555", flexShrink: 0, letterSpacing: "0.02em",
+        fontVariantNumeric: "tabular-nums",
+      }}>
+        {fmt(current)} / {fmtTotal()}
+      </div>
+
+      {/* Speed */}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <button
+          onClick={() => setSpeedOpen(o => !o)}
+          style={{
+            padding: "5px 10px", borderRadius: 7,
+            border: "1px solid #e0ddd8", backgroundColor: "#f5f4f2",
+            fontFamily: "'Inter', sans-serif", fontSize: "0.78rem",
+            fontWeight: 700, color: "#333", cursor: "pointer",
+          }}
+        >
+          {speed}X
+        </button>
+        {speedOpen && (
+          <div style={{
+            position: "absolute", bottom: "calc(100% + 6px)", right: 0,
+            backgroundColor: "white", borderRadius: 10, border: "1px solid #e0ddd8",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden",
+            zIndex: 10, minWidth: 70,
+          }}>
+            {SPEEDS.map(s => (
+              <button key={s} onClick={() => applySpeed(s)} style={{
+                display: "block", width: "100%", padding: "8px 14px",
+                background: "none", border: "none", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.82rem",
+                fontWeight: speed === s ? 700 : 400,
+                color: speed === s ? "#1A1A1A" : "#555",
+                backgroundColor: speed === s ? "#f5f4f2" : "transparent",
+                textAlign: "left",
+                borderBottom: "1px solid #f5f4f2",
+              }}>
+                {s}×
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Volume */}
+      <button onClick={toggleMute} style={{
+        background: "none", border: "none", cursor: "pointer",
+        color: "#888", padding: 0, display: "flex", flexShrink: 0,
+      }}>
+        {muted || volume === 0 ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -59,10 +290,8 @@ export default function ArticlePage() {
   const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Prevents double-fire in React StrictMode dev
   const viewTracked = useRef(false);
 
-  // ── Fetch article ─────────────────────────────────────────────
   useEffect(() => {
     if (!slug) return;
     const fetchArticle = async () => {
@@ -85,35 +314,23 @@ export default function ArticlePage() {
     fetchArticle();
   }, [slug]);
 
-  // ── Track unique view — logged-in users only ─────────────────
   useEffect(() => {
-    // Wait until article is loaded AND user state is resolved
-    if (!article || viewTracked.current) return;
-    // Only track if user is logged in
-    if (!user) return;
-
+    if (!article || viewTracked.current || !user) return;
     viewTracked.current = true;
-
     const trackView = async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
         if (!token) return;
-
         const res = await fetch(`/api/articles/${slug}/view`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          const data = await res.json();
-          setViews(data.views);
-        }
+        if (res.ok) { const data = await res.json(); setViews(data.views); }
       } catch { /* silent */ }
     };
-
     trackView();
   }, [article, user, slug]);
 
-  // ── Like ──────────────────────────────────────────────────────
   const handleLike = async () => {
     if (!user) { router.push("/login"); return; }
     if (actionLoading) return;
@@ -129,23 +346,19 @@ export default function ArticlePage() {
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setLiked(data.liked);
-      setLikes(data.likes);
+      setLiked(data.liked); setLikes(data.likes);
     } catch {
-      setLiked(wasLiked);
-      setLikes(n => wasLiked ? n + 1 : n - 1);
+      setLiked(wasLiked); setLikes(n => wasLiked ? n + 1 : n - 1);
     } finally {
       setActionLoading(false);
     }
   };
 
-  // ── Save ──────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!user) { router.push("/login"); return; }
     if (actionLoading) return;
     setActionLoading(true);
-    const wasSaved = saved;
-    setSaved(!wasSaved);
+    const wasSaved = saved; setSaved(!wasSaved);
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`/api/articles/${slug}/save`, {
@@ -153,30 +366,19 @@ export default function ArticlePage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error();
-      const data = await res.json();
-      setSaved(data.saved);
-    } catch {
-      setSaved(wasSaved);
-    } finally {
-      setActionLoading(false);
-    }
+      const data = await res.json(); setSaved(data.saved);
+    } catch { setSaved(wasSaved); }
+    finally { setActionLoading(false); }
   };
 
-  // ── Share ─────────────────────────────────────────────────────
   const handleShare = async () => {
     const url = window.location.href;
-    if (navigator.share) {
-      try { await navigator.share({ title: article?.title, url }); return; }
-      catch { /* fall through */ }
+    if (navigator.share) { try { await navigator.share({ title: article?.title, url }); return; } catch { /* fall through */ } }
+    try { await navigator.clipboard.writeText(url); } catch {
+      const el = document.createElement("textarea"); el.value = url;
+      document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
     }
-    try { await navigator.clipboard.writeText(url); }
-    catch {
-      const el = document.createElement("textarea");
-      el.value = url; document.body.appendChild(el); el.select();
-      document.execCommand("copy"); document.body.removeChild(el);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
   const actionBtn = (active: boolean): React.CSSProperties => ({
@@ -262,6 +464,11 @@ export default function ArticlePage() {
 
           {article.coverImage && (
             <img src={article.coverImage} alt={article.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block", marginBottom: 40 }} />
+          )}
+
+          {/* ── Listen to Article Player ── */}
+          {article.audioUrl && (
+            <ListenPlayer src={article.audioUrl} readTime={article.readTime} />
           )}
 
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content }} />
