@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
-
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+import { verifyAdmin } from "@/lib/verifyAdmin";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -40,9 +39,7 @@ function decodeToken(token: string) {
     );
     if (payload.exp * 1000 < Date.now()) return null;
     return payload;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function calcReadTime(content: string) {
@@ -50,6 +47,7 @@ function calcReadTime(content: string) {
   return `${Math.max(1, Math.ceil(words / 200))} min read`;
 }
 
+// GET — list articles (public for published, admin-only for drafts)
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -60,14 +58,9 @@ export async function GET(req: NextRequest) {
     const tag    = searchParams.get("tag");
     const uid    = searchParams.get("uid");
 
-    // For draft requests, verify admin token
     if (status === "draft") {
-      const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-      if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      const payload = decodeToken(token);
-      if (!payload || payload.email !== ADMIN_EMAIL) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+      const admin = await verifyAdmin(req);
+      if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const query: Record<string, any> = { status };
@@ -87,13 +80,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// POST — create article, allow any team admin
 export async function POST(req: NextRequest) {
   try {
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const payload = decodeToken(token);
-    if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (payload.email !== ADMIN_EMAIL) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const admin = await verifyAdmin(req);
+    if (!admin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     await connectDB();
     const Article = getArticleModel();
@@ -104,11 +97,8 @@ export async function POST(req: NextRequest) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    // Check for slug collision and append timestamp if needed
     const existing = await Article.findOne({ slug: body.slug });
-    if (existing) {
-      body.slug = `${body.slug}-${Date.now()}`;
-    }
+    if (existing) body.slug = `${body.slug}-${Date.now()}`;
 
     body.publishedAt = body.status === "published" ? new Date() : null;
     body.updatedAt   = new Date();

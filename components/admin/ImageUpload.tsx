@@ -12,11 +12,23 @@ interface ImageUploadProps {
   onChange: (url: string) => void;
   label?: string;
   folder?: string;
+  /** aspect ratio for preview, e.g. "16/9" (default) or "1/1" */
+  aspectRatio?: string;
+  /** "cover" fills the box (default), "contain" letterboxes smaller images */
+  fit?: "cover" | "contain";
 }
 
-export default function ImageUpload({ value, onChange, label = "Cover Image", folder = "articles" }: ImageUploadProps) {
+export default function ImageUpload({
+  value,
+  onChange,
+  label = "Cover Image",
+  folder = "articles",
+  aspectRatio = "16/9",
+  fit = "cover",
+}: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError]         = useState("");
+  const [imgSize, setImgSize]     = useState<{ w: number; h: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +46,6 @@ export default function ImageUpload({ value, onChange, label = "Cover Image", fo
     }
   };
 
-  // Handle paste event on the input
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const items = e.clipboardData.items;
     for (const item of Array.from(items)) {
@@ -58,18 +69,27 @@ export default function ImageUpload({ value, onChange, label = "Cover Image", fo
     textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 7,
   };
 
+  // Detect actual image dimensions when loaded
+  const onImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+  };
+
+  // If image is smaller than 1920×1080, use "contain" to avoid upscale blurring
+  const effectiveFit = imgSize && (imgSize.w < 1920 || imgSize.h < 1080) ? "contain" : fit;
+
   return (
     <div>
-      <label style={labelStyle}>{label}</label>
+      {label && <label style={labelStyle}>{label}</label>}
 
-      {/* Single input row with upload icon on right */}
+      {/* Input row */}
       <div style={{ position: "relative" }}>
         <input
           type="url"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onPaste={handlePaste}
-          placeholder="Paste image URL or link — or click ↑ to upload from device"
+          placeholder="Paste image URL — or click ↑ to upload"
           style={{
             width: "100%", padding: "10px 44px 10px 14px",
             borderRadius: 8, border: "1px solid #CFCBC3",
@@ -81,8 +101,6 @@ export default function ImageUpload({ value, onChange, label = "Cover Image", fo
           onFocus={(e) => (e.target.style.borderColor = ACCENT)}
           onBlur={(e)  => (e.target.style.borderColor = "#CFCBC3")}
         />
-
-        {/* Upload icon button — right side of input */}
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -112,26 +130,68 @@ export default function ImageUpload({ value, onChange, label = "Cover Image", fo
             </svg>
           )}
         </button>
-
         <style>{`@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}`}</style>
         <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
       </div>
 
-      {error && <p style={{ fontSize: "0.72rem", color: "#c0392b", fontFamily: "'Inter', sans-serif", marginTop: 4, margin: "4px 0 0" }}>{error}</p>}
+      {error && <p style={{ fontSize: "0.72rem", color: "#c0392b", fontFamily: "'Inter', sans-serif", marginTop: 4 }}>{error}</p>}
 
-      {/* Preview */}
+      {/* Preview — 16:9 (1920×1080 standard) */}
       {value && !uploading && (
-        <div style={{ marginTop: 8, position: "relative", display: "inline-block", width: "100%" }}>
-          <img
-            src={value}
-            alt="preview"
-            style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, border: "1px solid #CFCBC3", display: "block" }}
-            onError={() => { /* silently ignore broken URLs while typing */ }}
-          />
-          <button
-            onClick={() => onChange("")}
-            style={{ position: "absolute", top: 7, right: 7, width: 24, height: 24, borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.55)", border: "none", cursor: "pointer", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", lineHeight: 1 }}
-          >×</button>
+        <div style={{ marginTop: 10, position: "relative" }}>
+          {/* Aspect-ratio container */}
+          <div style={{
+            width: "100%",
+            paddingTop: aspectRatio === "16/9" ? "56.25%" : aspectRatio === "1/1" ? "100%" : "56.25%",
+            position: "relative",
+            borderRadius: 10,
+            overflow: "hidden",
+            border: "1px solid #CFCBC3",
+            backgroundColor: "#f0eeea",
+          }}>
+            <img
+              src={value}
+              alt="Cover preview"
+              onLoad={onImgLoad}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: effectiveFit,
+                objectPosition: "center",
+                display: "block",
+              }}
+              onError={() => { /* ignore broken URLs while typing */ }}
+            />
+            {/* Remove button */}
+            <button
+              onClick={() => { onChange(""); setImgSize(null); }}
+              style={{
+                position: "absolute", top: 8, right: 8,
+                width: 28, height: 28, borderRadius: "50%",
+                backgroundColor: "rgba(0,0,0,0.6)", border: "none",
+                cursor: "pointer", color: "white",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1rem", lineHeight: 1, zIndex: 2,
+              }}
+            >×</button>
+          </div>
+
+          {/* Dimension badge */}
+          {imgSize && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+              <p style={{ fontSize: "0.7rem", color: MUTED, fontFamily: "'Inter', sans-serif", margin: 0 }}>
+                Original size: {imgSize.w}×{imgSize.h}px
+                {imgSize.w < 1920 && ` · Recommended: 1920×1080 for best quality`}
+              </p>
+              {imgSize.w >= 1920 && imgSize.h >= 1080 && (
+                <span style={{ fontSize: "0.65rem", color: "#3a7a3e", fontFamily: "'Inter', sans-serif", fontWeight: 700, backgroundColor: "rgba(76,140,80,0.1)", padding: "2px 8px", borderRadius: 4 }}>
+                  ✓ HD Ready
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

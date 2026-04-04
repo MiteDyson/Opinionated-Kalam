@@ -2,24 +2,26 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
 
-const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL ;
+const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 function getAdminModel() {
   if (mongoose.models.Admin) return mongoose.models.Admin;
   const schema = new mongoose.Schema({
-    email:     { type: String, required: true, unique: true, lowercase: true },
-    name:      { type: String, required: true },
-    role:      { type: String, default: "author" }, // "admin" | "author"
-    addedBy:   { type: String },
-    addedAt:   { type: Date, default: Date.now },
-    isMain:    { type: Boolean, default: false },
+    email:   { type: String, required: true, unique: true, lowercase: true },
+    name:    { type: String, required: true },
+    role:    { type: String, default: "author" },
+    addedBy: { type: String },
+    addedAt: { type: Date, default: Date.now },
+    isMain:  { type: Boolean, default: false },
   });
   return mongoose.model("Admin", schema);
 }
 
 export { getAdminModel };
 
-export async function verifyAdmin(req: NextRequest): Promise<{ uid: string; email: string; isMain: boolean } | null> {
+export async function verifyAdmin(
+  req: NextRequest
+): Promise<{ uid: string; email: string; isMain: boolean; role: string } | null> {
   try {
     const token = req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!token) return null;
@@ -30,23 +32,27 @@ export async function verifyAdmin(req: NextRequest): Promise<{ uid: string; emai
     const payload = JSON.parse(
       Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")
     );
-
     if (payload.exp * 1000 < Date.now()) return null;
 
     const email: string = payload.email ?? "";
 
-    // Main admin always has access
+    // Main admin always has full access
     if (email === MAIN_ADMIN_EMAIL) {
-      return { uid: payload.user_id ?? payload.sub, email, isMain: true };
+      return { uid: payload.user_id ?? payload.sub, email, isMain: true, role: "admin" };
     }
 
-    // Check if email is in the admin collection
+    // Check team admin collection
     await connectDB();
     const Admin = getAdminModel();
-    const adminRecord = await Admin.findOne({ email: email.toLowerCase() }).lean();
+    const adminRecord = await Admin.findOne({ email: email.toLowerCase() }).lean() as any;
     if (!adminRecord) return null;
 
-    return { uid: payload.user_id ?? payload.sub, email, isMain: false };
+    return {
+      uid: payload.user_id ?? payload.sub,
+      email,
+      isMain: false,
+      role: adminRecord.role ?? "author",
+    };
   } catch (err: any) {
     console.log("[verifyAdmin] Error:", err.message);
     return null;

@@ -457,7 +457,7 @@ function HomeView({
                   <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginBottom: 10 }}>
                     {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""}
                     &nbsp;·&nbsp; {hero.author}
-                    {hero.readTime && <> &nbsp;·&nbsp; {hero.readTime}</>}
+                    {hero.readTime && <> &nbsp;·&nbsp; {hero.readTime} minute read </>}
                   </div>
                   <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", marginBottom: 16 }}>
                     {hero.excerpt}
@@ -499,7 +499,7 @@ function HomeView({
                             </span>
                             {a.readTime && (
                               <><span style={{ fontSize: "0.6rem", color: "var(--border)" }}>·</span>
-                                <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.readTime}</span>
+                                <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.readTime} minute read</span>
                               </>
                             )}
                             <ReadPill />

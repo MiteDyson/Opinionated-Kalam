@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
+import { verifyAdmin } from "@/lib/verifyAdmin";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -21,18 +22,7 @@ function getArticleModel() {
   return mongoose.model("Article", schema);
 }
 
-function decodeToken(token: string) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(
-      Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")
-    );
-    if (payload.exp * 1000 < Date.now()) return null;
-    return payload;
-  } catch { return null; }
-}
-
+// GET — fetch article WITHOUT incrementing views (views are tracked via POST /view)
 export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
     await connectDB();
@@ -40,11 +30,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get("uid") ?? "";
 
-    const article = await Article.findOneAndUpdate(
-      { slug: params.slug },  // allow draft loading for admin edit
-      { $inc: { views: 1 } },
-      { new: true }
-    ).lean() as any;
+    // Fetch WITHOUT view increment — views are counted by POST /api/articles/[slug]/view
+    const article = await Article.findOne({ slug: params.slug }).lean() as any;
 
     if (!article) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -58,31 +45,37 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
   }
 }
 
+// PATCH — allow main admin OR any team admin
 export async function PATCH(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const payload = decodeToken(token);
-    if (!payload || payload.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     await connectDB();
     const Article = getArticleModel();
     const body = await req.json();
-    const article = await Article.findOneAndUpdate({ slug: params.slug }, body, { new: true });
+    const article = await Article.findOneAndUpdate(
+      { slug: params.slug },
+      { ...body, updatedAt: new Date() },
+      { new: true }
+    );
     return NextResponse.json(article);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
+// DELETE — allow main admin OR any team admin with admin role
 export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const payload = decodeToken(token);
-    if (!payload || payload.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+    const admin = await verifyAdmin(req);
+    if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    // Only main admin or team admins (not just authors) can delete
+    if (!admin.isMain && admin.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden — admin role required to delete" }, { status: 403 });
     }
     await connectDB();
     const Article = getArticleModel();

@@ -451,7 +451,7 @@ export default function ArticlePage() {
             {dateStr && <span>{dateStr}</span>}
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{article.author}</span>
-            {article.readTime && <><span style={{ opacity: 0.4 }}>|</span><span>{article.readTime}</span></>}
+            {article.readTime && <><span style={{ opacity: 0.4 }}>|</span><span>{article.readTime} minute read</span></>}
             {views > 0 && (
               <><span style={{ opacity: 0.4 }}>|</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
