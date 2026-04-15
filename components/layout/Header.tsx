@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ;
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 const ACCENT = "#1B2A47";
 const RED    = "#D92323";
 
+// Beats tab removed — now lives as a dropdown filter on each section page
 const TABS = [
   { id: "home",     label: "Home" },
   { id: "recent",   label: "Recent Stories" },
   { id: "podcasts", label: "Podcasts" },
   { id: "shorts",   label: "Short Reads" },
-  { id: "beats",    label: "Beats" },
 ];
 
 interface HeaderProps {
@@ -35,11 +35,8 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
   const inputRef    = useRef<HTMLInputElement>(null);
 
   const isAdmin     = user?.email === ADMIN_EMAIL;
-  // Use displayName (username) if available, else show nudge
   const hasUsername = !!(user?.displayName?.trim());
-  const displayName = hasUsername
-    ? user!.displayName!.trim().slice(0, 15)
-    : "Set name";
+  const displayName = hasUsername ? user!.displayName!.trim().slice(0, 15) : "Set name";
 
   useEffect(() => {
     const d = new Date();
@@ -67,7 +64,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
         .ok-search:focus        { border-color: #908e8a !important; outline: none; }
       `}</style>
 
-      {/* ── No-username nudge banner ── */}
       {user && !hasUsername && (
         <div style={{ backgroundColor: "rgba(27,42,71,0.07)", border: "1px solid rgba(27,42,71,0.15)", borderRadius: 8, padding: "9px 14px", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -76,23 +72,18 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
               <strong>You haven't set a username yet.</strong> Add one to personalise your profile.
             </span>
           </div>
-          <button
-            onClick={() => router.push("/login")}
-            style={{ flexShrink: 0, padding: "5px 14px", borderRadius: 6, border: "none", backgroundColor: ACCENT, color: "white", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}
-          >
+          <button onClick={() => router.push("/login")} style={{ flexShrink: 0, padding: "5px 14px", borderRadius: 6, border: "none", backgroundColor: ACCENT, color: "white", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
             Set Username
           </button>
         </div>
       )}
 
-      {/* ── Title ── */}
       <div style={{ textAlign: "center", paddingTop: 24 }}>
         <button onClick={() => onTabChange("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(2rem, 4.5vw, 3.2rem)", fontWeight: 400, lineHeight: 1, letterSpacing: "-0.5px", color: "var(--text-main)", display: "block", margin: "0 auto" }}>
           Opinionated Kalam
         </button>
       </div>
 
-      {/* ── Date + YouTube ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
         <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{dateStr}</span>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -105,10 +96,8 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
         </div>
       </div>
 
-      {/* ── Nav ── */}
       <nav style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 0", marginBottom: 32, position: "relative" }}>
 
-        {/* LEFT */}
         <div ref={searchRef} style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
           <button onClick={onMenuOpen} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-main)", padding: 0, display: "flex", flexShrink: 0 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -136,7 +125,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
           )}
         </div>
 
-        {/* CENTER */}
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -148,7 +136,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
           })}
         </div>
 
-        {/* RIGHT */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end" }}>
           {user ? (
             <div ref={dropdownRef} style={{ position: "relative" }}>
@@ -168,7 +155,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
                     <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginTop: 2 }}>{user.email}</div>
                   </div>
 
-                  {/* Set username nudge in dropdown */}
                   {!hasUsername && (
                     <a href="/login" onClick={() => setDropdownOpen(false)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", textDecoration: "none", color: "#b85c58", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", fontWeight: 600, borderBottom: "1px solid var(--border)", backgroundColor: "rgba(211,139,136,0.06)" }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(211,139,136,0.12)")}
@@ -179,10 +165,7 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
                     </a>
                   )}
 
-                  {[
-                    { label: "Saved Articles",   href: "/saved" },
-                    { label: "My Subscriptions", href: "/subscriptions" },
-                  ].map((item) => (
+                  {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
                     <a key={item.label} href={item.href} style={{ display: "flex", alignItems: "center", padding: "10px 14px", textDecoration: "none", color: "var(--text-main)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", borderBottom: "1px solid var(--border)", transition: "background 0.1s" }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
@@ -219,7 +202,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
   );
 }
 
-/* ── Search Results ── */
 function SearchResults({ query, onClose }: { query: string; onClose: () => void }) {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -234,11 +216,7 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
       fetch("/api/articles?type=podcast&status=published").then(r => r.ok ? r.json() : []),
     ])
       .then(([articles, shorts, podcasts]) => {
-        const all = [
-          ...(Array.isArray(articles) ? articles : []),
-          ...(Array.isArray(shorts)   ? shorts   : []),
-          ...(Array.isArray(podcasts) ? podcasts : []),
-        ];
+        const all = [...(Array.isArray(articles) ? articles : []), ...(Array.isArray(shorts) ? shorts : []), ...(Array.isArray(podcasts) ? podcasts : [])];
         setResults(all.filter((c: any) =>
           c.title?.toLowerCase().includes(q) ||
           (c.tags ?? []).some((t: string) => t.toLowerCase().includes(q)) ||

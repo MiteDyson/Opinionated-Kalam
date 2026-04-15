@@ -54,7 +54,7 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-export default function SavedPage() {
+export default function DesktopSavedPage() {
   const router   = useRouter();
   const { user, loading: authLoading } = useAuth();
 

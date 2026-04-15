@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
@@ -271,7 +272,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
     </div>
   );
 }
-
 export default function ArticlePage() {
   const router   = useRouter();
   const params   = useParams();

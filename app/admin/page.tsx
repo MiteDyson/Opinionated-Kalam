@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -70,7 +71,7 @@ const typeBadge = (type: string) => {
   return <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", backgroundColor: s.bg, color: s.color, fontFamily: "'Inter', sans-serif" }}>{type}</span>;
 };
 
-export default function AdminDashboard() {
+export default function DesktopAdminDashboard() {
   const { logout } = useAuth();
   const router     = useRouter();
 
