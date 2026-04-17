@@ -8,6 +8,7 @@ import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useMobile } from "@/hooks/useMobile";
+import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
 
 // Lazy-load the mobile page to avoid SSR issues
@@ -497,13 +498,13 @@ export default function HomePage() {
   const isMobile = useMobile();
   const [activeTab, setActiveTab] = useState("home");
   const [menuOpen, setMenuOpen]   = useState(false);
-  const [articles, setArticles]   = useState<Article[]>([]);
-  const [podcasts, setPodcasts]   = useState<Article[]>([]);
-  const [shorts, setShorts]       = useState<Article[]>([]);
-  const [loading, setLoading]     = useState(true);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
+
+  // Shared cached hook — no duplicate fetches, 3-min TTL cache
+  const uid = (user as any)?.uid ?? "";
+  const { articles, podcasts, shorts, loading } = useArticles(uid);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -511,30 +512,6 @@ export default function HomePage() {
     const tab = params.get("tab");
     if (tab) setActiveTab(tab);
   }, []);
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const uid = (user as any)?.uid ?? "";
-        const uidQ = uid ? `&uid=${uid}` : "";
-        const [artRes, podRes, shrRes] = await Promise.all([
-          fetch(`/api/articles?type=article&status=published${uidQ}`),
-          fetch(`/api/articles?type=podcast&status=published${uidQ}`),
-          fetch(`/api/articles?type=short&status=published${uidQ}`),
-        ]);
-        const [art, pod, shr] = await Promise.all([
-          artRes.ok ? artRes.json() : [],
-          podRes.ok ? podRes.json() : [],
-          shrRes.ok ? shrRes.json() : [],
-        ]);
-        setArticles(Array.isArray(art) ? art : []);
-        setPodcasts(Array.isArray(pod) ? pod : []);
-        setShorts(Array.isArray(shr) ? shr : []);
-      } catch (e) { console.error("Failed to fetch content:", e); }
-      finally { setLoading(false); }
-    };
-    fetchAll();
-  }, [user]);
 
   // Render mobile layout if on mobile device
   if (isMobile) {

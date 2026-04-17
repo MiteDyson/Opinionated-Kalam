@@ -1,18 +1,22 @@
-const IMAGEKIT_ENDPOINT = "https://ik.imagekit.io/ok15";
 const IMAGEKIT_UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
 
-// You need to add this to your .env.local:
-// NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=your_public_key
-// Get it from: ImageKit dashboard → Developer Options → Public Key
+// Cache the auth signature for its lifetime (avoids a round-trip on every upload)
+let authCache: { token: string; expire: number; signature: string } | null = null;
+
+async function getAuth() {
+  const now = Date.now() / 1000;
+  if (authCache && authCache.expire - 60 > now) return authCache;
+  const res = await fetch("/api/imagekit-auth");
+  if (!res.ok) throw new Error("Failed to get upload auth");
+  authCache = await res.json();
+  return authCache!;
+}
 
 export async function uploadToImageKit(file: File, folder = "articles"): Promise<string> {
   const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
   if (!publicKey) throw new Error("NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY not set in .env.local");
 
-  // Get auth signature from our API
-  const authRes = await fetch("/api/imagekit-auth");
-  if (!authRes.ok) throw new Error("Failed to get upload auth");
-  const { token, expire, signature } = await authRes.json();
+  const { token, expire, signature } = await getAuth();
 
   const formData = new FormData();
   formData.append("file", file);
@@ -23,18 +27,13 @@ export async function uploadToImageKit(file: File, folder = "articles"): Promise
   formData.append("expire", expire.toString());
   formData.append("token", token);
 
-  const res = await fetch(IMAGEKIT_UPLOAD_URL, {
-    method: "POST",
-    body: formData,
-  });
-
+  const res = await fetch(IMAGEKIT_UPLOAD_URL, { method: "POST", body: formData });
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.message ?? "Upload failed");
   }
-
   const data = await res.json();
   return data.url;
 }
 
-export { IMAGEKIT_ENDPOINT };
+export const IMAGEKIT_ENDPOINT = "https://ik.imagekit.io/ok15";

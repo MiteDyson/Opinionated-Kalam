@@ -30,24 +30,12 @@ function getArticleModel() {
   return mongoose.model("Article", schema);
 }
 
-function decodeToken(token: string) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(
-      Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")
-    );
-    if (payload.exp * 1000 < Date.now()) return null;
-    return payload;
-  } catch { return null; }
-}
-
 function calcReadTime(content: string) {
   const words = content.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
   return `${Math.max(1, Math.ceil(words / 200))} min read`;
 }
 
-// GET — list articles (public for published, admin-only for drafts)
+// GET — list articles
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -58,6 +46,7 @@ export async function GET(req: NextRequest) {
     const tag    = searchParams.get("tag");
     const uid    = searchParams.get("uid");
 
+    // Draft requests require admin auth
     if (status === "draft") {
       const admin = await verifyAdmin(req);
       if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -68,25 +57,37 @@ export async function GET(req: NextRequest) {
     if (tag)  query.tags = tag;
 
     const articles = await Article.find(query).sort({ createdAt: -1 }).lean();
+
     const result = articles.map((a: any) => ({
       ...a,
       isLiked: uid ? (a.likedBy ?? []).includes(uid) : false,
       isSaved: uid ? (a.savedBy ?? []).includes(uid) : false,
     }));
-    return NextResponse.json(result);
+
+    const response = NextResponse.json(result);
+
+    // HTTP cache headers — only for public published content without uid
+    if (status === "published" && !uid) {
+      response.headers.set(
+        "Cache-Control",
+        "public, s-maxage=120, stale-while-revalidate=300"
+      );
+    } else {
+      response.headers.set("Cache-Control", "private, no-store");
+    }
+
+    return response;
   } catch (err: any) {
     console.error("[GET /api/articles]", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// POST — create article, allow any team admin
+// POST — create article
 export async function POST(req: NextRequest) {
   try {
     const admin = await verifyAdmin(req);
-    if (!admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     await connectDB();
     const Article = getArticleModel();
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
     console.log("[POST /api/articles] Created:", article.slug);
     return NextResponse.json(article, { status: 201 });
   } catch (err: any) {
-    console.error("[POST /api/articles] Error:", err.message);
+    console.error("[POST /api/articles]", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

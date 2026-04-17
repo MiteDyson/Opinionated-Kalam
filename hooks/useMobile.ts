@@ -6,18 +6,14 @@ export function useMobile(): boolean {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => {
-      // Check both screen width AND user agent for device detection
+    const check = () => {
       const ua = navigator.userAgent;
-      const isPhone =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-      const isNarrow = window.innerWidth < 768;
-      setIsMobile(isPhone || isNarrow);
+      const isPhone = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      setIsMobile(isPhone || window.innerWidth < 768);
     };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   return isMobile;

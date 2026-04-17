@@ -16,42 +16,57 @@ function getArticleModel() {
     readTime: { type: String, default: "" },
     likedBy: [String], savedBy: [String],
     audioUrl: String, episode: String, duration: String,
-    publishedAt: Date, createdAt: { type: Date, default: Date.now },
+    publishedAt: Date,
+    createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   });
   return mongoose.model("Article", schema);
 }
 
-// GET — fetch article WITHOUT incrementing views (views are tracked via POST /view)
-export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
+// GET /api/articles/[slug]
+// Published articles cached at CDN for 2 min; uid-scoped skips CDN
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { slug: string } }
+) {
   try {
     await connectDB();
     const Article = getArticleModel();
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get("uid") ?? "";
 
-    // Fetch WITHOUT view increment — views are counted by POST /api/articles/[slug]/view
     const article = await Article.findOne({ slug: params.slug }).lean() as any;
-
     if (!article) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    return NextResponse.json({
+    const body = {
       ...article,
       isLiked: uid ? (article.likedBy ?? []).includes(uid) : false,
       isSaved: uid ? (article.savedBy ?? []).includes(uid) : false,
-    });
+    };
+
+    const res = NextResponse.json(body);
+
+    // Cache public published articles for 2 min at CDN
+    if (article.status === "published" && !uid) {
+      res.headers.set("Cache-Control", "public, s-maxage=120, stale-while-revalidate=300");
+    } else {
+      res.headers.set("Cache-Control", "private, no-store");
+    }
+
+    return res;
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// PATCH — allow main admin OR any team admin
-export async function PATCH(req: NextRequest, { params }: { params: { slug: string } }) {
+// PATCH /api/articles/[slug]
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { slug: string } }
+) {
   try {
     const admin = await verifyAdmin(req);
-    if (!admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     await connectDB();
     const Article = getArticleModel();
     const body = await req.json();
@@ -66,16 +81,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
   }
 }
 
-// DELETE — allow main admin OR any team admin with admin role
-export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
+// DELETE /api/articles/[slug]
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { slug: string } }
+) {
   try {
     const admin = await verifyAdmin(req);
-    if (!admin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    // Only main admin or team admins (not just authors) can delete
+    if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     if (!admin.isMain && admin.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden — admin role required to delete" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden — admin role required" }, { status: 403 });
     }
     await connectDB();
     const Article = getArticleModel();
