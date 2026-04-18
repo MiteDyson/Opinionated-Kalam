@@ -38,9 +38,16 @@ export default function BeatsFilter({ selectedBeat, onBeatChange }: BeatsFilterP
         }}
       >
         {selectedBeat ? `Beat: ${selectedBeat}` : "Beats"}
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.15s" }}>
-          <polyline points="6 9 12 15 18 9"/>
+        {/* Change 4: closed = pointing right (90°), open = pointing down (0° from right = rotated -90°) */}
+        <svg
+          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+          style={{
+            transform: open ? "rotate(90deg)" : "rotate(0deg)",
+            transition: "transform 0.15s",
+          }}
+        >
+          {/* Right-pointing chevron: closed state faces right toward "Beats" label */}
+          <polyline points="9 18 15 12 9 6"/>
         </svg>
       </button>
 

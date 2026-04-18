@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
@@ -139,7 +138,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
         .listen-seek:hover { opacity: 0.85; }
       `}</style>
 
-      {/* Play button */}
       <button
         onClick={togglePlay}
         disabled={buffering}
@@ -170,7 +168,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
         )}
       </button>
 
-      {/* Label */}
       <div style={{ flexShrink: 0, minWidth: 90 }}>
         <div style={{
           fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700,
@@ -186,7 +183,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
         </div>
       </div>
 
-      {/* Seek bar */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
         <div
           ref={seekBarRef}
@@ -205,7 +201,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
         </div>
       </div>
 
-      {/* Time */}
       <div style={{
         fontFamily: "'Inter', sans-serif", fontSize: "0.8rem",
         color: "#555", flexShrink: 0, letterSpacing: "0.02em",
@@ -214,7 +209,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
         {fmt(current)} / {fmtTotal()}
       </div>
 
-      {/* Speed */}
       <div style={{ position: "relative", flexShrink: 0 }}>
         <button
           onClick={() => setSpeedOpen(o => !o)}
@@ -252,7 +246,6 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
         )}
       </div>
 
-      {/* Volume */}
       <button onClick={toggleMute} style={{
         background: "none", border: "none", cursor: "pointer",
         color: "#888", padding: 0, display: "flex", flexShrink: 0,
@@ -272,6 +265,7 @@ function ListenPlayer({ src, readTime }: { src: string; readTime?: string }) {
     </div>
   );
 }
+
 export default function ArticlePage() {
   const router   = useRouter();
   const params   = useParams();
@@ -411,7 +405,8 @@ export default function ArticlePage() {
   return (
     <>
       <style>{`
-        .article-body { font-size: 1.05rem; line-height: 1.85; color: #2A2A2A; font-family: 'Inter', sans-serif; }
+        /* Change 1: Radley for article content body */
+        .article-body { font-size: 1.05rem; line-height: 1.85; color: #2A2A2A; font-family: 'Radley', serif; }
         .article-body p  { margin: 0 0 1.2em; }
         .article-body h2 { font-family: 'DM Serif Display', serif; font-size: 1.7rem; font-weight: 400; color: #1A1A1A; margin: 1.6em 0 0.5em; }
         .article-body h3 { font-family: 'DM Serif Display', serif; font-size: 1.25rem; font-weight: 400; color: #1A1A1A; margin: 1.4em 0 0.4em; }
@@ -432,9 +427,10 @@ export default function ArticlePage() {
 
         <div style={{ maxWidth: 780, margin: "0 auto 80px" }}>
 
+          {/* Change 6: Back → Home button */}
           <button onClick={() => router.push("/")} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: "0.88rem", fontWeight: 600, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: 32, fontFamily: "'Inter', sans-serif", padding: 0 }}>
             <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: "currentColor", strokeWidth: 2, fill: "none" }}><polyline points="15 18 9 12 15 6" /></svg>
-            Back
+            Home
           </button>
 
           {article.tags.length > 0 && (
@@ -447,11 +443,11 @@ export default function ArticlePage() {
             {article.title}
           </h1>
 
+          {/* Change 2: Removed readTime from meta row */}
           <div style={{ display: "flex", gap: 16, color: "var(--text-muted)", fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", marginBottom: 32, flexWrap: "wrap", alignItems: "center" }}>
             {dateStr && <span>{dateStr}</span>}
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{article.author}</span>
-            {article.readTime && <><span style={{ opacity: 0.4 }}>|</span><span>{article.readTime} minute read</span></>}
             {views > 0 && (
               <><span style={{ opacity: 0.4 }}>|</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -466,14 +462,12 @@ export default function ArticlePage() {
             <img src={article.coverImage} alt={article.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block", marginBottom: 40 }} />
           )}
 
-          {/* ── Listen to Article Player ── */}
           {article.audioUrl && (
             <ListenPlayer src={article.audioUrl} readTime={article.readTime} />
           )}
 
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content }} />
 
-          {/* Action bar */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
             <button style={actionBtn(liked)} onClick={handleLike} disabled={actionLoading}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">

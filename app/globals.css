@@ -4,7 +4,7 @@
 
 /* ── Design tokens ── */
 :root {
-  --bg: #d5d2cb;
+  --bg: #f4efea;
   --text-main: #1a1a1a;
   --text-muted: #555555;
   --terracotta: #d38b88;
@@ -52,11 +52,12 @@ img {
   max-width: 100%;
 }
 
-/* ── Article body ── */
+/* ── Article body — Radley for content font ── */
 .article-body {
   font-size: 1.1rem;
   line-height: 1.8;
   color: #2a2a2a;
+  font-family: "Radley", serif;
 }
 .article-body p {
   margin-bottom: 25px;

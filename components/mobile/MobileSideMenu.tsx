@@ -37,11 +37,12 @@ export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSel
         }}
       />
 
-      {/* Panel */}
+      {/* Panel — Change 3: bg #f4efea */}
       <div style={{
         position: "fixed", top: 0, left: isOpen ? 0 : -280,
         width: 260, height: "100vh",
-        backgroundColor: "var(--bg)", zIndex: 100,
+        backgroundColor: "#f4efea",
+        zIndex: 100,
         boxShadow: "4px 0 24px rgba(0,0,0,0.15)",
         transition: "left 0.26s ease",
         display: "flex", flexDirection: "column",
@@ -63,7 +64,7 @@ export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSel
         </div>
 
         <div style={{ flex: 1, padding: "0 20px" }}>
-          {/* Beats with sub-menu */}
+          {/* Beats with sub-menu — Change 4: arrow points right when closed */}
           <div>
             <button
               onClick={() => setBeatsOpen(o => !o)}
@@ -75,8 +76,14 @@ export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSel
               }}
             >
               <span>Beats</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                style={{ transform: beatsOpen ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s" }}>
+              {/* Change 4: closed = points right (›), open = points down (rotate 90°) */}
+              <svg
+                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{
+                  transform: beatsOpen ? "rotate(90deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s",
+                }}
+              >
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
