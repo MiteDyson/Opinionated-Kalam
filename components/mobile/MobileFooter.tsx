@@ -1,31 +1,147 @@
 "use client";
 
+const DARK_FOOTER = "#1a1a1a";
+
 export default function MobileFooter() {
   return (
-    <footer style={{ backgroundColor: "#151515", color: "#F8F8F8", padding: "40px 24px 32px", marginTop: 48 }}>
-      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 48 }}>
+    <footer
+      style={{
+        backgroundColor: DARK_FOOTER,
+        padding: "28px 24px 20px",
+        marginTop: 40,
+      }}
+    >
+      {/* Two-column grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <h3 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.9rem", marginBottom: 16, color: "white" }}>Learn</h3>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            <li><a href="#" style={{ color: "#888", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>About Us</a></li>
-            <li><a href="#" style={{ color: "#888", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>Contact Us</a></li>
-          </ul>
+          <h4
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              color: "white",
+              marginBottom: 10,
+              letterSpacing: "0.05em",
+            }}
+          >
+            Learn
+          </h4>
+          <a
+            href="#"
+            style={{
+              display: "block",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "0.72rem",
+              color: "#aaa",
+              textDecoration: "none",
+              marginBottom: 6,
+            }}
+          >
+            About Us
+          </a>
+          <a
+            href="#"
+            style={{
+              display: "block",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "0.72rem",
+              color: "#aaa",
+              textDecoration: "none",
+              marginBottom: 6,
+            }}
+          >
+            Contact Us
+          </a>
         </div>
+
         <div style={{ textAlign: "center" }}>
-          <h3 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.9rem", marginBottom: 16, color: "white" }}>Legal</h3>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            <li><a href="/terms" style={{ color: "#888", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>Terms of Service</a></li>
-            <li><a href="/privacy" style={{ color: "#888", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>Privacy Policy</a></li>
-            <li><a href="#" style={{ color: "#888", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>Grievance Redressal</a></li>
-          </ul>
+          <h4
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              color: "white",
+              marginBottom: 10,
+              letterSpacing: "0.05em",
+            }}
+          >
+            Legal
+          </h4>
+          <a
+            href="/terms"
+            style={{
+              display: "block",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "0.72rem",
+              color: "#aaa",
+              textDecoration: "none",
+              marginBottom: 6,
+            }}
+          >
+            Terms of Service
+          </a>
+          <a
+            href="/privacy"
+            style={{
+              display: "block",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "0.72rem",
+              color: "#aaa",
+              textDecoration: "none",
+              marginBottom: 6,
+            }}
+          >
+            Privacy Policy
+          </a>
+          <a
+            href="#"
+            style={{
+              display: "block",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "0.72rem",
+              color: "#aaa",
+              textDecoration: "none",
+            }}
+          >
+            Grievance Redressal
+          </a>
         </div>
       </div>
 
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(1.8rem, 8vw, 2.8rem)", color: "white", lineHeight: 1.1, marginBottom: 12 }}>
+      {/* Brand name centred */}
+      <div
+        style={{
+          textAlign: "center",
+          paddingTop: 20,
+          borderTop: "1px solid #333",
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
+            fontSize: "1.6rem",
+            fontWeight: 900,
+            color: "white",
+            marginBottom: 8,
+            letterSpacing: "-0.01em",
+          }}
+        >
           Opinionated Kalam
-        </div>
-        <p style={{ color: "#555", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif" }}>
+        </h2>
+        <p
+          style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "0.65rem",
+            color: "#666",
+          }}
+        >
           © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
         </p>
       </div>
