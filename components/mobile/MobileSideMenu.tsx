@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-const RED = "#c0392b";
-const BLACK = "#111111";
-const BG = "#f5f0eb";
+const RED    = "#c0392b";
+const BLACK  = "#111111";
+const BG     = "#f5f0eb";
 const BORDER = "#e0d8d0";
-const MUTED = "#666666";
+const MUTED  = "#666666";
+const ACCENT = "#1B2A47";
+
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 const ALL_BEATS = [
   "Automotive",
@@ -16,263 +18,141 @@ const ALL_BEATS = [
   "Scandals",
   "Crime",
   "Explainers",
-  "Society",
-  "Global",
-  "War",
 ];
 
-interface MobileSideMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onTabChange: (tab: string) => void;
+interface Props {
+  isOpen:       boolean;
+  onClose:      () => void;
+  onTabChange:  (tab: string) => void;
   onBeatSelect?: (beat: string) => void;
 }
 
-export default function MobileSideMenu({
-  isOpen,
-  onClose,
-  onTabChange,
-  onBeatSelect,
-}: MobileSideMenuProps) {
+export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSelect }: Props) {
   const { user, logout } = useAuth();
-  const router = useRouter();
   const [beatsOpen, setBeatsOpen] = useState(false);
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const navigateBeat = (beat: string) => {
     if (onBeatSelect) onBeatSelect(beat);
     onClose();
   };
 
-  const menuItemStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    fontFamily: "'Inter', sans-serif",
-    fontSize: "1.05rem",
-    fontWeight: 500,
-    color: BLACK,
-    padding: "12px 0",
-    cursor: "pointer",
-    background: "none",
-    border: "none",
-    width: "100%",
-    textAlign: "left",
-    borderBottom: "none",
+  const itemStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    fontFamily: "'Inter', sans-serif", fontSize: "1rem", fontWeight: 400, color: BLACK,
+    padding: "11px 0", cursor: "pointer", background: "none", border: "none",
+    width: "100%", textAlign: "left",
   };
 
   return (
     <>
-      {/* Dim overlay */}
-      <div
-        onClick={onClose}
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.35)",
-          zIndex: 199,
-          opacity: isOpen ? 1 : 0,
-          visibility: isOpen ? "visible" : "hidden",
-          transition: "opacity 0.25s ease, visibility 0.25s ease",
-        }}
-      />
+      {/* Overlay */}
+      <div onClick={onClose} style={{
+        position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.35)", zIndex: 199,
+        opacity: isOpen ? 1 : 0, visibility: isOpen ? "visible" : "hidden",
+        transition: "opacity 0.25s ease, visibility 0.25s ease",
+      }} />
 
-      {/* Side panel — slides from left */}
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: isOpen ? 0 : "-280px",
-          width: "62%",
-          maxWidth: 260,
-          height: "100vh",
-          backgroundColor: BG,
-          zIndex: 200,
-          boxShadow: "4px 0 24px rgba(0,0,0,0.15)",
-          transition: "left 0.26s ease",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      {/* Panel */}
+      <div style={{
+        position: "fixed", top: 0, left: isOpen ? 0 : "-280px",
+        width: "62%", maxWidth: 260, height: "100vh",
+        backgroundColor: BG, zIndex: 200,
+        boxShadow: "4px 0 24px rgba(0,0,0,0.15)", transition: "left 0.26s ease",
+        display: "flex", flexDirection: "column",
+      }}>
         {/* Header row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "20px 20px 16px",
-          }}
-        >
-          {/* Hamburger (closes menu) — lines are red in menu */}
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-              padding: 0,
-            }}
-          >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "20px 20px 16px" }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", gap: 4, padding: 0 }}>
             <span style={{ display: "block", width: 18, height: 1.5, backgroundColor: RED, borderRadius: 1 }} />
             <span style={{ display: "block", width: 18, height: 1.5, backgroundColor: RED, borderRadius: 1 }} />
             <span style={{ display: "block", width: 18, height: 1.5, backgroundColor: RED, borderRadius: 1 }} />
           </button>
-          <span
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              color: RED,
-            }}
-          >
-            Menu
-          </span>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "1.1rem", color: RED }}>Menu</span>
         </div>
 
-        {/* Menu items */}
+        {/* Scrollable items */}
         <div style={{ flex: 1, padding: "0 20px", overflowY: "auto" }}>
-          {/* Beats — expandable */}
+          {/* Beats */}
           <div>
-            <button
-              onClick={() => setBeatsOpen(o => !o)}
-              style={menuItemStyle}
-            >
+            <button onClick={() => setBeatsOpen(o => !o)} style={itemStyle}>
               <span>Beats</span>
-              {/* Chevron: right when closed, down when open */}
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={MUTED}
-                strokeWidth="2"
-                style={{
-                  transform: beatsOpen ? "rotate(90deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s",
-                }}
-              >
-                <polyline points="9 18 15 12 9 6" />
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2"
+                style={{ transform: beatsOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
-
             {beatsOpen && (
               <div style={{ paddingLeft: 12, paddingBottom: 8 }}>
                 {ALL_BEATS.map(beat => (
-                  <button
-                    key={beat}
-                    onClick={() => navigateBeat(beat)}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "0.85rem",
-                      color: MUTED,
-                      padding: "6px 0",
-                      textAlign: "left",
-                    }}
-                  >
-                    {beat}
-                  </button>
+                  <button key={beat} onClick={() => navigateBeat(beat)} style={{
+                    display: "block", width: "100%", background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: MUTED, padding: "5px 0", textAlign: "left",
+                  }}>{beat}</button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Saved */}
-          <a
-            href="/saved"
-            onClick={onClose}
-            style={{
-              ...menuItemStyle,
-              textDecoration: "none",
-              display: "flex",
-            }}
-          >
-            Saved
-          </a>
-
-          {/* My Subscriptions */}
-          <a
-            href="/subscriptions"
-            onClick={onClose}
-            style={{
-              ...menuItemStyle,
-              textDecoration: "none",
-              display: "flex",
-            }}
-          >
-            My Subscriptions
-          </a>
+          <a href="/saved" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>Saved</a>
+          <a href="/subscriptions" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>My Subscriptions</a>
         </div>
 
-        {/* Auth area */}
-        <div
-          style={{
-            padding: "16px 20px 28px",
-            borderTop: `1px solid ${BORDER}`,
-          }}
-        >
+        {/* Bottom: user + admin button + signout */}
+        <div style={{ padding: "14px 20px 28px", borderTop: `1px solid ${BORDER}` }}>
           {user ? (
-            <button
-              onClick={() => {
-                logout();
-                onClose();
-              }}
-              style={{
-                width: "100%",
-                padding: "12px 0",
-                borderRadius: 8,
-                border: `1px solid ${BORDER}`,
-                backgroundColor: "transparent",
-                color: "#e05555",
-                fontFamily: "'Inter', sans-serif",
-                fontSize: "0.9rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Sign out
-            </button>
+            <>
+              {/* User info */}
+              <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${BORDER}` }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 500, color: BLACK, marginBottom: 1 }}>
+                  {user.displayName?.trim() || "User"}
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", color: MUTED }}>{user.email}</div>
+              </div>
+
+              {/* Admin Panel — styled button, not just a link text */}
+              {isAdmin && (
+                <button
+                  onClick={() => { window.location.href = "/admin"; onClose(); }}
+                  style={{
+                    width: "100%", padding: "10px 0", marginBottom: 10,
+                    borderRadius: 7, border: `1.5px solid ${ACCENT}`,
+                    backgroundColor: "transparent", color: ACCENT,
+                    fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
+                    fontWeight: 600, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  Admin Panel
+                </button>
+              )}
+
+              {/* Sign out */}
+              <button onClick={() => { logout(); onClose(); }} style={{
+                width: "100%", padding: "10px 0", borderRadius: 7,
+                border: "1px solid rgba(224,85,85,0.4)",
+                backgroundColor: "transparent", color: "#e05555",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 500, cursor: "pointer",
+              }}>
+                Sign out
+              </button>
+            </>
           ) : (
             <>
-              <a
-                href="/login"
-                onClick={onClose}
-                style={{
-                  display: "block",
-                  textAlign: "center",
-                  padding: "12px 0",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "0.95rem",
-                  color: BLACK,
-                  textDecoration: "none",
-                  marginBottom: 10,
-                  borderBottom: `1px solid ${BORDER}`,
-                }}
-              >
-                Log In
-              </a>
-              <a
-                href="/login"
-                onClick={onClose}
-                style={{
-                  display: "block",
-                  textAlign: "center",
-                  padding: "12px 0",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "0.95rem",
-                  color: RED,
-                  textDecoration: "none",
-                  fontWeight: 500,
-                }}
-              >
-                Create an Account
-              </a>
+              <a href="/login" onClick={onClose} style={{
+                display: "block", textAlign: "center", padding: "11px 0",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.92rem", color: BLACK,
+                textDecoration: "none", marginBottom: 8, borderBottom: `1px solid ${BORDER}`,
+              }}>Log In</a>
+              <a href="/login" onClick={onClose} style={{
+                display: "block", textAlign: "center", padding: "11px 0",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.92rem", color: RED,
+                textDecoration: "none", fontWeight: 500,
+              }}>Create an Account</a>
             </>
           )}
         </div>

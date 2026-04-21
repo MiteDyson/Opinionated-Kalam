@@ -29,7 +29,6 @@ type Tab     = "all" | "article" | "short" | "podcast";
 type SortKey = "title" | "views" | "likes" | "createdAt";
 type SortDir = "asc" | "desc";
 
-// ── Icons ────────────────────────────────────────────────────────
 const IconEye = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>);
 const IconEdit = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
 const IconTrash = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>);
@@ -40,7 +39,6 @@ const IconSort = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="no
 const IconChevUp = () => (<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15"/></svg>);
 const IconChevDown = () => (<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>);
 
-// ── Skeleton row ─────────────────────────────────────────────────
 const SkeletonRow = () => (
   <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "14px 20px", alignItems: "center", borderBottom: "1px solid #f5f5f3" }}>
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -71,7 +69,7 @@ const typeBadge = (type: string) => {
   return <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", backgroundColor: s.bg, color: s.color, fontFamily: "'Inter', sans-serif" }}>{type}</span>;
 };
 
-export default function DesktopAdminDashboard() {
+export default function AdminDashboard() {
   const { logout } = useAuth();
   const router     = useRouter();
 
@@ -178,56 +176,46 @@ export default function DesktopAdminDashboard() {
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
       `}</style>
 
-      {/* ── Thicker top bar (64px) ── */}
-      <div style={{ backgroundColor: TEXT, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 0 rgba(255,255,255,0.06)" }}>
-        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.25rem", color: "white", letterSpacing: "-0.3px" }}>
+      {/* ── Top bar ── */}
+      <div style={{ backgroundColor: TEXT, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 0 rgba(255,255,255,0.06)" }}>
+        {/* Left: title */}
+        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.15rem", color: "white", letterSpacing: "-0.3px", flexShrink: 0 }}>
           Admin
         </span>
+
+        {/* Right: actions */}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {/* View site — navigates internally, no new tab */}
-          <button
-            onClick={() => router.push("/")}
-            title="View Site"
-            style={{ ...iconBtn("#aaa", "transparent", "rgba(255,255,255,0.14)") }}
+          {/* View site */}
+          <button onClick={() => router.push("/")} title="View Site" style={{ ...iconBtn("#aaa", "transparent", "rgba(255,255,255,0.14)") }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "white"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#aaa"; }}
-          >
-            <IconHome />
-          </button>
+          ><IconHome /></button>
 
           {/* Create */}
-          <button
-            onClick={() => router.push("/admin/create")}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 36, borderRadius: 8, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}
-          >
+          <button onClick={() => router.push("/admin/create")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 14px", height: 34, borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
             <IconPlus /> Create
           </button>
 
           {/* Sign out */}
-          <button
-            onClick={logout}
-            title="Sign out"
-            style={{ ...iconBtn("#888", "transparent", "rgba(255,255,255,0.14)") }}
+          <button onClick={logout} title="Sign out" style={{ ...iconBtn("#888", "transparent", "rgba(255,255,255,0.14)") }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "#e05555"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#888"; }}
-          >
-            <IconSignOut />
-          </button>
+          ><IconSignOut /></button>
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
 
-        {/* Stats — skeleton or real */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 28 }}>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
           {loading
             ? [0,1,2,3].map(i => <SkeletonStat key={i} />)
             : STATS.map(s => (
-              <div key={s.label} style={{ backgroundColor: "white", borderRadius: 10, padding: "18px 20px", border: "1px solid #CFCBC3" }}>
-                <div style={{ fontSize: "1.3rem", marginBottom: 6 }}>{s.icon}</div>
-                <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.8rem", color: TEXT, lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: MUTED, marginTop: 3 }}>{s.label}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", color: "#3a7a3e", marginTop: 4 }}>{s.sub}</div>
+              <div key={s.label} style={{ backgroundColor: "white", borderRadius: 10, padding: "16px 18px", border: "1px solid #CFCBC3" }}>
+                <div style={{ fontSize: "1.2rem", marginBottom: 5 }}>{s.icon}</div>
+                <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.7rem", color: TEXT, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: MUTED, marginTop: 3 }}>{s.label}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: "#3a7a3e", marginTop: 4 }}>{s.sub}</div>
               </div>
             ))
           }
@@ -240,26 +228,20 @@ export default function DesktopAdminDashboard() {
           </div>
         )}
 
-        {/* ── Content table ── */}
-        <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", overflow: "hidden" }}>
+        {/* Content table */}
+        <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", overflowX: "auto" }}>
 
           {/* Table toolbar */}
-          <div style={{ padding: "13px 20px", borderBottom: "1px solid #CFCBC3", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ padding: "12px 18px", borderBottom: "1px solid #CFCBC3", display: "flex", alignItems: "center", gap: 10 }}>
 
-            {/* Sort icon button — leftmost */}
+            {/* Sort */}
             <div ref={sortRef} style={{ position: "relative" }}>
-              <button
-                onClick={() => setSortOpen(o => !o)}
-                title={`Sort by ${sortLabels[sortKey]} (${sortDir === "asc" ? "ascending" : "descending"})`}
-                style={{
-                  ...iconBtn(sortOpen ? ACCENT : MUTED, sortOpen ? "rgba(27,42,71,0.07)" : "transparent", sortOpen ? "rgba(27,42,71,0.3)" : "#CFCBC3"),
-                  position: "relative",
-                }}
+              <button onClick={() => setSortOpen(o => !o)} title={`Sort by ${sortLabels[sortKey]} (${sortDir === "asc" ? "ascending" : "descending"})`}
+                style={{ ...iconBtn(sortOpen ? ACCENT : MUTED, sortOpen ? "rgba(27,42,71,0.07)" : "transparent", sortOpen ? "rgba(27,42,71,0.3)" : "#CFCBC3"), position: "relative" }}
                 onMouseEnter={(e) => { if (!sortOpen) { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; } }}
                 onMouseLeave={(e) => { if (!sortOpen) { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; } }}
               >
                 <IconSort />
-                {/* tiny indicator dot showing active sort */}
                 <span style={{ position: "absolute", top: 4, right: 4, width: 5, height: 5, borderRadius: "50%", backgroundColor: ACCENT, opacity: sortKey !== "createdAt" || sortDir !== "desc" ? 1 : 0, transition: "opacity 0.2s" }} />
               </button>
 
@@ -292,10 +274,7 @@ export default function DesktopAdminDashboard() {
             </div>
 
             <div style={{ width: 1, height: 18, backgroundColor: "#e0ddd8" }} />
-
-            <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.86rem", color: TEXT, flex: 1 }}>
-              Content
-            </span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.86rem", color: TEXT, flex: 1 }}>Content</span>
 
             {/* Tab filters */}
             <div style={{ display: "flex", gap: 4 }}>
@@ -307,14 +286,14 @@ export default function DesktopAdminDashboard() {
             </div>
           </div>
 
-          {/* Column labels */}
+          {/* Column headers */}
           <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "8px 20px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7" }}>
             {["Title","Type","Status","Views","Likes","Actions"].map(h => (
               <span key={h} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.66rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
             ))}
           </div>
 
-          {/* Rows — skeleton or real */}
+          {/* Rows */}
           {loading ? (
             <>{[0,1,2,3,4].map(i => <SkeletonRow key={i} />)}</>
           ) : filtered.length === 0 ? (
@@ -334,18 +313,14 @@ export default function DesktopAdminDashboard() {
                   {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                 </div>
               </div>
-
               <div>{typeBadge(a.type)}</div>
-
               <div>
                 <button onClick={() => handleToggleStatus(a)} style={{ padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.67rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", textTransform: "capitalize", backgroundColor: a.status === "published" ? "rgba(76,140,80,0.12)" : "rgba(217,178,0,0.12)", color: a.status === "published" ? "#3a7a3e" : "#8a6a00" }}>
                   {a.status}
                 </button>
               </div>
-
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{(a.views ?? 0).toLocaleString()}</div>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
-
               <div style={{ display: "flex", gap: 5 }}>
                 <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
                   style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
