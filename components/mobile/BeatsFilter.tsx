@@ -8,7 +8,7 @@ const ALL_BEATS = [
   "Geo Politics",
   "Scandals",
   "Crime",
-  "Explainers",
+  "Society",
 ];
 
 const BLACK = "#111111";

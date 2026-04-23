@@ -116,7 +116,7 @@ const MobileHeroArticle = memo(function MobileHeroArticle({ a }: { a: Article })
 
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: MUTED, display: "flex", gap: 8, marginBottom: 8 }}>
           {date && <span>{date}</span>}
-          <span>{a.author}</span>
+          <span>.{a.author}</span>
         </div>
 
         {a.excerpt && (

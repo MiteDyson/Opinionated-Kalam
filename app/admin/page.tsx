@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -39,17 +38,32 @@ const IconSort = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="no
 const IconChevUp = () => (<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15"/></svg>);
 const IconChevDown = () => (<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>);
 
-const SkeletonRow = () => (
-  <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "14px 20px", alignItems: "center", borderBottom: "1px solid #f5f5f3" }}>
-    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-      <div style={{ height: 13, width: "65%", borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
-      <div style={{ height: 10, width: "35%", borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite 0.1s" }} />
+function SkeletonRow({ isMobile }: { isMobile: boolean }) {
+  if (isMobile) {
+    return (
+      <div style={{ padding: "14px 16px", borderBottom: "1px solid #f5f5f3" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}>
+            <div style={{ height: 13, width: "70%", borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
+            <div style={{ height: 10, width: "40%", borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite 0.1s" }} />
+          </div>
+          <div style={{ height: 28, width: 80, borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite 0.2s" }} />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "14px 20px", alignItems: "center", borderBottom: "1px solid #f5f5f3" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ height: 13, width: "65%", borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite" }} />
+        <div style={{ height: 10, width: "35%", borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite 0.1s" }} />
+      </div>
+      {[60, 70, 36, 28, 84].map((w, i) => (
+        <div key={i} style={{ height: 20, width: w, borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: `shimmer 1.4s infinite ${i * 0.06}s` }} />
+      ))}
     </div>
-    {[60, 70, 36, 28, 84].map((w, i) => (
-      <div key={i} style={{ height: 20, width: w, borderRadius: 4, background: "linear-gradient(90deg,#e8e5e0 25%,#f0eeea 50%,#e8e5e0 75%)", backgroundSize: "200% 100%", animation: `shimmer 1.4s infinite ${i * 0.06}s` }} />
-    ))}
-  </div>
-);
+  );
+}
 
 const SkeletonStat = () => (
   <div style={{ backgroundColor: "white", borderRadius: 10, padding: "18px 20px", border: "1px solid #CFCBC3" }}>
@@ -66,8 +80,84 @@ const typeBadge = (type: string) => {
     podcast: { bg: "rgba(76,140,80,0.12)",  color: "#3a7a3e" },
   };
   const s = map[type] ?? map.article;
-  return <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", backgroundColor: s.bg, color: s.color, fontFamily: "'Inter', sans-serif" }}>{type}</span>;
+  return <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.05em", backgroundColor: s.bg, color: s.color, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap" as const }}>{type}</span>;
 };
+
+// Mobile card row for an article
+function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, router }: {
+  a: Article; i: number; filtered: Article[];
+  onToggleStatus: (a: Article) => void;
+  onDelete: (slug: string, title: string) => void;
+  deleting: string | null;
+  router: ReturnType<typeof useRouter>;
+}) {
+  return (
+    <div
+      key={a._id}
+      style={{
+        padding: "12px 16px",
+        borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f3" : "none",
+        transition: "background 0.1s",
+      }}
+      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
+      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
+    >
+      {/* Row 1: title + action buttons */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {a.title}
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED, marginTop: 3 }}>
+            {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </div>
+        </div>
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+          <Link
+            href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`}
+            title="Edit"
+            style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+          ><IconEdit /></Link>
+          <Link
+            href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`}
+            title="View"
+            style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+          ><IconEye /></Link>
+          <button
+            onClick={() => onDelete(a.slug, a.title)}
+            disabled={deleting === a.slug}
+            title="Delete"
+            style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: deleting === a.slug ? 0.4 : 1 }}
+          ><IconTrash /></button>
+        </div>
+      </div>
+      {/* Row 2: type badge + status toggle + stats */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {typeBadge(a.type)}
+        <button
+          onClick={() => onToggleStatus(a)}
+          style={{
+            padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.67rem", fontWeight: 600,
+            fontFamily: "'Inter', sans-serif", border: "none", textTransform: "capitalize" as const,
+            backgroundColor: a.status === "published" ? "rgba(76,140,80,0.12)" : "rgba(217,178,0,0.12)",
+            color: a.status === "published" ? "#3a7a3e" : "#8a6a00",
+          }}
+        >
+          {a.status}
+        </button>
+        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: MUTED, display: "flex", alignItems: "center", gap: 3 }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          {(a.views ?? 0).toLocaleString()}
+        </span>
+        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: MUTED, display: "flex", alignItems: "center", gap: 3 }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill={a.likes > 0 ? TERRA : "none"} stroke={TERRA} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          {a.likes ?? 0}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { logout } = useAuth();
@@ -81,7 +171,16 @@ export default function AdminDashboard() {
   const [sortKey, setSortKey]   = useState<SortKey>("createdAt");
   const [sortDir, setSortDir]   = useState<SortDir>("desc");
   const [sortOpen, setSortOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -174,29 +273,30 @@ export default function AdminDashboard() {
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        .tab-scroll { overflow-x: auto; scrollbar-width: none; }
+        .tab-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* ── Top bar ── */}
-      <div style={{ backgroundColor: TEXT, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 0 rgba(255,255,255,0.06)" }}>
-        {/* Left: title */}
+      <div style={{
+        backgroundColor: TEXT, padding: isMobile ? "0 14px" : "0 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        height: 56, position: "sticky", top: 0, zIndex: 10,
+        boxShadow: "0 1px 0 rgba(255,255,255,0.06)",
+      }}>
         <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.15rem", color: "white", letterSpacing: "-0.3px", flexShrink: 0 }}>
           Admin
         </span>
-
-        {/* Right: actions */}
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {/* View site */}
-          <button onClick={() => router.push("/")} title="View Site" style={{ ...iconBtn("#aaa", "transparent", "rgba(255,255,255,0.14)") }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "white"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#aaa"; }}
-          ><IconHome /></button>
-
-          {/* Create */}
-          <button onClick={() => router.push("/admin/create")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 14px", height: 34, borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
-            <IconPlus /> Create
+        <div style={{ display: "flex", gap: isMobile ? 6 : 8, alignItems: "center" }}>
+          {!isMobile && (
+            <button onClick={() => router.push("/")} title="View Site" style={{ ...iconBtn("#aaa", "transparent", "rgba(255,255,255,0.14)") }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "white"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#aaa"; }}
+            ><IconHome /></button>
+          )}
+          <button onClick={() => router.push("/admin/create")} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile ? "0 10px" : "0 14px", height: 34, borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
+            <IconPlus /> {!isMobile && "Create"}
           </button>
-
-          {/* Sign out */}
           <button onClick={logout} title="Sign out" style={{ ...iconBtn("#888", "transparent", "rgba(255,255,255,0.14)") }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "#e05555"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#888"; }}
@@ -204,16 +304,16 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "16px 12px" : "24px" }}>
 
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+        {/* Stats — 2-col on mobile, 4-col on desktop */}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
           {loading
             ? [0,1,2,3].map(i => <SkeletonStat key={i} />)
             : STATS.map(s => (
-              <div key={s.label} style={{ backgroundColor: "white", borderRadius: 10, padding: "16px 18px", border: "1px solid #CFCBC3" }}>
-                <div style={{ fontSize: "1.2rem", marginBottom: 5 }}>{s.icon}</div>
-                <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.7rem", color: TEXT, lineHeight: 1 }}>{s.value}</div>
+              <div key={s.label} style={{ backgroundColor: "white", borderRadius: 10, padding: isMobile ? "12px 14px" : "16px 18px", border: "1px solid #CFCBC3" }}>
+                <div style={{ fontSize: isMobile ? "1rem" : "1.2rem", marginBottom: 4 }}>{s.icon}</div>
+                <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? "1.4rem" : "1.7rem", color: TEXT, lineHeight: 1 }}>{s.value}</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: MUTED, marginTop: 3 }}>{s.label}</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: "#3a7a3e", marginTop: 4 }}>{s.sub}</div>
               </div>
@@ -228,15 +328,15 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Content table */}
-        <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", overflowX: "auto" }}>
+        {/* Content table / card list */}
+        <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", overflow: "hidden" }}>
 
           {/* Table toolbar */}
-          <div style={{ padding: "12px 18px", borderBottom: "1px solid #CFCBC3", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderBottom: "1px solid #CFCBC3", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>
 
             {/* Sort */}
-            <div ref={sortRef} style={{ position: "relative" }}>
-              <button onClick={() => setSortOpen(o => !o)} title={`Sort by ${sortLabels[sortKey]} (${sortDir === "asc" ? "ascending" : "descending"})`}
+            <div ref={sortRef} style={{ position: "relative", flexShrink: 0 }}>
+              <button onClick={() => setSortOpen(o => !o)} title={`Sort by ${sortLabels[sortKey]}`}
                 style={{ ...iconBtn(sortOpen ? ACCENT : MUTED, sortOpen ? "rgba(27,42,71,0.07)" : "transparent", sortOpen ? "rgba(27,42,71,0.3)" : "#CFCBC3"), position: "relative" }}
                 onMouseEnter={(e) => { if (!sortOpen) { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; } }}
                 onMouseLeave={(e) => { if (!sortOpen) { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; } }}
@@ -273,75 +373,101 @@ export default function AdminDashboard() {
               )}
             </div>
 
-            <div style={{ width: 1, height: 18, backgroundColor: "#e0ddd8" }} />
-            <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.86rem", color: TEXT, flex: 1 }}>Content</span>
+            <div style={{ width: 1, height: 18, backgroundColor: "#e0ddd8", flexShrink: 0 }} />
+            <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: isMobile ? "0.82rem" : "0.86rem", color: TEXT, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Content</span>
 
-            {/* Tab filters */}
-            <div style={{ display: "flex", gap: 4 }}>
+            {/* Tab filters — scrollable strip on mobile */}
+            <div className="tab-scroll" style={{ display: "flex", gap: 4, flexShrink: 0, maxWidth: isMobile ? "50vw" : "none" }}>
               {(["all","article","short","podcast"] as Tab[]).map(t => (
-                <button key={t} onClick={() => setTab(t)} style={{ padding: "5px 11px", borderRadius: 6, cursor: "pointer", border: `1px solid ${tab === t ? ACCENT : "#CFCBC3"}`, backgroundColor: tab === t ? ACCENT : "transparent", color: tab === t ? "white" : MUTED, fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", textTransform: "capitalize", transition: "all 0.13s" }}>
+                <button key={t} onClick={() => setTab(t)} style={{
+                  padding: isMobile ? "4px 8px" : "5px 11px",
+                  borderRadius: 6, cursor: "pointer",
+                  border: `1px solid ${tab === t ? ACCENT : "#CFCBC3"}`,
+                  backgroundColor: tab === t ? ACCENT : "transparent",
+                  color: tab === t ? "white" : MUTED,
+                  fontSize: isMobile ? "0.68rem" : "0.72rem",
+                  fontFamily: "'Inter', sans-serif", textTransform: "capitalize" as const,
+                  transition: "all 0.13s", whiteSpace: "nowrap" as const, flexShrink: 0,
+                }}>
                   {t}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Column headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "8px 20px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7" }}>
-            {["Title","Type","Status","Views","Likes","Actions"].map(h => (
-              <span key={h} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.66rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
-            ))}
-          </div>
+          {/* ── DESKTOP: column headers + grid rows ── */}
+          {!isMobile && (
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "8px 20px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7" }}>
+              {["Title","Type","Status","Views","Likes","Actions"].map(h => (
+                <span key={h} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.66rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
+              ))}
+            </div>
+          )}
 
           {/* Rows */}
           {loading ? (
-            <>{[0,1,2,3,4].map(i => <SkeletonRow key={i} />)}</>
+            <>{[0,1,2,3,4].map(i => <SkeletonRow key={i} isMobile={isMobile} />)}</>
           ) : filtered.length === 0 ? (
             <div style={{ padding: "40px 20px", textAlign: "center", color: MUTED, fontFamily: "'Inter', sans-serif", fontSize: "0.85rem" }}>
               No content yet.{" "}
               <button onClick={() => router.push("/admin/create")} style={{ color: ACCENT, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>Create something →</button>
             </div>
-          ) : filtered.map((a, i) => (
-            <div key={a._id}
-              style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "12px 20px", alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f3" : "none", transition: "background 0.1s" }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
-            >
-              <div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>{a.title}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED, marginTop: 2 }}>
-                  {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          ) : isMobile ? (
+            // ── MOBILE: card rows ──
+            filtered.map((a, i) => (
+              <MobileArticleRow
+                key={a._id}
+                a={a} i={i} filtered={filtered}
+                onToggleStatus={handleToggleStatus}
+                onDelete={handleDelete}
+                deleting={deleting}
+                router={router}
+              />
+            ))
+          ) : (
+            // ── DESKTOP: grid rows ──
+            filtered.map((a, i) => (
+              <div key={a._id}
+                style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "12px 20px", alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f3" : "none", transition: "background 0.1s" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
+              >
+                <div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>{a.title}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED, marginTop: 2 }}>
+                    {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
+                </div>
+                <div>{typeBadge(a.type)}</div>
+                <div>
+                  <button onClick={() => handleToggleStatus(a)} style={{ padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.67rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", textTransform: "capitalize", backgroundColor: a.status === "published" ? "rgba(76,140,80,0.12)" : "rgba(217,178,0,0.12)", color: a.status === "published" ? "#3a7a3e" : "#8a6a00" }}>
+                    {a.status}
+                  </button>
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{(a.views ?? 0).toLocaleString()}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
+                <div style={{ display: "flex", gap: 5 }}>
+                  <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
+                    style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(27,42,71,0.08)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                  ><IconEdit /></Link>
+
+                  <Link href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`} title="View"
+                    style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; }}
+                  ><IconEye /></Link>
+
+                  <button onClick={() => handleDelete(a.slug, a.title)} disabled={deleting === a.slug} title="Delete"
+                    style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.13s", opacity: deleting === a.slug ? 0.4 : 1 }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(192,57,43,0.06)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                  ><IconTrash /></button>
                 </div>
               </div>
-              <div>{typeBadge(a.type)}</div>
-              <div>
-                <button onClick={() => handleToggleStatus(a)} style={{ padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.67rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", textTransform: "capitalize", backgroundColor: a.status === "published" ? "rgba(76,140,80,0.12)" : "rgba(217,178,0,0.12)", color: a.status === "published" ? "#3a7a3e" : "#8a6a00" }}>
-                  {a.status}
-                </button>
-              </div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{(a.views ?? 0).toLocaleString()}</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
-              <div style={{ display: "flex", gap: 5 }}>
-                <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
-                  style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(27,42,71,0.08)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-                ><IconEdit /></Link>
-
-                <Link href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`} title="View"
-                  style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; }}
-                ><IconEye /></Link>
-
-                <button onClick={() => handleDelete(a.slug, a.title)} disabled={deleting === a.slug} title="Delete"
-                  style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.13s", opacity: deleting === a.slug ? 0.4 : 1 }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(192,57,43,0.06)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-                ><IconTrash /></button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
