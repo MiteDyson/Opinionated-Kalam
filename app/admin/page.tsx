@@ -288,12 +288,10 @@ export default function AdminDashboard() {
           Admin
         </span>
         <div style={{ display: "flex", gap: isMobile ? 6 : 8, alignItems: "center" }}>
-          {!isMobile && (
-            <button onClick={() => router.push("/")} title="View Site" style={{ ...iconBtn("#aaa", "transparent", "rgba(255,255,255,0.14)") }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "white"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#aaa"; }}
-            ><IconHome /></button>
-          )}
+          <button onClick={() => router.push("/")} title="View Site" style={{ ...iconBtn("#aaa", "transparent", "rgba(255,255,255,0.14)") }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLElement).style.color = "white"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "#aaa"; }}
+          ><IconHome /></button>
           <button onClick={() => router.push("/admin/create")} style={{ display: "flex", alignItems: "center", gap: 6, padding: isMobile ? "0 10px" : "0 14px", height: 34, borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
             <IconPlus /> {!isMobile && "Create"}
           </button>

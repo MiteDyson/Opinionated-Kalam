@@ -247,7 +247,7 @@ function ArticleCard({ a }: { a: Article }) {
           </div>
         )}
         <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
-        <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date} · {a.author}</div>
+        <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date}{date && a.author ? " . " : ""}{a.author}</div>
         <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
         <div style={{ alignSelf: "flex-start" }}><ReadPill /></div>
       </article>
@@ -410,7 +410,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
                   )}
                   <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", lineHeight: 1.1, marginBottom: 8, color: "var(--text-main)" }}>{hero.title}</h2>
                   <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginBottom: 10 }}>
-                    {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""} &nbsp;·&nbsp; {hero.author}
+                    {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""} {hero.publishedAt && hero.author ? " . " : ""}{hero.author}
                     {hero.readTime && <> &nbsp;·&nbsp; {hero.readTime} minute read </>}
                   </div>
                   <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", marginBottom: 16 }}>{hero.excerpt}</p>
