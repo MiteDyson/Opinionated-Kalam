@@ -19,59 +19,6 @@ interface Props {
   onBeatSelect?: (beat: string) => void;
 }
 
-const ALL_BEATS = [
-  "Automotive",
-  "Business",
-  "Environment",
-  "Geo Politics",
-  "Governance",
-  "Law & Order",
-  "Media",
-  "Society",
-  "Technology",
-];
-
-function BeatsSection({ onBeatSelect, onClose }: { onBeatSelect?: (beat: string) => void, onClose: () => void }) {
-  const [open, setOpen] = useState(false);
-
-  const itemStyle: React.CSSProperties = {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    fontFamily: "'Inter', sans-serif", fontSize: "1rem", fontWeight: 400, color: BLACK,
-    padding: "11px 0", cursor: "pointer", background: "none", border: "none",
-    width: "100%", textAlign: "left",
-  };
-
-  return (
-    <div>
-      <button onClick={() => setOpen(!open)} style={itemStyle}>
-        Beats
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-      {open && (
-        <div style={{ paddingLeft: 12, marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-          {ALL_BEATS.map(beat => (
-            <button
-              key={beat}
-              onClick={() => {
-                if (onBeatSelect) onBeatSelect(beat);
-                onClose();
-              }}
-              style={{
-                background: "none", border: "none", textAlign: "left", cursor: "pointer",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", color: MUTED,
-                padding: "4px 0"
-              }}
-            >
-              {beat}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSelect }: Props) {
   const { user, logout } = useAuth();
@@ -114,8 +61,6 @@ export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSel
 
         {/* Scrollable items */}
         <div style={{ flex: 1, padding: "0 20px", overflowY: "auto" }}>
-          {/* Beats dropdown */}
-          <BeatsSection onBeatSelect={onBeatSelect} onClose={onClose} />
 
           <a href="/saved" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>Saved Content</a>
           <a href="/subscriptions" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>My Subscriptions</a>

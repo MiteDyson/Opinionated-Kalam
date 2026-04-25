@@ -26,12 +26,13 @@ const WPM    = 200;
 
 const FONT_SIZES    = ["12","14","16","18","20","24","28","32","36","48"];
 const FONT_FAMILIES = [
-  { label: "Default (Inter)",  value: "Inter, sans-serif" },
+  { label: "Default (Radley)", value: "'Radley', serif" },
   { label: "DM Serif",         value: "'DM Serif Display', serif" },
   { label: "Georgia",          value: "Georgia, serif" },
   { label: "Times New Roman",  value: "'Times New Roman', serif" },
   { label: "Courier New",      value: "'Courier New', monospace" },
   { label: "Arial",            value: "Arial, sans-serif" },
+  { label: "Inter",            value: "Inter, sans-serif" },
 ];
 const TEXT_COLORS      = ["#1A1A1A","#D92323","#1B2A47","#D38B88","#555555","#3a7a3e","#8a6a00","#ffffff"];
 const HIGHLIGHT_COLORS = ["#FFF3CD","#D1ECF1","#D4EDDA","#F8D7DA","#E2E3E5","#FFE0F0","#D5D2CB"];
@@ -117,7 +118,7 @@ export default function NewArticlePage() {
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
   const [fontSize, setFontSize]   = useState("16");
-  const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
+  const [fontFamily, setFontFamily] = useState("'Radley', serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
 
   const editor = useEditor({
@@ -232,7 +233,7 @@ export default function NewArticlePage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
-        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Inter', sans-serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Radley', serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
         .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: ${TEXT}; margin: 1.4em 0 0.5em; }
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; color: ${TEXT}; margin: 1.2em 0 0.4em; }
@@ -249,25 +250,25 @@ export default function NewArticlePage() {
       `}</style>
 
       {/* Top bar — 64px */}
-      <div style={{ backgroundColor: TEXT, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64, position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button onClick={() => router.push("/admin/create")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: "0.83rem", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ backgroundColor: TEXT, padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10, gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
+          <button onClick={() => router.push("/admin/create")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
-          <span style={{ color: "rgba(255,255,255,0.12)" }}>|</span>
-          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.1rem", color: "white" }}>New Article</span>
+          <span style={{ color: "rgba(255,255,255,0.12)", flexShrink: 0 }}>|</span>
+          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>New Article</span>
           {wordCount > 0 && (
-            <span style={{ fontSize: "0.72rem", color: "#888", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(255,255,255,0.07)", padding: "2px 9px", borderRadius: 20 }}>
+            <span style={{ fontSize: "0.68rem", color: "#888", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(255,255,255,0.07)", padding: "2px 7px", borderRadius: 20, whiteSpace: "nowrap", flexShrink: 0, display: "none" }}>
               {wordCount.toLocaleString()} words · {readTime} min read
             </span>
           )}
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {error && <span style={{ color: "#ff6b6b", fontSize: "0.78rem", fontFamily: "'Inter', sans-serif", maxWidth: 240 }}>{error}</span>}
-          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "0 16px", height: 34, borderRadius: 7, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>Save Draft</button>
-          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "0 18px", height: 34, borderRadius: 7, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}>
-            {saving ? "Publishing…" : "Publish"}
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+          {error && <span style={{ color: "#ff6b6b", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{error}</span>}
+          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "0 10px", height: 30, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>Draft</button>
+          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "0 12px", height: 30, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0 }}>
+            {saving ? "…" : "Publish"}
           </button>
         </div>
       </div>

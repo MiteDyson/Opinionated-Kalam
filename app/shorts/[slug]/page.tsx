@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -100,15 +100,11 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
           {dateStr && <span>{dateStr}</span>}
           <span style={{ opacity: 0.4 }}>·</span>
           <span>{short.author}</span>
-          {views > 0 && (
-            <>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                {views.toLocaleString()}
-              </span>
-            </>
-          )}
+          <span style={{ opacity: 0.4 }}>·</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            {(views || 0).toLocaleString()}
+          </span>
         </div>
 
         {/* Tags */}
@@ -161,6 +157,7 @@ export default function ShortPage() {
   const [views,    setViews]    = useState(0);
   const [copied,   setCopied]   = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const viewTracked = useRef(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -175,6 +172,19 @@ export default function ShortPage() {
       } catch { setNotFound(true); } finally { setLoading(false); }
     })();
   }, [slug]);
+
+  useEffect(() => {
+    if (!short || viewTracked.current || !user) return;
+    viewTracked.current = true;
+    (async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) return;
+        const res = await fetch(`/api/articles/${slug}/view`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) { const d = await res.json(); setViews(d.views); }
+      } catch { /* silent */ }
+    })();
+  }, [short, user, slug]);
 
   const handleLike = async () => {
     if (!user) { router.push("/login"); return; }
@@ -226,6 +236,7 @@ export default function ShortPage() {
   }
 
   // Desktop (original)
+  const dateStr = short.publishedAt ? new Date(short.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
   const actionBtn = (active: boolean): React.CSSProperties => ({
     display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 8, cursor: "pointer",
     fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", fontWeight: 600,
@@ -260,7 +271,19 @@ export default function ShortPage() {
             {short.tags?.map(t => <span key={t} style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: "0.65rem", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT }}>{t}</span>)}
             {short.readTime && <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>⚡ {short.readTime}</span>}
           </div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.6rem", lineHeight: 1.1, marginBottom: 32, color: "var(--text-main)" }}>{short.title}</h1>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.6rem", lineHeight: 1.1, marginBottom: 16, color: "var(--text-main)" }}>{short.title}</h1>
+          
+          <div style={{ display: "flex", gap: 16, color: "var(--text-muted)", fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", marginBottom: 32, flexWrap: "wrap", alignItems: "center" }}>
+            {dateStr && <span>{dateStr}</span>}
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>{short.author}</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              {(views || 0).toLocaleString()}
+            </span>
+          </div>
+
           <div className="short-body" dangerouslySetInnerHTML={{ __html: short.content }} />
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 40, paddingTop: 28, borderTop: "1px solid var(--border)" }}>
             <button style={actionBtn(liked)} onClick={handleLike} disabled={actionLoading}>

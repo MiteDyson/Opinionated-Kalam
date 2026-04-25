@@ -27,12 +27,13 @@ const WPM    = 200;
 
 const FONT_SIZES    = ["12","14","16","18","20","24","28","32","36","48"];
 const FONT_FAMILIES = [
-  { label: "Default (Inter)",  value: "Inter, sans-serif" },
+  { label: "Default (Radley)", value: "'Radley', serif" },
   { label: "DM Serif",         value: "'DM Serif Display', serif" },
   { label: "Georgia",          value: "Georgia, serif" },
   { label: "Times New Roman",  value: "'Times New Roman', serif" },
   { label: "Courier New",      value: "'Courier New', monospace" },
   { label: "Arial",            value: "Arial, sans-serif" },
+  { label: "Inter",            value: "Inter, sans-serif" },
 ];
 const TEXT_COLORS      = ["#1A1A1A","#D92323","#1B2A47","#D38B88","#555555","#3a7a3e","#8a6a00","#ffffff"];
 const HIGHLIGHT_COLORS = ["#FFF3CD","#D1ECF1","#D4EDDA","#F8D7DA","#E2E3E5","#FFE0F0","#D5D2CB"];
@@ -215,7 +216,7 @@ export default function EditArticlePage() {
   const [imgUploading, setImgUploading] = useState(false);
   const [articleStatus, setArticleStatus] = useState("draft");
   const [fontSize, setFontSize]   = useState("16");
-  const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
+  const [fontFamily, setFontFamily] = useState("'Radley', serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -381,7 +382,7 @@ export default function EditArticlePage() {
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .tiptap-editor { min-height: ${isMobile ? "320px" : "480px"}; padding: ${isMobile ? "16px" : "24px 28px"}; font-family: 'Inter', sans-serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor { min-height: ${isMobile ? "320px" : "480px"}; padding: ${isMobile ? "16px" : "24px 28px"}; font-family: 'Radley', serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
         .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; margin: 1.4em 0 0.5em; }
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; margin: 1.2em 0 0.4em; }

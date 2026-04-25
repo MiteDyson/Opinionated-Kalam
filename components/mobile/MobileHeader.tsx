@@ -181,10 +181,10 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
         {/* ── Nav row 1: hamburger | centred tabs | search ─ */}
         <div style={{ display: "flex", alignItems: "center", padding: "0 12px", borderBottom: "none" }}>
           {/* Hamburger */}
-          <button onClick={onMenuOpen} style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 8px 10px 0", display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
-            <span style={{ display: "block", width: 18, height: 1.5, backgroundColor: BLACK, borderRadius: 1 }} />
-            <span style={{ display: "block", width: 18, height: 1.5, backgroundColor: BLACK, borderRadius: 1 }} />
-            <span style={{ display: "block", width: 18, height: 1.5, backgroundColor: BLACK, borderRadius: 1 }} />
+          <button onClick={onMenuOpen} style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 8px 10px 0", display: "flex", flexDirection: "column", gap: 5, flexShrink: 0 }}>
+            <span style={{ display: "block", width: 22, height: 2, backgroundColor: BLACK, borderRadius: 2 }} />
+            <span style={{ display: "block", width: 22, height: 2, backgroundColor: BLACK, borderRadius: 2 }} />
+            <span style={{ display: "block", width: 22, height: 2, backgroundColor: BLACK, borderRadius: 2 }} />
           </button>
 
           {/* Row-1 tabs — centred */}
