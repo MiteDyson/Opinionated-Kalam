@@ -7,7 +7,7 @@ import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
-import { useMobile } from "@/hooks/useMobile";
+import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
 
@@ -16,7 +16,7 @@ const MobilePage = dynamic(() => import("@/components/mobile/MobilePage"), { ssr
 
 const ACCENT   = "#1B2A47";
 const RED      = "#D92323";
-const ALL_TAGS = ["Automotive", "Geo Politics", "Scandals", "Crime", "Explainers", "Society", "Global", "War"];
+const ALL_TAGS = ["Automotive", "Business", "Environment", "Geo Politics", "Governance", "Law & Order", "Media", "Society", "Technology"];
 
 const POD_BG       = "#e1dfe8";
 const SHORT_BG     = "#fae8c1";
@@ -103,17 +103,12 @@ function BeatsDropdown({ selectedBeat, onBeatChange }: { selectedBeat: string | 
         }}>
           <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-          <div style={{ padding: "8px 14px 6px", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid #f0f0ee" }}>
-            Filter by Beat
-          </div>
-
-          {selectedBeat && (
-            <button onClick={() => { onBeatChange(null); setOpen(false); }}
-              style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "9px 14px", background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "#888", borderBottom: "1px solid #f0f0ee", textAlign: "left" }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Clear filter
-            </button>
-          )}
+          {/* Reset to Default — always visible */}
+          <button onClick={() => { onBeatChange(null); setOpen(false); }}
+            style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "9px 14px", background: "none", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", fontWeight: 600, color: selectedBeat ? ACCENT : "#aaa", borderBottom: "1px solid #f0f0ee", textAlign: "left" }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Reset to Default
+          </button>
 
           {ALL_TAGS.map((tag, i) => (
             <button key={tag} onClick={() => { onBeatChange(tag); setOpen(false); }}
@@ -191,7 +186,7 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
 
   return (
     <Link href={`/podcasts/${p.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ backgroundColor: POD_BG, border: "1px solid rgba(27,42,71,0.1)", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <article style={{ backgroundColor: "transparent", border: "1px solid rgba(27,42,71,0.1)", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "10px 10px 0" }}>
           {p.coverImage ? <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }} />
             : <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: "2rem" }}>🎙</span></div>}
@@ -220,7 +215,7 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
 function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
   return (
     <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ backgroundColor: SHORT_BG, border: "1px solid rgba(211,139,136,0.2)", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer", transition: "transform 0.18s, box-shadow 0.18s" }}
+      <article style={{ backgroundColor: "transparent", border: "1px solid rgba(211,139,136,0.2)", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer", transition: "transform 0.18s, box-shadow 0.18s" }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
         <div style={{ padding: "10px 10px 0" }}>
@@ -495,7 +490,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
 
 // ── Root page — detects mobile and routes ─────────────────────
 export default function HomePage() {
-  const isMobile = useMobile();
+  const [isMobile, mobileReady] = useMobileReady();
   const [activeTab, setActiveTab] = useState("home");
   const [menuOpen, setMenuOpen]   = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
@@ -512,6 +507,11 @@ export default function HomePage() {
     const tab = params.get("tab");
     if (tab) setActiveTab(tab);
   }, []);
+
+  // Don't render anything until mobile detection is ready (prevents flash)
+  if (!mobileReady) {
+    return <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)" }} />;
+  }
 
   // Render mobile layout if on mobile device
   if (isMobile) {

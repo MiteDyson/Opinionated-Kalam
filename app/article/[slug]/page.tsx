@@ -10,6 +10,7 @@ import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
+import MobileFooter from "@/components/mobile/MobileFooter";
 
 const ACCENT  = "#1B2A47";
 const RED     = "#c0392b";
@@ -34,10 +35,15 @@ function DesktopTag({ label }: { label: string }) {
   );
 }
 
-// ── Mobile tag — desktop-style coloured text, no fill ─────────
+// ── Mobile tag — chip/pill style ─────────
 function MobileTag({ label }: { label: string }) {
   return (
-    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 800, color: RED, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+    <span style={{
+      display: "inline-block", padding: "2px 8px", borderRadius: 999,
+      fontFamily: "'Inter', sans-serif", fontSize: "0.55rem", fontWeight: 700,
+      color: RED, textTransform: "uppercase", letterSpacing: "0.05em",
+      backgroundColor: "rgba(192,57,43,0.1)", whiteSpace: "nowrap",
+    }}>
       {label}
     </span>
   );
@@ -155,7 +161,20 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
       <MobileSideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={() => router.push("/")} onBeatSelect={() => router.push("/")} />
       <MobileHeader activeTab="" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMenuOpen(true)} />
 
-      <div style={{ padding: "12px 16px 60px" }}>
+      <div style={{ padding: "12px 16px 0" }}>
+        {/* Back button */}
+        <button onClick={() => router.back()} style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
+          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
+          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+      </div>
+
+      <div style={{ padding: "0 16px 60px" }}>
         {/* Cover image */}
         {article.coverImage && (
           <img src={article.coverImage} alt={article.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 6, display: "block", marginBottom: 14 }} />
@@ -211,6 +230,8 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
           </button>
         </div>
       </div>
+
+      <MobileFooter />
     </div>
   );
 }

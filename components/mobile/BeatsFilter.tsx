@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect } from "react";
 
-// Only original beats — no society, global, war
 const ALL_BEATS = [
   "Automotive",
+  "Business",
+  "Environment",
   "Geo Politics",
-  "Scandals",
-  "Crime",
+  "Governance",
+  "Law & Order",
+  "Media",
   "Society",
+  "Technology",
 ];
 
 const BLACK = "#111111";
@@ -55,12 +58,24 @@ export default function BeatsFilter({ selectedBeat, onBeatChange }: BeatsFilterP
           minWidth: 140, overflow: "hidden", animation: "fadeDown 0.12s ease",
         }}>
           <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}`}</style>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", padding: "8px 14px 6px", borderBottom: `1px solid #f5f0eb`, display: "flex", alignItems: "center", justifyContent: "space-between", color: BLACK }}>
-            <span>Filter</span>
-            {selectedBeat && (
-              <button onClick={() => { onBeatChange(null); setOpen(false); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.7rem", color: "#888", padding: 0 }}>✕</button>
-            )}
-          </div>
+
+          {/* Reset to Default button — always visible */}
+          <button
+            onClick={() => { onBeatChange(null); setOpen(false); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 5, width: "100%",
+              padding: "8px 16px", background: "none", border: "none",
+              borderBottom: `1px solid #f5f0eb`, cursor: "pointer",
+              fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", fontWeight: 600,
+              color: selectedBeat ? BLACK : "#aaa", textAlign: "left",
+            }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+            Reset to Default
+          </button>
+
           <ul style={{ listStyle: "none", padding: "6px 0", margin: 0 }}>
             {ALL_BEATS.map(beat => (
               <li key={beat} onClick={() => { onBeatChange(beat); setOpen(false); }}

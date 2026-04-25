@@ -1,147 +1,77 @@
 "use client";
 
-const DARK_FOOTER = "#1a1a1a";
+import Link from "next/link";
+
+const BLACK = "#111111";
+const MUTED = "#666666";
+const BG    = "#f5f0eb";
+const BORDER = "#e0d8d0";
+
+const FOOTER_COLS = [
+  {
+    title: "Learn",
+    links: [
+      { label: "About Us", href: "#" },
+      { label: "Our Team", href: "#" },
+    ],
+  },
+  {
+    title: "Connect",
+    links: [
+      { label: "Contact Us", href: "#" },
+      { label: "Grievance Redressal", href: "#" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Privacy Policy", href: "/privacy" },
+    ],
+  },
+];
 
 export default function MobileFooter() {
   return (
-    <footer
-      style={{
-        backgroundColor: DARK_FOOTER,
-        padding: "28px 24px 20px",
-        marginTop: 40,
-      }}
-    >
-      {/* Two-column grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <h4
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              fontSize: "0.75rem",
-              color: "white",
-              marginBottom: 10,
-              letterSpacing: "0.05em",
-            }}
-          >
-            Learn
-          </h4>
-          <a
-            href="#"
-            style={{
-              display: "block",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "0.72rem",
-              color: "#aaa",
-              textDecoration: "none",
-              marginBottom: 6,
-            }}
-          >
-            About Us
-          </a>
-          <a
-            href="#"
-            style={{
-              display: "block",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "0.72rem",
-              color: "#aaa",
-              textDecoration: "none",
-              marginBottom: 6,
-            }}
-          >
-            Contact Us
-          </a>
-        </div>
-
-        <div style={{ textAlign: "center" }}>
-          <h4
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              fontSize: "0.75rem",
-              color: "white",
-              marginBottom: 10,
-              letterSpacing: "0.05em",
-            }}
-          >
-            Legal
-          </h4>
-          <a
-            href="/terms"
-            style={{
-              display: "block",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "0.72rem",
-              color: "#aaa",
-              textDecoration: "none",
-              marginBottom: 6,
-            }}
-          >
-            Terms of Service
-          </a>
-          <a
-            href="/privacy"
-            style={{
-              display: "block",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "0.72rem",
-              color: "#aaa",
-              textDecoration: "none",
-              marginBottom: 6,
-            }}
-          >
-            Privacy Policy
-          </a>
-          <a
-            href="#"
-            style={{
-              display: "block",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "0.72rem",
-              color: "#aaa",
-              textDecoration: "none",
-            }}
-          >
-            Grievance Redressal
-          </a>
-        </div>
+    <footer style={{ backgroundColor: "#151515", color: "#F8F8F8", padding: "36px 20px 28px", marginTop: 32 }}>
+      {/* Three columns */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 32 }}>
+        {FOOTER_COLS.map(col => (
+          <div key={col.title} style={{ flex: 1, textAlign: "center" }}>
+            <h4 style={{
+              fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.78rem",
+              marginBottom: 12, color: "white", letterSpacing: "0.03em",
+            }}>
+              {col.title}
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+              {col.links.map(link => (
+                <li key={link.label}>
+                  <Link href={link.href} style={{
+                    color: "#888", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif",
+                    textDecoration: "none",
+                  }}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
 
-      {/* Brand name centred */}
-      <div
-        style={{
-          textAlign: "center",
-          paddingTop: 20,
-          borderTop: "1px solid #333",
-        }}
-      >
-        <h2
-          style={{
-            fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
-            fontSize: "1.6rem",
-            fontWeight: 900,
-            color: "white",
-            marginBottom: 8,
-            letterSpacing: "-0.01em",
-          }}
-        >
+      {/* Brand */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{
+          fontFamily: "'DM Serif Display', serif",
+          fontSize: "1.5rem", color: "white", lineHeight: 1,
+        }}>
           Opinionated Kalam
-        </h2>
-        <p
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontSize: "0.65rem",
-            color: "#666",
-          }}
-        >
+        </div>
+        <p style={{
+          color: "#555", fontSize: "0.65rem", marginTop: 10,
+          fontFamily: "'Inter', sans-serif",
+        }}>
           © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
         </p>
       </div>

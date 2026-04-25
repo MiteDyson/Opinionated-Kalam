@@ -43,16 +43,21 @@ const SectionHeader = memo(function SectionHeader({ label, onClick }: { label: s
   );
 });
 
-// ── Tag chip — desktop style: small, coloured text, no bg fill ─
+// ── Tag chip — small pill/chip style with background ─
 function Tag({ label }: { label: string }) {
   return (
     <span style={{
+      display: "inline-block",
+      padding: "1px 6px",
+      borderRadius: 999,
       fontFamily: "'Inter', sans-serif",
-      fontSize: "0.6rem",
-      fontWeight: 800,
+      fontSize: "0.48rem",
+      fontWeight: 700,
       color: RED,
       textTransform: "uppercase",
-      letterSpacing: "0.06em",
+      letterSpacing: "0.04em",
+      backgroundColor: "rgba(192,57,43,0.1)",
+      whiteSpace: "nowrap",
     }}>
       {label}
     </span>
@@ -66,7 +71,7 @@ function ReadPill({ label = "Read" }: { label?: string }) {
       display: "inline-block",
       padding: "2px 9px",
       borderRadius: 999,
-      fontSize: "0.62rem",
+      fontSize: "0.58rem",
       fontWeight: 700,
       fontFamily: "'Inter', sans-serif",
       backgroundColor: "rgba(211,139,136,0.18)",
@@ -114,13 +119,12 @@ const MobileHeroArticle = memo(function MobileHeroArticle({ a }: { a: Article })
           {a.title}
         </h3>
 
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: MUTED, display: "flex", gap: 8, marginBottom: 8 }}>
-          {date && <span>{date}</span>}
-          <span>.{a.author}</span>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: MUTED, marginBottom: 8 }}>
+          {date}{date && a.author ? " · " : ""}{a.author}
         </div>
 
         {a.excerpt && (
-          <p style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: "0.8rem", color: MUTED, lineHeight: 1.55, margin: "0 0 10px" }}>
+          <p style={{ fontFamily: "'Radley', serif", fontSize: "0.88rem", color: MUTED, lineHeight: 1.6, margin: "0 0 10px" }}>
             {a.excerpt.slice(0, 130)}{a.excerpt.length > 130 ? "..." : ""}
           </p>
         )}
@@ -275,13 +279,23 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
     setProgress(ratio * 100);
   }, []);
 
+
+
   return (
     <Link href={`/podcasts/${p.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
       <div style={{
-        backgroundColor: CARD_BG,
-        border: `1.5px solid ${BLACK}`,   /* thick black stroke */
+        backgroundColor: "transparent",
+        border: `1.5px solid ${BLACK}`,
         borderRadius: 6, padding: 12, marginBottom: 10,
+        position: "relative",
       }}>
+        {/* Maximize arrow — top right */}
+        <div style={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2" strokeLinecap="round">
+            <polyline points="15 3 21 3 21 9"/><line x1="21" y1="3" x2="14" y2="10"/>
+          </svg>
+        </div>
+
         {/* Top row: image + info */}
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: isPlaying ? 10 : 0 }}>
           {p.coverImage
@@ -289,13 +303,11 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
             : <div style={{ width: 72, height: 72, backgroundColor: "#2a2a2a", borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem" }}>🎙</div>
           }
           <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Tags top-left */}
             {showTag && p.tags?.length > 0 && (
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 4 }}>
                 {p.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
               </div>
             )}
-            {/* Normal weight title */}
             <h4 style={{
               fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
               fontSize: "0.88rem", fontWeight: 400,
@@ -304,7 +316,6 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
             } as any}>
               {p.title}
             </h4>
-            {/* Duration shown when NOT playing, play btn bottom-right */}
             {!isPlaying && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.62rem", color: MUTED }}>{totalDur}</span>
@@ -319,7 +330,6 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
         {/* Player controls — shown when playing */}
         {isPlaying && (
           <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "center" }}>
-            {/* Row 1: skip-10 / play-pause / skip+10 */}
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
               <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", color: MUTED, display: "flex", flexDirection: "column", alignItems: "center", gap: 1, padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.6rem" }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
@@ -333,16 +343,16 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
                 10
               </button>
             </div>
-            {/* Row 2: seek bar */}
             <div ref={seekRef} onClick={handleSeek} style={{ width: "100%", height: 3, backgroundColor: BORDER, borderRadius: 2, cursor: "pointer", position: "relative", overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${progress}%`, backgroundColor: BLACK, borderRadius: 2, transition: "width 0.25s linear" }} />
             </div>
-            {/* Row 3: time */}
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.62rem", color: MUTED, fontVariantNumeric: "tabular-nums" }}>
               {current} / {totalDur}
             </div>
           </div>
         )}
+
+
       </div>
     </Link>
   );
@@ -353,8 +363,8 @@ const MobileShortCard = memo(function MobileShortCard({ s }: { s: Article }) {
   return (
     <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
       <article style={{
-        backgroundColor: CARD_BG,
-        border: `1.5px solid ${BLACK}`,   /* thick black stroke */
+        backgroundColor: "transparent",
+        border: `1.5px solid ${BLACK}`,
         borderRadius: 6, padding: 10,
         display: "flex", flexDirection: "column", minHeight: 105,
       }}>
@@ -367,7 +377,7 @@ const MobileShortCard = memo(function MobileShortCard({ s }: { s: Article }) {
         {/* Normal weight title */}
         <h4 style={{
           fontFamily: "'Inter', sans-serif",
-          fontSize: "0.76rem", fontWeight: 500,   /* medium, not bold */
+          fontSize: "0.76rem", fontWeight: 500,
           color: BLACK, lineHeight: 1.35,
           margin: "0 0 auto", paddingBottom: 8,
           display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",

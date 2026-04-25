@@ -10,7 +10,14 @@ export default function Footer() {
               title: "Learn",
               links: [
                 { label: "About Us", href: "#" },
+                { label: "Our Team", href: "#" },
+              ],
+            },
+            {
+              title: "Connect",
+              links: [
                 { label: "Contact Us", href: "#" },
+                { label: "Grievance Redressal", href: "#" },
               ],
             },
             {
@@ -18,7 +25,6 @@ export default function Footer() {
               links: [
                 { label: "Terms of Service", href: "/terms" },
                 { label: "Privacy Policy", href: "/privacy" },
-                { label: "Sitemap", href: "#" },
               ],
             },
           ].map((col) => (

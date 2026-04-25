@@ -7,6 +7,7 @@ import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
+import MobileFooter from "@/components/mobile/MobileFooter";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -192,18 +193,36 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
       <MobileSideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={(t) => router.push(`/?tab=${t}`)} onBeatSelect={() => router.push("/")} />
       <MobileHeader activeTab="" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMenuOpen(true)} />
 
-      <div style={{ padding: "12px 16px 60px" }}>
+      <div style={{ padding: "12px 16px 0" }}>
+        {/* Back button */}
+        <button onClick={() => router.back()} style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
+          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
+          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12,
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+      </div>
+
+      <div style={{ padding: "0 16px 60px" }}>
         {/* Cover image */}
         {podcast.coverImage
-          ? <img src={podcast.coverImage} alt={podcast.title} style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", borderRadius: 10, display: "block", marginBottom: 16, boxShadow: "0 8px 28px rgba(0,0,0,0.15)" }} />
-          : <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: "#2a2a2a", borderRadius: 10, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "3rem" }}>🎙</div>
+          ? <img src={podcast.coverImage} alt={podcast.title} style={{ width: "60%", maxWidth: 220, aspectRatio: "1/1", objectFit: "cover", borderRadius: 10, display: "block", margin: "0 auto 16px", boxShadow: "0 8px 28px rgba(0,0,0,0.15)" }} />
+          : <div style={{ width: "60%", maxWidth: 220, aspectRatio: "1/1", backgroundColor: "#2a2a2a", borderRadius: 10, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "3rem" }}>🎙</div>
         }
 
         {/* Tags */}
         {podcast.tags?.length > 0 && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
             {podcast.tags.map(t => (
-              <span key={t} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", fontWeight: 800, color: RED, textTransform: "uppercase", letterSpacing: "0.06em" }}>{t}</span>
+              <span key={t} style={{
+                display: "inline-block", padding: "2px 8px", borderRadius: 999,
+                fontFamily: "'Inter', sans-serif", fontSize: "0.55rem", fontWeight: 700,
+                color: RED, textTransform: "uppercase", letterSpacing: "0.05em",
+                backgroundColor: "rgba(217,35,35,0.1)", whiteSpace: "nowrap",
+              }}>{t}</span>
             ))}
             {podcast.episode && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", fontWeight: 600, color: MUTED, padding: "1px 7px", borderRadius: 4, backgroundColor: "rgba(0,0,0,0.06)" }}>{podcast.episode}</span>}
           </div>
@@ -272,10 +291,12 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
         {podcast.excerpt && (
           <div style={{ marginTop: 28 }}>
             <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.2rem", color: BLACK, marginBottom: 10, fontWeight: 400 }}>Episode Notes</h2>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", lineHeight: 1.7, color: MUTED }}>{podcast.excerpt}</p>
+            <p style={{ fontFamily: "'Radley', serif", fontSize: "0.95rem", lineHeight: 1.7, color: MUTED }}>{podcast.excerpt}</p>
           </div>
         )}
       </div>
+
+      <MobileFooter />
     </div>
   );
 }
@@ -429,7 +450,7 @@ export default function PodcastPage() {
           <button style={actionBtn(saved)} onClick={handleSave} disabled={actionLoading}><svg width="16" height="16" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>{saved ? "Saved" : "Save"}</button>
           <button style={actionBtn(copied)} onClick={handleShare}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>{copied ? "Link Copied!" : "Share"}</button>
         </div>
-        {podcast.excerpt && <div style={{ marginTop: 36 }}><h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", color: "var(--text-main)", marginBottom: 14, fontWeight: 400 }}>Episode Notes</h2><p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", lineHeight: 1.75, color: "var(--text-muted)" }}>{podcast.excerpt}</p></div>}
+        {podcast.excerpt && <div style={{ marginTop: 36 }}><h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", color: "var(--text-main)", marginBottom: 14, fontWeight: 400 }}>Episode Notes</h2><p style={{ fontFamily: "'Radley', serif", fontSize: "1rem", lineHeight: 1.75, color: "var(--text-muted)" }}>{podcast.excerpt}</p></div>}
       </div>
       <Footer />
     </>

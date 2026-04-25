@@ -39,7 +39,7 @@ export default function SideMenu({ isOpen, onClose, onTabChange }: SideMenuProps
           <a href="/saved" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "block" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = ACCENT)}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-main)")}
-          >Saved</a>
+          >Saved Content</a>
 
           <a href="/subscriptions" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "block" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = ACCENT)}

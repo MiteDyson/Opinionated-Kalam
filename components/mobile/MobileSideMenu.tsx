@@ -3,40 +3,26 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
-const RED    = "#c0392b";
-const BLACK  = "#111111";
-const BG     = "#f5f0eb";
+const RED = "#c0392b";
+const BLACK = "#111111";
+const BG = "#f5f0eb";
 const BORDER = "#e0d8d0";
-const MUTED  = "#666666";
+const MUTED = "#666666";
 const ACCENT = "#1B2A47";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
-const ALL_BEATS = [
-  "Automotive",
-  "Geo Politics",
-  "Scandals",
-  "Crime",
-  "Society",
-];
-
 interface Props {
-  isOpen:       boolean;
-  onClose:      () => void;
-  onTabChange:  (tab: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onTabChange: (tab: string) => void;
   onBeatSelect?: (beat: string) => void;
 }
 
 export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSelect }: Props) {
   const { user, logout } = useAuth();
-  const [beatsOpen, setBeatsOpen] = useState(false);
 
   const isAdmin = user?.email === ADMIN_EMAIL;
-
-  const navigateBeat = (beat: string) => {
-    if (onBeatSelect) onBeatSelect(beat);
-    onClose();
-  };
 
   const itemStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -74,28 +60,10 @@ export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSel
 
         {/* Scrollable items */}
         <div style={{ flex: 1, padding: "0 20px", overflowY: "auto" }}>
-          {/* Beats */}
-          <div>
-            <button onClick={() => setBeatsOpen(o => !o)} style={itemStyle}>
-              <span>Beats</span>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2"
-                style={{ transform: beatsOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </button>
-            {beatsOpen && (
-              <div style={{ paddingLeft: 12, paddingBottom: 8 }}>
-                {ALL_BEATS.map(beat => (
-                  <button key={beat} onClick={() => navigateBeat(beat)} style={{
-                    display: "block", width: "100%", background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: MUTED, padding: "5px 0", textAlign: "left",
-                  }}>{beat}</button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Beats dropdown */}
+          {/* <BeatsSection onBeatSelect={onBeatSelect} onClose={onClose} /> */}
 
-          <a href="/saved" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>Saved</a>
+          <a href="/saved" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>Saved Content</a>
           <a href="/subscriptions" onClick={onClose} style={{ ...itemStyle, textDecoration: "none", display: "flex" }}>My Subscriptions</a>
         </div>
 
