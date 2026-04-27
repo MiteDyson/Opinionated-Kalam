@@ -379,9 +379,7 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
               title="Open podcast page"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
               </svg>
             </a>
 
@@ -426,47 +424,27 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
 
       {/* ── Playing: skip controls + seek bar + time ── */}
       {isPlaying && (
-        <div style={{ marginTop: 10 }}>
-          {/* Skip + pause row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, marginBottom: 8 }}>
-            <button onClick={(e) => skip(e, -10)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: MUTED,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-                padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.58rem" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3"/>
-              </svg>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", marginTop: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", color: BLACK, display: "flex", alignItems: "center", gap: 6, padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", fontWeight: 500 }}>
+              <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>←</span>
               10
             </button>
-            <button onClick={(e) => { e.stopPropagation(); handleCardClick(); }}
-              style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: BLACK,
-                border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
-                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-              </svg>
+            <button onClick={(e) => { e.stopPropagation(); handleCardClick(); }} style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: BLACK, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
             </button>
-            <button onClick={(e) => skip(e, 10)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: MUTED,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-                padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.58rem" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-.49-3"/>
-              </svg>
+            <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", color: BLACK, display: "flex", alignItems: "center", gap: 6, padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", fontWeight: 500 }}>
               10
+              <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>→</span>
             </button>
           </div>
-
-          {/* Seek bar */}
-          <div ref={seekRef} onClick={handleSeek}
-            style={{ width: "100%", height: 3, backgroundColor: BORDER, borderRadius: 2,
-              cursor: "pointer", position: "relative", overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ height: "100%", width: `${progress}%`, backgroundColor: RED,
-              borderRadius: 2, transition: "width 0.25s linear" }} />
+          
+          <div style={{ width: "85%", padding: "0" }}>
+            <div ref={seekRef} onClick={handleSeek} style={{ width: "100%", height: 3, backgroundColor: "#d9d5ce", borderRadius: 1.5, cursor: "pointer", position: "relative" }}>
+              <div style={{ height: "100%", width: `${progress}%`, backgroundColor: RED, borderRadius: 1.5, transition: "width 0.2s linear" }} />
+            </div>
           </div>
-
-          {/* Time */}
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", color: MUTED,
-            fontVariantNumeric: "tabular-nums", textAlign: "center" }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", color: BLACK, fontVariantNumeric: "tabular-nums" }}>
             {current} / {totalDur}
           </div>
         </div>
@@ -519,37 +497,8 @@ const MobileShortCard = memo(function MobileShortCard({ s }: { s: Article }) {
   );
 });
 
-// ── Sort dropdown ─────────────────────────────────────────────
-type SortOption = "trending" | "mostViews" | "leastViews" | "newest" | "oldest";
-const SORT_LABELS: Record<SortOption, string> = {
-  trending: "Trending", mostViews: "Most Views", leastViews: "Least Views", newest: "Newest", oldest: "Oldest",
-};
+import SortFilter, { type SortOption } from "@/components/mobile/SortFilter";
 
-function SortDropdown({ sortOpt, setSortOpt }: { sortOpt: SortOption; setSortOpt: (d: SortOption) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ position: "relative" }}>
-      <button onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 4, border: `1px solid ${BORDER}`, backgroundColor: WHITE, fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", fontWeight: 400, color: BLACK, cursor: "pointer" }}>
-        Sort <span style={{ fontSize: "0.6rem" }}>‹</span>
-      </button>
-      {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, backgroundColor: WHITE, borderRadius: 6, border: `1px solid ${BORDER}`, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", zIndex: 40, minWidth: 130, overflow: "hidden" }}>
-          {(Object.keys(SORT_LABELS) as SortOption[]).map((opt, i, arr) => (
-            <button key={opt} onClick={() => { setSortOpt(opt); setOpen(false); }} style={{
-              display: "block", width: "100%", padding: "8px 14px", background: "none", border: "none", cursor: "pointer",
-              fontFamily: "'Inter', sans-serif", fontSize: "0.78rem",
-              fontWeight: sortOpt === opt ? 600 : 400, color: sortOpt === opt ? BLACK : MUTED,
-              backgroundColor: sortOpt === opt ? "#f5f0eb" : "transparent",
-              borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : "none", textAlign: "left",
-            }}>
-              {SORT_LABELS[opt]}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────
 // HOME VIEW
@@ -666,7 +615,7 @@ function MobileArticlesView({ articles, loading, onTabChange }: { articles: Arti
         <button onClick={() => onTabChange("home")} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: BLACK, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" }}>← Home</button>
         <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
-          <SortDropdown sortOpt={sortOpt} setSortOpt={setSortOpt} />
+          <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
         </div>
       </div>
 
@@ -736,7 +685,7 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
         <button onClick={() => onTabChange("home")} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: BLACK, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" }}>← Home</button>
         <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
-          <SortDropdown sortOpt={sortOpt} setSortOpt={setSortOpt} />
+          <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
         </div>
       </div>
       {loading

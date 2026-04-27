@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import ImageExt from "@tiptap/extension-image";
+import { uploadToImageKit } from "@/lib/imagekit";
 import { auth } from "@/lib/firebase";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TagSelector from "@/components/admin/TagSelector";
@@ -38,10 +40,12 @@ export default function NewShortPage() {
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
   const [wordCount, setWordCount] = useState(0);
+  const [imgUploading, setImgUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
+      ImageExt.configure({ allowBase64: true }),
       Placeholder.configure({ placeholder: "Keep it short and punchy — facts, timelines, quick explainers…" }),
     ],
     content: "",
@@ -51,6 +55,23 @@ export default function NewShortPage() {
     },
     editorProps: { attributes: { class: "tiptap-editor" } },
   });
+  const addImage = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = "image/*"; input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files ?? []);
+      if (!files.length) return;
+      setImgUploading(true);
+      try {
+        for (const file of files) {
+          const url = await uploadToImageKit(file, "shorts");
+          editor?.commands.setImage({ src: url });
+        }
+      } catch (err: any) { setError("Image upload failed: " + err.message); }
+      finally { setImgUploading(false); }
+    };
+    input.click();
+  }, [editor]);
 
   const readTime = Math.max(1, Math.ceil(wordCount / WPM));
 
@@ -82,6 +103,8 @@ export default function NewShortPage() {
         .tiptap-editor ul, .tiptap-editor ol { padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.2em 0; padding: 8px 16px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; }
         .tiptap-editor strong { font-weight: 700; }
+        .tiptap-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.2rem auto; display: block; cursor: pointer; transition: outline 0.15s; }
+        .tiptap-editor img.ProseMirror-selectednode { outline: 3px solid ${ACCENT}; outline-offset: 2px; }
         .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #bbb; pointer-events: none; float: left; height: 0; }
       `}</style>
 
@@ -145,6 +168,10 @@ export default function NewShortPage() {
               <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbers">1.</TBtn>
               <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()}  active={editor?.isActive("blockquote")}  title="Quote">"</TBtn>
               <TBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Divider">—</TBtn>
+              <TDivider />
+              <TBtn onClick={imgUploading ? () => {} : addImage} active={imgUploading} title={imgUploading ? "Uploading…" : "Add image"}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </TBtn>
               <TDivider />
               <TBtn onClick={() => editor?.chain().focus().undo().run()} title="Undo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></TBtn>
               <TBtn onClick={() => editor?.chain().focus().redo().run()} title="Redo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></TBtn>

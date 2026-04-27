@@ -73,7 +73,7 @@ export async function PATCH(
     const article = await Article.findOneAndUpdate(
       { slug: params.slug },
       { ...body, updatedAt: new Date() },
-      { new: true }
+      { returnDocument: 'after' }
     );
     return NextResponse.json(article);
   } catch (err: any) {

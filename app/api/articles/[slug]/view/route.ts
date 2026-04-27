@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       const updated = await Article.findOneAndUpdate(
         { slug: params.slug },
         { $inc: { views: 1 } },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean() as any;
       currentViews = updated?.views ?? 0;
     } else {

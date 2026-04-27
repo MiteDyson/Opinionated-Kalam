@@ -53,7 +53,7 @@ export async function POST(
       alreadyLiked
         ? { $inc: { likes: -1 }, $pull: { likedBy: uid } }
         : { $inc: { likes: 1 }, $push: { likedBy: uid } },
-      { new: true }
+      { returnDocument: 'after' }
     ).lean() as any;
 
     return NextResponse.json({

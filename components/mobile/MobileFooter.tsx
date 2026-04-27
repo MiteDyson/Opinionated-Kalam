@@ -10,24 +10,24 @@ const BORDER = "#e0d8d0";
 export default function MobileFooter() {
   const COLUMNS = [
     {
-      title: "Learn",
+      title: "Legal",
       links: [
-        { label: "About Us", href: "/?tab=about" },
-        { label: "Our Team", href: "#" },
+        { label: "Terms of Service", href: "/terms" },
+        { label: "Privacy Policy", href: "/privacy" },
       ]
     },
     {
       title: "Connect",
       links: [
-        { label: "Contact Us", href: "#" },
         { label: "Grievance Redressal", href: "/?tab=grievance" },
+        { label: "Contact Us", href: "#" },
       ]
     },
     {
-      title: "Legal",
+      title: "Learn",
       links: [
-        { label: "Terms of Service", href: "/terms" },
-        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Our Team", href: "#" },
+        { label: "About Us", href: "/?tab=about" },
       ]
     }
   ];

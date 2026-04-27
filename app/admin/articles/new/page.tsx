@@ -125,7 +125,7 @@ export default function NewArticlePage() {
     extensions: [
       StarterKit,
       Underline,
-      ImageExt.configure({ inline: false, allowBase64: true }),
+      ImageExt.configure({ allowBase64: true }),
       LinkExt.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: "Start writing your article here…" }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
@@ -163,7 +163,7 @@ export default function NewArticlePage() {
       try {
         for (const file of files) {
           const url = await uploadToImageKit(file, "articles");
-          editor?.chain().focus().setImage({ src: url }).run();
+          editor?.commands.setImage({ src: url });
         }
       } catch (err: any) { setError("Image upload failed: " + err.message); }
       finally { setImgUploading(false); }
@@ -243,7 +243,8 @@ export default function NewArticlePage() {
         .tiptap-editor code { background: rgba(27,42,71,0.08); color: ${ACCENT}; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
         .tiptap-editor pre { background: #1A1A1A; color: #e8e8e8; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
         .tiptap-editor pre code { background: none; color: inherit; padding: 0; }
-        .tiptap-editor img { max-width: 100%; border-radius: 8px; margin: 16px 0; display: block; }
+        .tiptap-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem auto; display: block; cursor: pointer; transition: outline 0.15s; }
+        .tiptap-editor img.ProseMirror-selectednode { outline: 3px solid ${ACCENT}; outline-offset: 2px; }
         .tiptap-editor a { color: ${ACCENT}; text-decoration: underline; }
         .tiptap-editor hr { border: none; border-top: 1px solid #CFCBC3; margin: 2em 0; }
         .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #bbb; pointer-events: none; float: left; height: 0; }

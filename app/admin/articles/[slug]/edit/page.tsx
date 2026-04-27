@@ -224,7 +224,7 @@ export default function EditArticlePage() {
     extensions: [
       StarterKit,
       Underline,
-      ImageExt.configure({ inline: false, allowBase64: true }),
+      ImageExt.configure({ allowBase64: true }),
       LinkExt.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: "Start writing..." }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
@@ -288,7 +288,7 @@ export default function EditArticlePage() {
       try {
         for (const file of files) {
           const url = await uploadToImageKit(file, "articles");
-          editor?.chain().focus().setImage({ src: url }).run();
+          editor?.commands.setImage({ src: url });
         }
       } catch (err: any) { setError("Image upload failed: " + err.message); }
       finally { setImgUploading(false); }
@@ -388,7 +388,8 @@ export default function EditArticlePage() {
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; margin: 1.2em 0 0.4em; }
         .tiptap-editor ul, .tiptap-editor ol { padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; }
-        .tiptap-editor img { max-width: 100%; border-radius: 8px; margin: 16px 0; display: block; }
+        .tiptap-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem auto; display: block; cursor: pointer; transition: outline 0.15s; }
+        .tiptap-editor img.ProseMirror-selectednode { outline: 3px solid ${ACCENT}; outline-offset: 2px; }
         .tiptap-editor a { color: ${ACCENT}; text-decoration: underline; }
         .tiptap-editor code { background: rgba(27,42,71,0.08); color: ${ACCENT}; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
         .tiptap-editor pre { background: #1A1A1A; color: #e8e8e8; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 1em 0; }

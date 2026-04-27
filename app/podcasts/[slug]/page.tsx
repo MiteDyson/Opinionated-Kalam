@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Header from "@/components/layout/Header";
@@ -120,26 +121,25 @@ function DesktopAudioPlayer({ src }: { src: string }) {
   );
 }
 
-// ── Mobile podcast layout ──────────────────────────────────────
-function MobilePodcastView({ podcast, liked, saved, likes, views, copied, actionLoading, onLike, onSave, onShare }: {
+import BeatsFilter from "@/components/mobile/BeatsFilter";
+import SortFilter, { type SortOption } from "@/components/mobile/SortFilter";
+
+// ── Mobile podcast layout (New Maximized View) ───────────────────
+function MobilePodcastView({ podcast, liked, saved, likes, views, copied, actionLoading, onLike, onSave, onShare, morePodcasts }: {
   podcast: Podcast; liked: boolean; saved: boolean; likes: number; views: number;
   copied: boolean; actionLoading: boolean;
   onLike: () => void; onSave: () => void; onShare: () => void;
+  morePodcasts: Podcast[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
+  const [sortOpt, setSortOpt] = useState<SortOption>("newest");
   const router = useRouter();
 
   const dateStr = podcast.publishedAt
     ? new Date(podcast.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
     : "";
-
-  const actionBtn = (active: boolean): React.CSSProperties => ({
-    display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
-    cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600,
-    border: `1.5px solid ${active ? BLACK : BORDER}`,
-    backgroundColor: active ? BLACK : "transparent",
-    color: active ? "white" : BLACK, transition: "all 0.15s",
-  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const seekRef  = useRef<HTMLDivElement>(null);
@@ -193,113 +193,202 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
       <MobileSideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={(t) => router.push(`/?tab=${t}`)} onBeatSelect={() => router.push("/")} />
       <MobileHeader activeTab="" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMenuOpen(true)} />
 
-      <div style={{ padding: "12px 16px 0" }}>
-        {/* Back button */}
-        <button onClick={() => router.back()} style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
-          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
-          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12,
-        }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </button>
-      </div>
+      <div style={{ padding: "12px 16px 20px" }}>
+        {/* Row 1: Back | Filter / Sort */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <button onClick={() => router.push("/")} style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", fontWeight: 400,
+            color: BLACK, background: "white", border: `1px solid ${BORDER}`,
+            borderRadius: 4, padding: "4px 10px", cursor: "pointer",
+          }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="15 18 9 12 15 6"/></svg>
+            Home
+          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
+            <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
+          </div>
+        </div>
 
-      <div style={{ padding: "0 16px 60px" }}>
         {/* Cover image */}
-        {podcast.coverImage
-          ? <img src={podcast.coverImage} alt={podcast.title} style={{ width: "60%", maxWidth: 220, aspectRatio: "1/1", objectFit: "cover", borderRadius: 10, display: "block", margin: "0 auto 16px", boxShadow: "0 8px 28px rgba(0,0,0,0.15)" }} />
-          : <div style={{ width: "60%", maxWidth: 220, aspectRatio: "1/1", backgroundColor: "#2a2a2a", borderRadius: 10, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "3rem" }}>🎙</div>
-        }
+        <div style={{ position: "relative", marginBottom: 0, borderRadius: 12, overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.12)" }}>
+          {podcast.coverImage
+            ? <img src={podcast.coverImage} alt={podcast.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
+            : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "3rem" }}>🎙</div>
+          }
+        </div>
+
+        {/* Description Dropdown (Outside Image) */}
+        <div style={{ 
+          backgroundColor: "#e0d8d0", 
+          padding: "10px 16px",
+          borderRadius: "0 0 12px 12px",
+          transition: "all 0.3s ease",
+          maxHeight: descriptionOpen ? "500px" : "40px",
+          overflow: "hidden",
+          marginBottom: 24,
+          border: `1px solid ${BORDER}`,
+          borderTop: "none"
+        }}>
+          <button 
+            onClick={() => setDescriptionOpen(!descriptionOpen)}
+            style={{ 
+              width: "100%", background: "none", border: "none", 
+              display: "flex", alignItems: "center", gap: 6, 
+              padding: 0, cursor: "pointer",
+              fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: MUTED,
+              height: 20,
+              marginBottom: descriptionOpen ? 10 : 0
+            }}
+          >
+            Description 
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: descriptionOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          {descriptionOpen && (
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", lineHeight: 1.5, color: BLACK, margin: 0, paddingBottom: 10 }}>
+              {podcast.excerpt || "No description available for this episode."}
+            </p>
+          )}
+        </div>
 
         {/* Tags */}
         {podcast.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             {podcast.tags.map(t => (
               <span key={t} style={{
-                display: "inline-block", padding: "2px 8px", borderRadius: 999,
-                fontFamily: "'Inter', sans-serif", fontSize: "0.55rem", fontWeight: 700,
-                color: RED, textTransform: "uppercase", letterSpacing: "0.05em",
-                backgroundColor: "rgba(217,35,35,0.1)", whiteSpace: "nowrap",
+                display: "inline-block", padding: "2px 10px", borderRadius: 999,
+                fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700,
+                color: RED, backgroundColor: "rgba(217,35,35,0.1)",
               }}>{t}</span>
             ))}
-            {podcast.episode && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", fontWeight: 600, color: MUTED, padding: "1px 7px", borderRadius: 4, backgroundColor: "rgba(0,0,0,0.06)" }}>{podcast.episode}</span>}
           </div>
         )}
 
-        {/* Title — normal weight */}
-        <h1 style={{ fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif", fontSize: "1.45rem", fontWeight: 400, lineHeight: 1.2, color: BLACK, margin: "0 0 8px" }}>
+        {/* Title */}
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.2, color: BLACK, margin: "0 0 12px" }}>
           {podcast.title}
         </h1>
 
-        {/* Meta */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: MUTED, marginBottom: 20, alignItems: "center" }}>
-          {dateStr && <span>{dateStr}</span>}
-          {podcast.author && <><span style={{ opacity: 0.4 }}>·</span><span>{podcast.author}</span></>}
-          {podcast.duration && <><span style={{ opacity: 0.4 }}>·</span><span>{podcast.duration}</span></>}
-          {views > 0 && <><span style={{ opacity: 0.4 }}>·</span><span style={{ display: "flex", alignItems: "center", gap: 3 }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>{views.toLocaleString()}</span></>}
+        {/* Meta Info */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: MUTED, marginBottom: 24 }}>
+          <div style={{ display: "flex", gap: 12 }}>
+            <span>{dateStr}</span>
+            <span>{podcast.author}</span>
+          </div>
+          {views > 0 && <span>{views.toLocaleString()} Views</span>}
         </div>
 
-        {/* Inline player */}
-        {podcast.audioUrl ? (
-          <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: "16px 18px", marginBottom: 24 }}>
-            {/* progress bar */}
-            <div ref={seekRef} onClick={handleSeek} style={{ height: 3, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 2, cursor: "pointer", marginBottom: 8, position: "relative", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${progress}%`, backgroundColor: TERRA, borderRadius: 2, transition: "width 0.3s linear" }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", marginBottom: 14 }}>
-              <span>{current}</span><span>{totalDur}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22 }}>
-              <button onClick={() => skip(-15)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontFamily: "'Inter', sans-serif", fontSize: "0.58rem" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>15
-              </button>
-              <button onClick={togglePlay} style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: TERRA, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(211,139,136,0.4)" }}>
-                {playing
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                }
-              </button>
-              <button onClick={() => skip(15)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontFamily: "'Inter', sans-serif", fontSize: "0.58rem" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-.49-3"/></svg>15
-              </button>
-            </div>
+        {/* Interaction Bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 40 }}>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button 
+              onClick={onLike}
+              style={{ 
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", 
+                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: liked ? RED : BLACK,
+                cursor: "pointer"
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={liked ? RED : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              Like
+            </button>
+            <button 
+              onClick={onSave}
+              style={{ 
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", 
+                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: saved ? RED : BLACK,
+                cursor: "pointer"
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={saved ? RED : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              Save
+            </button>
           </div>
-        ) : (
-          <div style={{ padding: "24px", borderRadius: 12, backgroundColor: "#e8e5e0", textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: MUTED, marginBottom: 24 }}>
-            Audio not available yet.
+          <div style={{ display: "flex", gap: 10 }}>
+            <button 
+              onClick={onShare}
+              style={{ 
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", 
+                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: BLACK,
+                cursor: "pointer"
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Share
+            </button>
+            <button 
+              onClick={() => router.push("/")}
+              style={{ 
+                display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36,
+                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white", cursor: "pointer"
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/></svg>
+            </button>
           </div>
-        )}
-
-        {/* Interactions */}
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button style={actionBtn(liked)} onClick={onLike}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            {likes.toLocaleString()} {liked ? "Liked" : "Like"}
-          </button>
-          <button style={actionBtn(saved)} onClick={onSave}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            {saved ? "Saved" : "Save"}
-          </button>
-          <button style={actionBtn(copied)} onClick={onShare}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            {copied ? "Copied!" : "Share"}
-          </button>
         </div>
 
-        {podcast.excerpt && (
-          <div style={{ marginTop: 28 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.2rem", color: BLACK, marginBottom: 10, fontWeight: 400 }}>Episode Notes</h2>
-            <p style={{ fontFamily: "'Radley', serif", fontSize: "0.95rem", lineHeight: 1.7, color: MUTED }}>{podcast.excerpt}</p>
+
+        {/* Audio Player Controls */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, marginBottom: 40 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
+            <button onClick={() => skip(-10)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'Inter', sans-serif", fontSize: "1rem", fontWeight: 500, color: BLACK }}>
+              <span style={{ fontSize: "1.4rem" }}>←</span> 10
+            </button>
+            <button onClick={togglePlay} style={{ width: 64, height: 64, borderRadius: "50%", backgroundColor: BLACK, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {playing 
+                ? <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                : <svg width="24" height="24" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 4 }}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              }
+            </button>
+            <button onClick={() => skip(10)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'Inter', sans-serif", fontSize: "1rem", fontWeight: 500, color: BLACK }}>
+              10 <span style={{ fontSize: "1.4rem" }}>→</span>
+            </button>
           </div>
-        )}
+          
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div ref={seekRef} onClick={handleSeek} style={{ height: 4, backgroundColor: "#d9d5ce", borderRadius: 2, cursor: "pointer", position: "relative" }}>
+              <div style={{ height: "100%", width: `${progress}%`, backgroundColor: RED, borderRadius: 2, transition: "width 0.2s linear" }} />
+            </div>
+            <div style={{ textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: BLACK }}>
+              {current} / {totalDur}
+            </div>
+          </div>
+        </div>
+
+        {/* Listen to more Podcasts */}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", color: MUTED }}>Listen to more Podcasts</span>
+            <span style={{ color: MUTED }}>→</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {morePodcasts.map(p => (
+              <Link key={p._id} href={`/podcasts/${p.slug}`} style={{ textDecoration: "none", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <span style={{ fontSize: "1.2rem", color: BLACK, lineHeight: 1.1 }}>↪</span>
+                <span style={{ 
+                  fontFamily: "'Playfair Display', serif", fontSize: "1.05rem", fontWeight: 700, 
+                  color: BLACK, textDecoration: "underline", textDecorationThickness: "1px", textUnderlineOffset: "3px" 
+                }}>
+                  {p.title}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
 
       <MobileFooter />
     </div>
   );
 }
+
 
 export default function PodcastPage() {
   const router   = useRouter();
@@ -310,6 +399,7 @@ export default function PodcastPage() {
 
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [podcast,  setPodcast]  = useState<Podcast | null>(null);
+  const [morePodcasts, setMorePodcasts] = useState<Podcast[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [liked,    setLiked]    = useState(false);
@@ -325,14 +415,24 @@ export default function PodcastPage() {
     (async () => {
       try {
         const uid = auth.currentUser?.uid ?? "";
+        // Fetch current podcast
         const res = await fetch(`/api/articles/${slug}${uid ? `?uid=${uid}` : ""}`);
         if (!res.ok) { setNotFound(true); return; }
         const d = await res.json();
         setPodcast(d); setLikes(d.likes ?? 0); setViews(d.views ?? 0);
         setLiked(d.isLiked ?? false); setSaved(d.isSaved ?? false);
+
+        // Fetch more podcasts for recommendations
+        const moreRes = await fetch(`/api/articles?type=podcast&limit=4`);
+        if (moreRes.ok) {
+          const moreData = await moreRes.json();
+          // Filter out current podcast
+          setMorePodcasts(moreData.filter((p: Podcast) => p.slug !== slug).slice(0, 3));
+        }
       } catch { setNotFound(true); } finally { setLoading(false); }
     })();
   }, [slug]);
+
 
   useEffect(() => {
     if (!podcast || viewTracked.current || !user) return;
@@ -399,8 +499,21 @@ export default function PodcastPage() {
   if (!podcast) return null;
 
   if (isMobile) {
-    return <MobilePodcastView podcast={podcast} liked={liked} saved={saved} likes={likes} views={views} copied={copied} actionLoading={actionLoading} onLike={handleLike} onSave={handleSave} onShare={handleShare} />;
+    return <MobilePodcastView 
+      podcast={podcast} 
+      liked={liked} 
+      saved={saved} 
+      likes={likes} 
+      views={views} 
+      copied={copied} 
+      actionLoading={actionLoading} 
+      onLike={handleLike} 
+      onSave={handleSave} 
+      onShare={handleShare}
+      morePodcasts={morePodcasts}
+    />;
   }
+
 
   // Desktop (original layout)
   const dateStr = podcast.publishedAt ? new Date(podcast.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
