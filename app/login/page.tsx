@@ -13,7 +13,6 @@ import {
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ;
 const MAX_USERNAME = 15;
 
 type Mode = "login" | "register" | "forgot" | "set-username";
@@ -73,7 +72,7 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function LoginPage() {
   const router   = useRouter();
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
 
   const [mode,         setMode]         = useState<Mode>("login");
   const [username,     setUsername]     = useState("");
@@ -90,17 +89,16 @@ export default function LoginPage() {
 
   // ── Redirect already-logged-in visitors ──────────────────────
   useEffect(() => {
-    if (!user) return;
-    if (justRegistered.current) return; // handled inline in handleEmailAuth
+    if (authLoading || !user) return;
+    if (justRegistered.current) return;
 
-    // Only show set-username screen for *existing* accounts with no displayName
     if (!user.displayName || user.displayName.trim() === "") {
       setMode("set-username");
       return;
     }
 
-    router.replace(user.email === ADMIN_EMAIL ? "/admin" : "/");
-  }, [user, router]);
+    router.replace(isAdmin ? "/admin" : "/");
+  }, [user, isAdmin, authLoading, router]);
 
   const reset = () => { setError(""); setSuccess(""); };
 
@@ -124,8 +122,9 @@ export default function LoginPage() {
         await updateProfile(cred.user, { displayName: username.trim() });
         // Step 3 – flag so useEffect doesn't re-trigger the set-username screen
         justRegistered.current = true;
-        // Step 4 – navigate directly; no second username prompt ever shown
-        router.replace(cred.user.email === ADMIN_EMAIL ? "/admin" : "/");
+        // Step 4 – navigate directly
+        const isAdmin = cred.user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        router.replace(isAdmin ? "/admin" : "/");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         // useEffect handles redirect after login
@@ -189,7 +188,8 @@ export default function LoginPage() {
     try {
       if (auth.currentUser) {
         await updateProfile(auth.currentUser, { displayName: username.trim() });
-        router.replace(auth.currentUser.email === ADMIN_EMAIL ? "/admin" : "/");
+        const isAdmin = auth.currentUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        router.replace(isAdmin ? "/admin" : "/");
       }
     } catch {
       setError("Failed to save username. Please try again.");

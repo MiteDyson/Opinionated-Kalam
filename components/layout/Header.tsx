@@ -6,7 +6,6 @@ import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { Menu, Search, X, User, ChevronDown, LogOut, ChevronRight } from "lucide-react";
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 const ACCENT = "#1B2A47";
 const RED    = "#D92323";
 
@@ -26,7 +25,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderProps) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin, isMainAdmin } = useAuth();
   const [dateStr, setDateStr]           = useState("");
   const [searchOpen, setSearchOpen]     = useState(false);
   const [searchQuery, setSearchQuery]   = useState("");
@@ -35,7 +34,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
   const searchRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
 
-  const isAdmin     = user?.email === ADMIN_EMAIL;
   const hasUsername = !!(user?.displayName?.trim());
   const displayName = hasUsername ? user!.displayName!.trim().slice(0, 15) : "Set name";
 
@@ -80,7 +78,8 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
       )}
 
       <div className="text-center pt-6">
-        <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] block mx-auto">
+        <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] flex items-center justify-center gap-4 mx-auto">
+          <img src="/favicon.svg" alt="Logo" className="w-[clamp(50px,8vw,80px)] h-[clamp(50px,8vw,80px)]" />
           Opinionated Kalam
         </button>
       </div>
@@ -185,7 +184,7 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
                     </a>
                   ))}
 
-                  {isAdmin && (
+                  {isMainAdmin && (
                     <a href="/admin/team" className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#1B2A47] text-[0.85rem] font-sans font-semibold border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
                       <User size={13} />
                       Manage Team

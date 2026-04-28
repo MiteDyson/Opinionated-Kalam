@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Eye, ChevronLeft, Play, Pause, Loader2 } from "lucide-react";
+import { Heart, Bookmark, Share, Eye, ChevronLeft, Play, Pause, Loader2, BookOpen } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -153,7 +153,8 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
         .art-body-m blockquote { border-left: 3px solid #D38B88; padding: 8px 16px; margin: 1.4em 0; background: rgba(211,139,136,0.06); color: #555; font-style: italic; }
         .art-body-m img { max-width: 100%; border-radius: 6px; margin: 16px 0; display: block; }
         .art-body-m a { color: ${ACCENT}; }
-        .art-body-m ul, .art-body-m ol { padding-left: 1.4em; margin: 0.5em 0 1.1em; }
+        .art-body-m ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
+        .art-body-m ol { list-style: decimal; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
         .art-body-m li { margin: 0.35em 0; }
         .art-body-m code { background: rgba(27,42,71,0.08); color: ${ACCENT}; padding: 2px 5px; border-radius: 3px; font-size: 0.88em; }
         .art-body-m hr { border: none; border-top: 1px solid ${BORDER}; margin: 1.8em 0; }
@@ -197,6 +198,15 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
               <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
                 <Eye size={12} />
                 {views.toLocaleString()} {views === 1 ? 'View' : 'Views'}
+              </span>
+            </>
+          )}
+          {article.readTime && (
+            <>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <BookOpen size={12} />
+                {article.readTime} minute read
               </span>
             </>
           )}
@@ -379,6 +389,7 @@ export default function ArticlePage() {
             <span style={{ opacity: 0.4 }}>|</span>
             <span>{article.author}</span>
             {views > 0 && (<><span style={{ opacity: 0.4 }}>|</span><span style={{ display: "flex", alignItems: "center", gap: 4 }}><Eye size={14} />{views.toLocaleString()} {views === 1 ? 'View' : 'Views'}</span></>)}
+            {article.readTime && (<><span style={{ opacity: 0.4 }}>|</span><span style={{ display: "flex", alignItems: "center", gap: 6 }}><BookOpen size={16} />{article.readTime} minute read</span></>)}
           </div>
           {article.coverImage && <img src={article.coverImage} alt={article.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block", marginBottom: 40 }} />}
           {article.audioUrl && <ListenPlayer src={article.audioUrl} readTime={article.readTime} />}

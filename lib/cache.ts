@@ -38,6 +38,8 @@ class ClientCache {
 
 export const clientCache = new ClientCache();
 
+const inFlight = new Map<string, Promise<any>>();
+
 export async function cachedFetch<T>(
   url: string,
   options?: RequestInit,
@@ -45,13 +47,28 @@ export async function cachedFetch<T>(
 ): Promise<T> {
   const cacheKey = `fetch:${url}`;
 
+  // 1. Check if we have a fresh cached version
   const cached = clientCache.get<T>(cacheKey);
   if (cached !== null) return cached;
 
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  const data: T = await res.json();
+  // 2. Check if a request is already in flight for this exact URL
+  if (inFlight.has(cacheKey)) {
+    return inFlight.get(cacheKey) as Promise<T>;
+  }
 
-  clientCache.set(cacheKey, data, ttlMs);
-  return data;
+  // 3. Start a new request and track it
+  const fetchPromise = (async () => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+      const data: T = await res.json();
+      clientCache.set(cacheKey, data, ttlMs);
+      return data;
+    } finally {
+      inFlight.delete(cacheKey);
+    }
+  })();
+
+  inFlight.set(cacheKey, fetchPromise);
+  return fetchPromise as Promise<T>;
 }

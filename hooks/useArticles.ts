@@ -42,13 +42,14 @@ async function fetchType(type: string, uid: string): Promise<Article[]> {
   return promise;
 }
 
-export function useArticles(uid = ""): ArticlesState {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [podcasts, setPodcasts] = useState<Article[]>([]);
-  const [shorts,   setShorts]   = useState<Article[]>([]);
-  const [loading,  setLoading]  = useState(true);
+export function useArticles(uid = "", initialData?: { articles: Article[]; podcasts: Article[]; shorts: Article[]; loading: boolean }): ArticlesState {
+  const [articles, setArticles] = useState<Article[]>(initialData?.articles || []);
+  const [podcasts, setPodcasts] = useState<Article[]>(initialData?.podcasts || []);
+  const [shorts,   setShorts]   = useState<Article[]>(initialData?.shorts || []);
+  const [loading,  setLoading]  = useState(initialData ? initialData.loading : true);
   const [error,    setError]    = useState<string | null>(null);
   const mounted = useRef(true);
+  const initialDataUsed = useRef(!!(initialData?.articles?.length || initialData?.podcasts?.length || initialData?.shorts?.length));
 
   const load = useCallback(async (showLoading = true) => {
     const batchUrl = `/api/articles?all=true&status=published${uid ? `&uid=${uid}` : ""}`;
@@ -95,7 +96,12 @@ export function useArticles(uid = ""): ArticlesState {
 
   useEffect(() => {
     mounted.current = true;
-    load();
+    if (!initialDataUsed.current) {
+      load();
+    } else {
+      // Mark as used so future uid changes can still trigger reload if needed
+      initialDataUsed.current = false;
+    }
     return () => { mounted.current = false; };
   }, [load]);
 

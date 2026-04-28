@@ -243,7 +243,8 @@ export default function NewArticlePage() {
         .tiptap-editor p { margin: 0 0 1em; }
         .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: ${TEXT}; margin: 1.4em 0 0.5em; }
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; color: ${TEXT}; margin: 1.2em 0 0.4em; }
-        .tiptap-editor ul, .tiptap-editor ol { padding-left: 1.5em; margin: 0.5em 0 1em; }
+        .tiptap-editor ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0 1em; }
+        .tiptap-editor ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor li { margin: 0.3em 0; }
         .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; border-radius: 0 6px 6px 0; }
         .tiptap-editor code { background: rgba(27,42,71,0.08); color: ${ACCENT}; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }

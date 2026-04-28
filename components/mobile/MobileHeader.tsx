@@ -80,20 +80,20 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
         </div>
         <div className="flex items-center gap-2 border-b-2 border-[#111111] pb-[10px] mb-[14px]">
           <Search size={16} className="text-[#aaaaaa]" />
-          <input 
-            ref={inputRef} 
-            value={query} 
-            onChange={e => setQuery(e.target.value)} 
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Search Here..."
-            className="flex-1 border-none outline-none text-[0.9rem] font-sans bg-transparent text-[#111111]" 
+            className="flex-1 border-none outline-none text-[0.9rem] font-sans bg-transparent text-[#111111]"
           />
           {query && <button onClick={() => setQuery("")} className="bg-none border-none cursor-pointer text-[#aaaaaa] text-[1.2rem] p-0">×</button>}
         </div>
         <div className="flex gap-0 mb-4">
           {filters.map((f, i) => (
             <span key={f} className="flex items-center">
-              <button 
-                onClick={() => setFilter(activeFilter === f ? null : f)} 
+              <button
+                onClick={() => setFilter(activeFilter === f ? null : f)}
                 className={`px-[10px] py-[4px] rounded-[3px] border-none cursor-pointer font-sans text-[0.72rem] transition-colors ${activeFilter === f ? "bg-[#111111] text-white font-semibold" : "bg-transparent text-[#111111] font-normal"}`}
               >
                 {f}
@@ -135,8 +135,8 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
   const TabBtn = ({ tab }: { tab: { id: string; label: string } }) => {
     const isActive = activeTab === tab.id;
     return (
-      <button 
-        onClick={() => onTabChange(tab.id)} 
+      <button
+        onClick={() => onTabChange(tab.id)}
         className={`bg-none border-none cursor-pointer px-[9px] py-[8px] font-sans text-[0.78rem] ${isActive ? "font-bold text-[#D92323]" : "font-normal text-[#111111]"} whitespace-nowrap shrink-0 transition-colors duration-[120ms]`}
       >
         {tab.label}
@@ -151,15 +151,15 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
       <header className="bg-[#f5f0eb] relative">
         {/* ── Brand ─────────────────────────────────────── */}
         <div className="text-center px-[16px] pt-[14px] pb-[25px]">
-          <button 
-            onClick={() => onTabChange("home")} 
-            className="bg-none border-none cursor-pointer font-serif text-[1.9rem] font-bold text-[#111111] leading-[1.1] tracking-[-0.01em]"
+          <button
+            onClick={() => onTabChange("home")}
+            className="bg-none border-none cursor-pointer font-serif text-[2.25rem] text-[#111111] leading-[1.1] tracking-[-0.01em] flex items-center justify-center gap-3 mx-auto"
           >
+            <img src="/favicon.svg" alt="Logo" className="w-[50px] h-[50px]" />
             Opinionated Kalam
           </button>
         </div>
 
-        {/* ── Date + socials ────────────────────────────── */}
         {/* ── Date + socials ────────────────────────────── */}
         <div className="flex items-center justify-between px-[16px] py-[7px] pb-2 border-b border-[#e0d8d0]">
           <span className="font-sans text-[0.68rem] text-[#666666]">{dateStr}</span>
@@ -184,7 +184,7 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
         <div className="flex items-center px-4 border-none">
           {/* Hamburger */}
           <button onClick={onMenuOpen} className="bg-none border-none cursor-pointer p-[10px_8px_10px_0] flex items-center shrink-0">
-            <Menu size={22} color="#111111" />
+            <Menu size={26} color="#111111" />
           </button>
 
           {/* Row-1 tabs — centred */}
@@ -194,7 +194,7 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
 
           {/* Search */}
           <button onClick={() => setSearch(true)} className="bg-none border-none cursor-pointer p-[10px_0_10px_8px] shrink-0 flex items-center">
-            <Search size={17} color="#111111" />
+            <Search size={21} color="#111111" />
           </button>
         </div>
 

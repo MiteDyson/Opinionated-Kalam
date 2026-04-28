@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
 
+import { verifyAdmin } from "@/lib/verifyAdmin";
+
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
   const schema = new mongoose.Schema({
@@ -16,21 +18,9 @@ function getArticleModel() {
   return mongoose.model("Article", schema);
 }
 
-function decodeToken(token: string) {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
-    if (payload.exp * 1000 < Date.now()) return null;
-    return payload;
-  } catch { return null; }
-}
-
 export async function GET(req: NextRequest) {
-  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const payload = decodeToken(token);
-  if (!payload || payload.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+  const admin = await verifyAdmin(req);
+  if (!admin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

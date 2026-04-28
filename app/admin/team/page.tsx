@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -36,6 +37,7 @@ const labelStyle: React.CSSProperties = {
 
 export default function AdminTeamPage() {
   const router = useRouter();
+  const { isMainAdmin, loading: authLoading } = useAuth();
   const [team, setTeam]         = useState<TeamMember[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
@@ -68,7 +70,13 @@ export default function AdminTeamPage() {
     }
   };
 
-  useEffect(() => { fetchTeam(); }, []);
+  useEffect(() => {
+    if (!authLoading && !isMainAdmin) {
+      router.replace("/admin");
+      return;
+    }
+    if (isMainAdmin) fetchTeam();
+  }, [isMainAdmin, authLoading, router]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

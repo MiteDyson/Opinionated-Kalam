@@ -11,8 +11,6 @@ const BORDER = "#e0d8d0";
 const MUTED = "#666666";
 const ACCENT = "#1B2A47";
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -20,11 +18,8 @@ interface Props {
   onBeatSelect?: (beat: string) => void;
 }
 
-
 export default function MobileSideMenu({ isOpen, onClose, onTabChange, onBeatSelect }: Props) {
-  const { user, logout } = useAuth();
-
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const { user, logout, isAdmin } = useAuth();
 
   const itemStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", gap: 12,

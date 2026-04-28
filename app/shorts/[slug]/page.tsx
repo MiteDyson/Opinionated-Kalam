@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Eye, ChevronLeft } from "lucide-react";
+import { Heart, Bookmark, Share, Eye, ChevronLeft, BookOpen } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -67,7 +67,8 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
         .short-body-m h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; color: #1A1A1A; margin: 1.5em 0 0.5em; }
         .short-body-m h3 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; font-weight: 400; color: #1A1A1A; margin: 1.3em 0 0.4em; }
         .short-body-m blockquote { border-left: 3px solid #D38B88; padding: 8px 16px; margin: 1.4em 0; background: rgba(211,139,136,0.06); color: #555; font-style: italic; }
-        .short-body-m ul, .short-body-m ol { padding-left: 1.4em; margin: 0.5em 0 1.1em; }
+        .short-body-m ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
+        .short-body-m ol { list-style: decimal; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
         .short-body-m li { margin: 0.35em 0; }
         .short-body-m strong { font-weight: 700; }
         .short-body-m a { color: ${ACCENT}; }
@@ -106,13 +107,21 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
             <Eye size={12} />
             {(views || 0).toLocaleString()} {views === 1 ? 'View' : 'Views'}
           </span>
+          {short.readTime && (
+            <>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <BookOpen size={12} />
+                {short.readTime} minute read
+              </span>
+            </>
+          )}
         </div>
 
         {/* Tags */}
         {short.tags?.length > 0 && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
             {short.tags.map(t => <MobileTag key={t} label={t} />)}
-            {short.readTime && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", color: "#888" }}>⚡ {short.readTime}</span>}
           </div>
         )}
 
@@ -270,7 +279,6 @@ export default function ShortPage() {
           </button>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
             {short.tags?.map(t => <span key={t} style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: "0.65rem", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT }}>{t}</span>)}
-            {short.readTime && <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>⚡ {short.readTime}</span>}
           </div>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.6rem", lineHeight: 1.1, marginBottom: 16, color: "var(--text-main)" }}>{short.title}</h1>
           
@@ -283,6 +291,15 @@ export default function ShortPage() {
               <Eye size={14} />
               {(views || 0).toLocaleString()} {views === 1 ? 'View' : 'Views'}
             </span>
+            {short.readTime && (
+              <>
+                <span style={{ opacity: 0.4 }}>|</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <BookOpen size={15} />
+                  {short.readTime} minute read
+                </span>
+              </>
+            )}
           </div>
 
           <div className="short-body" dangerouslySetInnerHTML={{ __html: short.content }} />

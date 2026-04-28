@@ -11,6 +11,7 @@ import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
 import { MobileAboutView, MobileGrievanceView, MobileTeamView } from "@/components/mobile/MobileInfoPages";
+import { BookOpen } from "lucide-react";
 
 // Lazy-load the mobile page to avoid SSR issues
 const MobilePage = dynamic(() => import("@/components/mobile/MobilePage"), { ssr: false });
@@ -42,13 +43,6 @@ interface Article {
   audioUrl?: string;
 }
 
-function ReadPill({ label = "Read" }: { label?: string }) {
-  return (
-    <span style={{ display: "inline-block", padding: "3px 12px", borderRadius: 999, fontSize: "0.68rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", backgroundColor: READ_PILL_BG, color: READ_PILL_TX, whiteSpace: "nowrap" }}>
-      {label}
-    </span>
-  );
-}
 
 function SectionLabel({ children, onClick }: { children: string; onClick?: () => void }) {
   return (
@@ -225,7 +219,14 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
             : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "rgba(211,139,136,0.15)", borderRadius: 8 }} />}
         </div>
         <div style={{ padding: "10px 14px 14px" }}>
-          {showTag && <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{s.tags[0] ?? "Short"} &nbsp;·&nbsp; {s.readTime}</div>}
+          {showTag && (
+            <div style={{ fontSize: "0.6rem", fontWeight: 800, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ color: RED }}>{s.tags[0] ?? "Short"}</span>
+              <span style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
+                &nbsp;·&nbsp; <BookOpen size={10} /> {s.readTime} minute read
+              </span>
+            </div>
+          )}
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: "0 0 8px" }}>{s.title}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-muted)", fontSize: "0.68rem", fontFamily: "'Inter', sans-serif" }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
@@ -257,7 +258,6 @@ function ArticleCard({ a }: { a: Article }) {
         <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.4rem", lineHeight: 1.2, margin: 0 }}>{a.title}</h2>
         <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{date}{date && a.author ? " . " : ""}{a.author}</div>
         <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{a.excerpt}</p>
-        <div style={{ alignSelf: "flex-start" }}><ReadPill /></div>
       </article>
     </Link>
   );
@@ -417,12 +417,12 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
                     </div>
                   )}
                   <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", lineHeight: 1.1, marginBottom: 8, color: "var(--text-main)" }}>{hero.title}</h2>
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginBottom: 10 }}>
-                    {hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""} {hero.publishedAt && hero.author ? " . " : ""}{hero.author}
-                    {hero.readTime && <> &nbsp;·&nbsp; {hero.readTime} minute read </>}
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", color: "var(--text-muted)", fontSize: "0.75rem", fontFamily: "'Inter', sans-serif", marginBottom: 12 }}>
+                    <span>{hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""}</span>
+                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span>{hero.author}</span>
                   </div>
                   <p style={{ fontSize: "0.88rem", color: "var(--text-main)", lineHeight: 1.7, fontFamily: "'Inter', sans-serif", marginBottom: 16 }}>{hero.excerpt}</p>
-                  <ReadPill label="Read Further" />
                 </article>
               </Link>
             ) : <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>No articles yet.</p>}
@@ -451,8 +451,6 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
                             <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
                               {a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
                             </span>
-                            {a.readTime && <><span style={{ fontSize: "0.6rem", color: "var(--border)" }}>·</span><span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{a.readTime} minute read</span></>}
-                            <ReadPill />
                           </div>
                         </div>
                       </div>
@@ -524,7 +522,11 @@ export default function HomePage() {
 
   // Render mobile layout if on mobile device
   if (isMobile) {
-    return <MobilePage />;
+    return (
+      <MobilePage 
+        initialData={{ articles, podcasts, shorts, loading }} 
+      />
+    );
   }
 
   // Desktop layout

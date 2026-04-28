@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Heart, Bookmark, Share, ExternalLink, MoveLeft, MoveRight, Play, Pause, Loader2, Maximize2 } from "lucide-react";
+import { Heart, Bookmark, Share, ExternalLink, MoveLeft, MoveRight, Play, Pause, Loader2, Maximize2, BookOpen } from "lucide-react";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
@@ -30,8 +30,8 @@ function Sk({ h = 16, w = "100%", r = 4 }: { h?: number; w?: string | number; r?
 // ── Section header ────────────────────────────────────────────
 const SectionHeader = memo(function SectionHeader({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
-    <button onClick={onClick} className={`bg-none border-none ${onClick ? "cursor-pointer" : "cursor-default"} font-sans font-bold text-[0.72rem] tracking-[0.1em] uppercase text-[#111111] pt-3 pb-2 flex items-baseline gap-[2px]`}>
-      {label}<span>→</span>
+    <button onClick={onClick} className={`bg-none border-none ${onClick ? "cursor-pointer" : "cursor-default"} font-sans font-bold text-[1rem] tracking-[0.12em] uppercase text-[#111111] pt-3 pb-2 flex items-baseline gap-[3px]`}>
+      {label}<span className="text-[1.5rem]">→</span>
     </button>
   );
 });
@@ -48,13 +48,6 @@ function Tag({ label }: { label: string }) {
 
 // ── Read pill — desktop style ─────────────────────────────────
 // ── Read pill — desktop style ─────────────────────────────────
-function ReadPill({ label = "Read" }: { label?: string }) {
-  return (
-    <span className="inline-block px-[9px] py-[2px] rounded-full text-[0.58rem] font-bold font-sans bg-[#d38b88]/20 text-[#a94438] whitespace-nowrap">
-      {label}
-    </span>
-  );
-}
 
 // ── Thin section divider (like desktop) ───────────────────────
 // ── Thin section divider (like desktop) ───────────────────────
@@ -85,8 +78,10 @@ const MobileHeroArticle = memo(function MobileHeroArticle({ a }: { a: Article })
           {a.title}
         </h3>
 
-        <div className="font-sans text-[0.68rem] text-[#666666] mb-2">
-          {date}{date && a.author ? " · " : ""}{a.author}
+        <div className="flex items-center gap-[6px] font-sans text-[0.68rem] text-[#666666] mb-2">
+          {date && <span>{date}</span>}
+          {date && a.author && <span className="opacity-40">·</span>}
+          {a.author && <span>{a.author}</span>}
         </div>
 
         {a.excerpt && (
@@ -94,7 +89,6 @@ const MobileHeroArticle = memo(function MobileHeroArticle({ a }: { a: Article })
             {a.excerpt.slice(0, 130)}{a.excerpt.length > 130 ? "..." : ""}
           </p>
         )}
-        <ReadPill label="Read Further" />
       </article>
     </Link>
   );
@@ -119,12 +113,11 @@ const MobileArticleItem = memo(function MobileArticleItem({ a, noBorder }: { a: 
             </div>
           )}
           {/* Normal weight */}
-          <h4 className="font-serif text-[0.85rem] font-normal text-[#111111] leading-[1.3] mb-1 line-clamp-2">
+          <h4 className="font-serif text-[0.85rem] font-normal text-[#111111] leading-[1.3] mb-1">
             {a.title}
           </h4>
           <div className="flex justify-between items-center font-sans text-[0.63rem] text-[#666666]">
             <span>{date} · {a.author}</span>
-            <ReadPill />
           </div>
         </div>
       </article>
@@ -141,14 +134,14 @@ const MobileArticleCard = memo(function MobileArticleCard({ a }: { a: Article })
     <Link href={`/article/${a.slug}`} className="no-underline text-inherit block">
       <article className="bg-[#f5f0eb]">
         {a.coverImage
-          ? <img src={a.coverImage} alt={a.title} loading="lazy" className="w-full h-[108px] object-cover rounded-[3px] block bg-[#2a2a2a]" />
-          : <div className="w-full h-[108px] bg-[#2a2a2a] rounded-[3px]" />
+          ? <img src={a.coverImage} alt={a.title} loading="lazy" className="w-full aspect-video object-cover rounded-[3px] block bg-[#2a2a2a]" />
+          : <div className="w-full aspect-video bg-[#2a2a2a] rounded-[3px]" />
         }
-        <h3 className="font-serif text-[0.82rem] font-normal text-[#111111] mt-[6px] mb-1 leading-[1.28] line-clamp-2">
+        <h3 className="font-serif text-[0.82rem] font-normal text-[#111111] mt-[6px] mb-1 leading-[1.28]">
           {a.title}
         </h3>
-        <div className="font-sans text-[0.6rem] text-[#666666] mb-1">
-          {date} · {a.author}
+        <div className="flex justify-between items-center font-sans text-[0.6rem] text-[#666666] mb-1">
+          <span>{date} · {a.author}</span>
         </div>
         {a.tags?.length > 0 && (
           <div className="flex gap-1 flex-wrap">
@@ -238,14 +231,14 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
     setSaving(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) { setSaved(s => !s); return; } 
+      if (!token) { setSaved(s => !s); return; }
       await fetch(`/api/articles/${p.slug}/save`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       setSaved(s => !s);
     } catch {
-      setSaved(s => !s); 
+      setSaved(s => !s);
     } finally {
       setSaving(false);
     }
@@ -254,8 +247,8 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
   const handleShare = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     const url = `${window.location.origin}/podcasts/${p.slug}`;
-    if (navigator.share) navigator.share({ title: p.title, url }).catch(() => {});
-    else navigator.clipboard.writeText(url).catch(() => {});
+    if (navigator.share) navigator.share({ title: p.title, url }).catch(() => { });
+    else navigator.clipboard.writeText(url).catch(() => { });
   }, [p.slug, p.title]);
 
   return (
@@ -267,7 +260,7 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
       <div className="flex gap-3 items-start">
         {p.coverImage
           ? <img src={p.coverImage} alt={p.title} loading="lazy"
-              className="w-[84px] h-[84px] object-cover rounded-[8px] flex-shrink-0" />
+            className="w-[84px] h-[84px] object-cover rounded-[8px] flex-shrink-0" />
           : <div className="w-[84px] h-[84px] bg-[#2a2a2a] rounded-[8px] flex-shrink-0 flex items-center justify-center text-[1.4rem]">🎙</div>
         }
         <div className="flex-1 min-w-0">
@@ -276,7 +269,7 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
               {p.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
             </div>
           )}
-          <h4 className="font-serif text-[1.05rem] font-normal text-[#111111] leading-[1.3] m-0 line-clamp-3">{p.title}</h4>
+          <h4 className="font-serif text-[1.05rem] font-normal text-[#111111] leading-[1.3] m-0">{p.title}</h4>
           {!isPlaying && (
             <span className="font-sans text-[0.7rem] text-[#666666] mt-1 block">
               {totalDur}
@@ -318,13 +311,13 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
           {/* Bottom Interactions Bar */}
           <div className="flex items-center justify-between px-[4px]">
             <div className="flex gap-4">
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
                 className={`bg-none border-none cursor-pointer p-0 flex ${liked ? "text-[#c0392b]" : "text-[#111111]"}`}
               >
                 <Heart size={22} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} />
               </button>
-              <button 
+              <button
                 onClick={handleShare}
                 className="bg-none border-none cursor-pointer p-0 text-[#111111] flex"
               >
@@ -337,14 +330,14 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
             </div>
 
             <div className="flex gap-4">
-              <button 
+              <button
                 onClick={handleSave}
                 className={`bg-none border-none cursor-pointer p-0 flex ${saved ? "text-[#c0392b]" : "text-[#111111]"} ${saving ? "opacity-50" : "opacity-100"}`}
               >
                 <Bookmark size={22} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} />
               </button>
-              <Link 
-                href={`/podcasts/${p.slug}`} 
+              <Link
+                href={`/podcasts/${p.slug}`}
                 onClick={(e) => e.stopPropagation()}
                 className="text-[#111111] flex no-underline"
               >
@@ -372,13 +365,14 @@ const MobileShortCard = memo(function MobileShortCard({ s }: { s: Article }) {
           </div>
         )}
         {/* Normal weight title */}
-        <h4 className="font-sans text-[0.76rem] font-medium text-[#111111] leading-[1.35] mb-auto pb-2 line-clamp-3">
+        <h4 className="font-sans text-[0.76rem] font-medium text-[#111111] leading-[1.35] mb-auto pb-2">
           {s.title}
         </h4>
         {/* Bottom: duration left, views right */}
         <div className="flex justify-between items-center mt-auto">
-          <span className="font-sans text-[0.6rem] text-[#999999]">
-            {s.readTime ?? "2 min read"}
+          <span className="font-sans text-[0.6rem] text-[#999999] flex items-center gap-[3px]">
+            <BookOpen size={10} />
+            {s.readTime || "2"} minute read
           </span>
           <span className="font-sans text-[0.6rem] text-[#999999] flex items-center gap-[3px]">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -458,7 +452,7 @@ function MobileHomeView({ articles, podcasts, shorts, loading, onTabChange, acti
             ? <div className="grid grid-cols-2 gap-[10px]">
               {[1, 2, 3, 4].map(i => <div key={i} className="h-[105px] rounded-[6px] bg-white border-[1.5px] border-[#111111] animate-[oksk_1.4s_ease-in-out_infinite]" />)}
             </div>
-            : <div className="grid grid-cols-2 gap-[10px]">
+            : <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[10px]">
               {shorts.slice(0, 4).map(s => <MobileShortCard key={s._id} s={s} />)}
             </div>
           }
@@ -522,7 +516,7 @@ function MobileArticlesView({ articles, loading, onTabChange }: { articles: Arti
           ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
             {selectedBeat ? `No articles in "${selectedBeat}" beat.` : "No articles yet."}
           </p>
-          : <div className="grid grid-cols-2 gap-[14px] pb-5">
+          : <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[14px] pb-5">
             {displayList.map(a => <MobileArticleCard key={a._id} a={a} />)}
           </div>
       }
@@ -591,7 +585,7 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
           ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
             {selectedBeat ? `No short reads in "${selectedBeat}" beat.` : "No short reads yet."}
           </p>
-          : <div className="grid grid-cols-2 gap-[10px] pb-5">
+          : <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[10px] pb-5">
             {sorted.map(s => <MobileShortCard key={s._id} s={s} />)}
           </div>
       }
@@ -602,17 +596,19 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
 // ─────────────────────────────────────────────────────────────
 // ROOT
 // ─────────────────────────────────────────────────────────────
-export default function MobilePage() {
+export default function MobilePage({ initialData }: {
+  initialData?: { articles: any[]; podcasts: any[]; shorts: any[]; loading: boolean }
+}) {
   const [activeTab, setActiveTab] = useState("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { user } = useAuth();
-  
+
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const uid = (user as any)?.uid ?? "";
-  const { articles, podcasts, shorts, loading, error, refetch } = useArticles(uid);
+  const { articles, podcasts, shorts, loading, error, refetch } = useArticles(uid, initialData);
 
   useEffect(() => {
     const tab = searchParams?.get("tab");
