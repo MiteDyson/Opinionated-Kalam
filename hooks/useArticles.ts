@@ -51,18 +51,13 @@ export function useArticles(uid = ""): ArticlesState {
   const mounted = useRef(true);
 
   const load = useCallback(async (showLoading = true) => {
-    const artUrl = `/api/articles?type=article&status=published${uid ? `&uid=${uid}` : ""}`;
-    const podUrl = `/api/articles?type=podcast&status=published${uid ? `&uid=${uid}` : ""}`;
-    const shrUrl = `/api/articles?type=short&status=published${uid ? `&uid=${uid}` : ""}`;
+    const batchUrl = `/api/articles?all=true&status=published${uid ? `&uid=${uid}` : ""}`;
+    const cached = clientCache.get<{ articles: Article[]; podcasts: Article[]; shorts: Article[] }>(`fetch:${batchUrl}`);
 
-    const cachedArt = clientCache.get<Article[]>(`fetch:${artUrl}`);
-    const cachedPod = clientCache.get<Article[]>(`fetch:${podUrl}`);
-    const cachedShr = clientCache.get<Article[]>(`fetch:${shrUrl}`);
-
-    if (cachedArt && cachedPod && cachedShr) {
-      setArticles(cachedArt);
-      setPodcasts(cachedPod);
-      setShorts(cachedShr);
+    if (cached) {
+      setArticles(cached.articles);
+      setPodcasts(cached.podcasts);
+      setShorts(cached.shorts);
       setLoading(false);
       showLoading = false;
     }
@@ -71,20 +66,28 @@ export function useArticles(uid = ""): ArticlesState {
     setError(null);
 
     try {
-      const [art, pod, shr] = await Promise.allSettled([
-        fetchType("article", uid),
-        fetchType("podcast", uid),
-        fetchType("short",   uid),
-      ]);
+      const data = await cachedFetch<{ articles: Article[]; podcasts: Article[]; shorts: Article[] }>(batchUrl);
       if (!mounted.current) return;
-      setArticles(art.status === "fulfilled" ? art.value : []);
-      setPodcasts(pod.status === "fulfilled" ? pod.value : []);
-      setShorts(  shr.status === "fulfilled" ? shr.value : []);
-      if (art.status === "rejected" && pod.status === "rejected" && shr.status === "rejected") {
-        setError("Failed to load content. Please check your connection.");
-      }
+      
+      setArticles(data.articles || []);
+      setPodcasts(data.podcasts || []);
+      setShorts(data.shorts || []);
     } catch (e: any) {
-      if (mounted.current) setError(e.message ?? "Unknown error");
+      console.error("[useArticles] Batch load failed, falling back...", e);
+      // Fallback to individual fetches if batch fails
+      try {
+        const [art, pod, shr] = await Promise.allSettled([
+          fetchType("article", uid),
+          fetchType("podcast", uid),
+          fetchType("short",   uid),
+        ]);
+        if (!mounted.current) return;
+        setArticles(art.status === "fulfilled" ? art.value : []);
+        setPodcasts(pod.status === "fulfilled" ? pod.value : []);
+        setShorts(  shr.status === "fulfilled" ? shr.value : []);
+      } catch (err: any) {
+        if (mounted.current) setError(err.message ?? "Failed to load content.");
+      }
     } finally {
       if (mounted.current) setLoading(false);
     }

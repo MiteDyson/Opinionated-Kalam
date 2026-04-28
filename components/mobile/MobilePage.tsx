@@ -71,7 +71,7 @@ const MobileHeroArticle = memo(function MobileHeroArticle({ a }: { a: Article })
     <Link href={`/article/${a.slug}`} className="no-underline text-inherit block">
       <article className="mb-1">
         {a.coverImage
-          ? <img src={a.coverImage} alt={a.title} loading="lazy" decoding="async" className="w-full h-[196px] object-cover rounded-[4px] block mb-[10px] bg-[#2a2a2a]" />
+          ? <img src={a.coverImage} alt={a.title} loading="lazy" decoding="async" className="w-full h-auto rounded-[4px] block mb-[10px] bg-[#2a2a2a]" />
           : <div className="w-full h-[196px] bg-[#2a2a2a] rounded-[4px] mb-[10px]" />
         }
 
@@ -309,7 +309,7 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
           </div>
 
           {/* Progress Bar */}
-          <div className="w-[80%] mx-auto mb-3">
+          <div className="w-[70%] mx-auto mb-3">
             <div ref={seekRef} onClick={handleSeek} className="w-full h-[3px] bg-[#d9d5ce] rounded-[1.5px] cursor-pointer relative">
               <div style={{ width: `${progress}%` }} className="h-full bg-[#c0392b] rounded-[1.5px] transition-[width] duration-200 linear" />
             </div>

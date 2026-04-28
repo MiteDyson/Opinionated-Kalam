@@ -365,7 +365,7 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
             </div>
           </div>
           
-          <div style={{ width: "95%", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ width: "80%", display: "flex", flexDirection: "column", gap: 12 }}>
             <div ref={seekRef} onClick={handleSeek} style={{ height: 4, backgroundColor: "#d9d5ce", borderRadius: 2, cursor: "pointer", position: "relative" }}>
               <div style={{ height: "100%", width: `${progress}%`, backgroundColor: RED, borderRadius: 2, transition: "width 0.2s linear" }} />
             </div>

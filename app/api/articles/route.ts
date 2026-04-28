@@ -27,6 +27,10 @@ function getArticleModel() {
     createdAt:   { type: Date, default: Date.now },
     updatedAt:   { type: Date, default: Date.now },
   });
+  schema.index({ status: 1, type: 1, createdAt: -1 });
+  schema.index({ tags: 1 });
+  schema.index({ slug: 1 }, { unique: true });
+
   return mongoose.model("Article", schema);
 }
 
@@ -41,16 +45,40 @@ export async function GET(req: NextRequest) {
     await connectDB();
     const Article = getArticleModel();
     const { searchParams } = new URL(req.url);
-    const type   = searchParams.get("type");
-    const status = searchParams.get("status") ?? "published";
-    const tag    = searchParams.get("tag");
+    const all    = searchParams.get("all") === "true";
     const uid    = searchParams.get("uid");
+    const status = searchParams.get("status") ?? "published";
 
     // Draft requests require admin auth
     if (status === "draft") {
       const admin = await verifyAdmin(req);
       if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    if (all) {
+      // Fetch all published content in one go
+      const items = await Article.find({ status }).sort({ createdAt: -1 }).lean();
+      const result = items.map((a: any) => ({
+        ...a,
+        isLiked: uid ? (a.likedBy ?? []).includes(uid) : false,
+        isSaved: uid ? (a.savedBy ?? []).includes(uid) : false,
+      }));
+
+      const structured = {
+        articles: result.filter((a: any) => a.type === "article"),
+        podcasts: result.filter((a: any) => a.type === "podcast"),
+        shorts:   result.filter((a: any) => a.type === "short"),
+      };
+
+      const response = NextResponse.json(structured);
+      if (status === "published" && !uid) {
+        response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+      }
+      return response;
+    }
+
+    const type   = searchParams.get("type");
+    const tag    = searchParams.get("tag");
 
     const query: Record<string, any> = { status };
     if (type) query.type = type;
