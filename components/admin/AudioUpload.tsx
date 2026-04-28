@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { uploadToImageKit } from "@/lib/imagekit";
+import { Loader2, Upload, Play, Trash2, Volume2 } from "lucide-react";
 
 const ACCENT = "#1B2A47";
 const TEXT   = "#1A1A1A";
@@ -169,21 +170,10 @@ export default function AudioUpload({
           }}
         >
           {uploading ? (
-            <svg
-              width="13" height="13" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2"
-              style={{ animation: "spin-audio 0.8s linear infinite" }}
-            >
-              <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="0.9"/>
-              <circle cx="12" cy="12" r="10" strokeOpacity="0.15"/>
-            </svg>
+            <Loader2 size={13} style={{ animation: "spin-audio 0.8s linear infinite" }} />
           ) : (
             // Waveform / audio upload icon
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+            <Upload size={13} />
           )}
         </button>
 
@@ -272,9 +262,7 @@ export default function AudioUpload({
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
+              <Play size={14} fill="white" />
             </div>
             <div style={{ flexShrink: 0 }}>
               <div style={{
@@ -305,10 +293,7 @@ export default function AudioUpload({
             }}>
               1X
             </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            </svg>
+            <Volume2 size={18} color="#888" />
           </div>
 
           {/* Remove button */}
@@ -333,10 +318,7 @@ export default function AudioUpload({
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(192,57,43,0.06)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-            </svg>
+            <Trash2 size={12} />
             Remove audio
           </button>
         </div>

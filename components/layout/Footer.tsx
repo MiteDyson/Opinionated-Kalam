@@ -2,24 +2,10 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: "#151515", color: "#F8F8F8", padding: "60px 0 40px", marginTop: 80 }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
-        <div style={{ display: "flex", justifyContent: "center", gap: 120, marginBottom: 80 }}>
+    <footer className="bg-[#151515] text-[#F8F8F8] pt-[60px] pb-[40px] mt-[80px]">
+      <div className="max-w-[1100px] mx-auto px-6">
+        <div className="flex justify-center gap-[120px] mb-[80px]">
           {[
-            {
-              title: "Learn",
-              links: [
-                { label: "About Us", href: "#" },
-                { label: "Our Team", href: "#" },
-              ],
-            },
-            {
-              title: "Connect",
-              links: [
-                { label: "Contact Us", href: "#" },
-                { label: "Grievance Redressal", href: "#" },
-              ],
-            },
             {
               title: "Legal",
               links: [
@@ -27,33 +13,31 @@ export default function Footer() {
                 { label: "Privacy Policy", href: "/privacy" },
               ],
             },
+            {
+              title: "Connect",
+              links: [
+                { label: "Contact Us", href: "#" },
+                { label: "Grievance Redressal", href: "/?tab=grievance" },
+              ],
+            },
+            {
+              title: "Learn",
+              links: [
+                { label: "Our Team", href: "/?tab=team" },
+                { label: "About Us", href: "/?tab=about" },
+              ],
+            },
           ].map((col) => (
-            <div key={col.title} style={{ textAlign: "center" }}>
-              <h3
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                  marginBottom: 20,
-                  color: "white",
-                }}
-              >
+            <div key={col.title} className="text-center">
+              <h3 className="font-sans font-bold text-base mb-5 text-white">
                 {col.title}
               </h3>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+              <ul className="list-none p-0 m-0 flex flex-col gap-3">
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      style={{
-                        color: "#888",
-                        fontSize: "0.88rem",
-                        fontFamily: "'Inter', sans-serif",
-                        textDecoration: "none",
-                        transition: "color 0.15s",
-                      }}
-                      onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "white")}
-                      onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "#888")}
+                      className="text-[#888888] text-[0.88rem] font-sans no-underline transition-colors hover:text-white"
                     >
                       {link.label}
                     </Link>
@@ -63,25 +47,11 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(2.5rem, 7vw, 5rem)",
-              color: "white",
-              lineHeight: 1,
-            }}
-          >
+        <div className="text-center">
+          <div className="font-serif text-[clamp(2.5rem,7vw,5rem)] text-white leading-none">
             Opinionated Kalam
           </div>
-          <p
-            style={{
-              color: "#555",
-              fontSize: "0.75rem",
-              marginTop: 16,
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
+          <p className="text-[#555555] text-[0.75rem] mt-4 font-sans">
             © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
           </p>
         </div>

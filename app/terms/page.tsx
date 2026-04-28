@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import Footer from "@/components/layout/Footer";
+import MobileFooter from "@/components/mobile/MobileFooter";
+import { useMobileReady } from "@/hooks/useMobile";
 
 const BRAND = "Opinionated Kalam";
 const EFFECTIVE = "March 21, 2026";
@@ -27,7 +29,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       >
         {title}
       </h2>
-      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.95rem", lineHeight: 1.85, color: "#2A2A2A" }}>
+      <div style={{ fontFamily: "'Radley', serif", fontSize: "1.05rem", lineHeight: 1.85, color: "#2A2A2A" }}>
         {children}
       </div>
     </section>
@@ -50,6 +52,9 @@ function UL({ items }: { items: string[] }) {
 
 export default function TermsOfServicePage() {
   const router = useRouter();
+  const [isMobile, mobileReady] = useMobileReady();
+
+  if (!mobileReady) return <div style={{ minHeight: "100vh" }} />;
 
   return (
     <>
@@ -82,7 +87,7 @@ export default function TermsOfServicePage() {
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: "var(--text-muted)" }}>
             Effective Date: <strong>{EFFECTIVE}</strong>
           </p>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.95rem", color: "#2A2A2A", lineHeight: 1.8, marginTop: 16 }}>
+          <p style={{ fontFamily: "'Radley', serif", fontSize: "1.05rem", color: "#2A2A2A", lineHeight: 1.8, marginTop: 16 }}>
             Welcome to <strong>{BRAND}</strong>. By accessing or using our website at{" "}
             <strong>{SITE}</strong>, you agree to be bound by these Terms of Service. Please read
             them carefully before using the platform.
@@ -257,7 +262,7 @@ export default function TermsOfServicePage() {
         </div>
 
       </div>
-      <Footer />
+      {isMobile ? <MobileFooter /> : <Footer />}
     </>
   );
 }

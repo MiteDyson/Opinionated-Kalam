@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
+import { Menu, Search, X, User, ChevronDown, LogOut, ChevronRight } from "lucide-react";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 const ACCENT = "#1B2A47";
@@ -12,9 +13,9 @@ const RED    = "#D92323";
 // Beats tab removed — now lives as a dropdown filter on each section page
 const TABS = [
   { id: "home",     label: "Home" },
-  { id: "recent",   label: "Recent Stories" },
+  { id: "articles", label: "Articles" },
   { id: "podcasts", label: "Podcasts" },
-  { id: "shorts",   label: "Short Reads" },
+  { id: "shorts",   label: "Short Articles" },
 ];
 
 interface HeaderProps {
@@ -65,137 +66,146 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
       `}</style>
 
       {user && !hasUsername && (
-        <div style={{ backgroundColor: "rgba(27,42,71,0.07)", border: "1px solid rgba(27,42,71,0.15)", borderRadius: 8, padding: "9px 14px", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "0.9rem" }}>👤</span>
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: ACCENT }}>
+        <div className="bg-[#1B2A47]/[0.07] border border-[#1B2A47]/15 rounded-[8px] p-[9px_14px] mb-[10px] flex items-center justify-between gap-[12px]">
+          <div className="flex items-center gap-2">
+            <User size={14} color="#1B2A47" />
+            <span className="font-sans text-[0.82rem] text-[#1B2A47]">
               <strong>You haven't set a username yet.</strong> Add one to personalise your profile.
             </span>
           </div>
-          <button onClick={() => router.push("/login")} style={{ flexShrink: 0, padding: "5px 14px", borderRadius: 6, border: "none", backgroundColor: ACCENT, color: "white", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
+          <button onClick={() => router.push("/login")} className="shrink-0 px-[14px] py-[5px] rounded-[6px] border-none bg-[#1B2A47] text-white font-sans text-[0.78rem] font-bold cursor-pointer">
             Set Username
           </button>
         </div>
       )}
 
-      <div style={{ textAlign: "center", paddingTop: 24 }}>
-        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(2rem, 4.5vw, 3.2rem)", fontWeight: 400, lineHeight: 1, letterSpacing: "-0.5px", color: "var(--text-main)", display: "block", margin: "0 auto" }}>
+      <div className="text-center pt-6">
+        <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] block mx-auto">
           Opinionated Kalam
         </button>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
-        <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>{dateStr}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="flex items-center justify-between py-[10px] border-b border-[var(--border)]">
+        <span className="text-[0.78rem] text-[var(--text-muted)] font-sans">{dateStr}</span>
+        <div className="flex items-center gap-[10px]">
           {isAdmin && (
-            <a href="/admin" style={{ backgroundColor: ACCENT, color: "white", padding: "4px 12px", borderRadius: 6, fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>Admin</a>
+            <a href="/admin" className="bg-[#1B2A47] text-white px-3 py-1 rounded-[6px] text-[0.75rem] font-semibold font-sans no-underline">Admin</a>
           )}
-          <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", backgroundColor: "#FF0000", color: "white", flexShrink: 0 }}>
+          <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FF0000] text-white shrink-0">
+            {/* Social media icons remain as SVGs per user request */}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
           </a>
         </div>
       </div>
 
-      <nav style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", padding: "10px 0", marginBottom: 32, position: "relative" }}>
-
-        <div ref={searchRef} style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
-          <button onClick={onMenuOpen} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-main)", padding: 0, display: "flex", flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <nav className="grid grid-cols-[1fr_auto_1fr] items-center py-[10px] mb-8 relative">
+        <div ref={searchRef} className="flex items-center gap-2 relative">
+          <button onClick={onMenuOpen} className="bg-none border-none cursor-pointer text-[var(--text-main)] p-0 flex shrink-0 hover:text-[#1B2A47] transition-colors">
+            <Menu size={20} />
           </button>
 
           {searchOpen ? (
-            <div style={{ position: "relative", width: 220 }}>
-              <svg style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "#908e8a", pointerEvents: "none" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              <input ref={inputRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") closeSearch(); }} placeholder="Search..." className="ok-search"
-                style={{ width: "100%", padding: "6px 26px 6px 28px", borderRadius: 8, border: "1.5px solid #d5d2cb", backgroundColor: "transparent", fontSize: "0.84rem", fontFamily: "'Inter', sans-serif", color: "var(--text-main)", boxSizing: "border-box" }}
+            <div className="relative w-[220px] animate-in fade-in slide-in-from-left-2 duration-200">
+              <Search size={13} className="absolute left-[9px] top-1/2 -translate-y-1/2 text-[#908e8a] pointer-events-none" />
+              <input 
+                ref={inputRef} 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                onKeyDown={(e) => { if (e.key === "Escape") closeSearch(); }} 
+                placeholder="Search..." 
+                className="w-full pl-[28px] pr-[26px] py-[6px] rounded-[8px] border-[1.5px] border-[#d5d2cb] bg-transparent font-sans text-[0.84rem] text-[var(--text-main)] focus:outline-none focus:border-[#908e8a] placeholder:text-[#908e8a]"
               />
-              {searchQuery && <button onClick={() => setSearchQuery("")} style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#908e8a", fontSize: "1rem", lineHeight: 1, padding: 0 }}>×</button>}
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")} 
+                  className="absolute right-[7px] top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-[#908e8a] p-0 flex hover:text-[var(--text-main)]"
+                >
+                  <X size={14} />
+                </button>
+              )}
               {searchQuery.trim().length > 1 && (
-                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, width: 300, zIndex: 200, backgroundColor: "white", borderRadius: 10, border: "1px solid var(--border)", boxShadow: "0 8px 28px rgba(0,0,0,0.1)", overflow: "hidden", animation: "fadeDown 0.13s ease" }}>
-                  <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}`}</style>
+                <div className="absolute top-[calc(100%+6px)] left-0 w-[300px] z-[200] bg-white rounded-[10px] border border-[var(--border)] shadow-[0_8px_28px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                   <SearchResults query={searchQuery} onClose={closeSearch} />
                 </div>
               )}
             </div>
           ) : (
-            <button onClick={openSearch} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-main)" }}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              <span style={{ fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", color: "var(--text-main)" }}>Search</span>
+            <button onClick={openSearch} className="bg-none border-none cursor-pointer p-0 flex items-center gap-[5px] group">
+              <Search size={15} className="text-[var(--text-main)] group-hover:text-[#1B2A47] transition-colors" />
+              <span className="text-[0.85rem] font-sans text-[var(--text-main)] group-hover:text-[#1B2A47] transition-colors">Search</span>
             </button>
           )}
         </div>
 
-        <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+        <div className="flex gap-6 items-center">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => onTabChange(tab.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.88rem", fontWeight: isActive ? 700 : 500, color: isActive ? RED : "var(--text-main)", fontFamily: "'Inter', sans-serif", padding: 0, whiteSpace: "nowrap" }}>
+              <button 
+                key={tab.id} 
+                onClick={() => onTabChange(tab.id)} 
+                className={`bg-none border-none cursor-pointer text-[0.88rem] ${isActive ? "font-bold text-[#D92323]" : "font-medium text-[var(--text-main)]"} font-sans p-0 whitespace-nowrap transition-colors duration-150 hover:text-[#D92323]`}
+              >
                 {tab.label}
               </button>
             );
           })}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "flex-end" }}>
+        <div className="flex items-center gap-[14px] justify-end">
           {user ? (
-            <div ref={dropdownRef} style={{ position: "relative" }}>
-              <button onClick={() => setDropdownOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: `1px solid ${!hasUsername ? "rgba(211,139,136,0.6)" : "var(--border)"}`, cursor: "pointer", padding: "5px 12px", borderRadius: 20, fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", fontWeight: 600, color: !hasUsername ? "#b85c58" : "var(--text-main)", transition: "border-color 0.15s" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <div ref={dropdownRef} className="relative">
+              <button onClick={() => setDropdownOpen(o => !o)} className={`flex items-center gap-[6px] bg-none border ${!hasUsername ? "border-[#d38b88]/60 text-[#b85c58]" : "border-[var(--border)] text-[var(--text-main)]"} cursor-pointer px-[12px] py-[5px] rounded-full text-[0.82rem] font-sans font-semibold transition-all hover:bg-black/5`}>
+                <User size={14} />
                 {displayName}
-                {!hasUsername && <span style={{ fontSize: "0.62rem", color: "#b85c58" }}>!</span>}
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.15s" }}><polyline points="6 9 12 15 18 9"/></svg>
+                {!hasUsername && <span className="text-[0.62rem] text-[#b85c58]">!</span>}
+                <ChevronDown size={10} className={`transition-transform duration-150 ${dropdownOpen ? "rotate-180" : "rotate-0"}`} />
               </button>
 
               {dropdownOpen && (
-                <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, backgroundColor: "white", borderRadius: 10, minWidth: 180, border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", overflow: "hidden", zIndex: 50, animation: "fadeDown 0.15s ease" }}>
-                  <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid var(--border)" }}>
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-main)", fontFamily: "'Inter', sans-serif" }}>
-                      {hasUsername ? displayName : <span style={{ color: "#b85c58" }}>No username set</span>}
+                <div className="absolute top-[calc(100%+8px)] right-0 bg-white rounded-[10px] min-w-[180px] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-[50] py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]">
+                    <div className="text-[0.78rem] font-bold text-[var(--text-main)] font-sans">
+                      {hasUsername ? displayName : <span className="text-[#b85c58]">No username set</span>}
                     </div>
-                    <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", marginTop: 2 }}>{user.email}</div>
+                    <div className="text-[0.7rem] text-[var(--text-muted)] font-sans mt-[2px]">{user.email}</div>
                   </div>
 
                   {!hasUsername && (
-                    <a href="/login" onClick={() => setDropdownOpen(false)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", textDecoration: "none", color: "#b85c58", fontSize: "0.82rem", fontFamily: "'Inter', sans-serif", fontWeight: 600, borderBottom: "1px solid var(--border)", backgroundColor: "rgba(211,139,136,0.06)" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(211,139,136,0.12)")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "rgba(211,139,136,0.06)")}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <a href="/login" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#b85c58] text-[0.82rem] font-sans font-semibold border-b border-[var(--border)] bg-[#d38b88]/[0.06] hover:bg-[#d38b88]/10 transition-colors">
+                      <User size={13} />
                       Set your username →
                     </a>
                   )}
 
                   {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
-                    <a key={item.label} href={item.href} style={{ display: "flex", alignItems: "center", padding: "10px 14px", textDecoration: "none", color: "var(--text-main)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", borderBottom: "1px solid var(--border)", transition: "background 0.1s" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
-                    >{item.label}</a>
+                    <a key={item.label} href={item.href} className="flex items-center px-[14px] py-[10px] no-underline text-[var(--text-main)] text-[0.85rem] font-sans border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
+                      {item.label}
+                    </a>
                   ))}
 
                   {isAdmin && (
-                    <a href="/admin/team" style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", textDecoration: "none", color: ACCENT, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", fontWeight: 600, borderBottom: "1px solid var(--border)", transition: "background 0.1s" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <a href="/admin/team" className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#1B2A47] text-[0.85rem] font-sans font-semibold border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
+                      <User size={13} />
                       Manage Team
                     </a>
                   )}
 
-                  <button onClick={() => { logout(); setDropdownOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", color: "#e05555", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", textAlign: "left" }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#fff5f5")}
-                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
+                  <button 
+                    onClick={() => { logout(); setDropdownOpen(false); }} 
+                    className="flex items-center gap-[10px] w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <LogOut size={14} />
                     Sign out
                   </button>
                 </div>
               )}
             </div>
           ) : (
-            <a href="/login" style={{ backgroundColor: "var(--text-main)", color: "white", padding: "5px 14px", borderRadius: 6, fontSize: "0.78rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>Login</a>
+            <a href="/login" className="bg-[var(--text-main)] text-white px-[14px] py-[5px] rounded-[6px] text-[0.78rem] font-semibold font-sans no-underline transition-opacity hover:opacity-90">Login</a>
           )}
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.88rem", color: "var(--text-main)", fontFamily: "'Inter', sans-serif", fontWeight: 500, whiteSpace: "nowrap" }}>About Us</button>
+          <button onClick={() => onTabChange("about")} className="bg-none border-none cursor-pointer text-[0.88rem] text-[var(--text-main)] font-sans font-medium whitespace-nowrap hover:text-[#1B2A47] transition-colors">About Us</button>
         </div>
       </nav>
     </header>
@@ -230,8 +240,8 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
   const typeIcon = (t: string) => t === "article" ? "📄" : t === "podcast" ? "🎙" : "⚡";
   const typeHref = (c: any) => c.type === "podcast" ? `/podcasts/${c.slug}` : c.type === "short" ? `/shorts/${c.slug}` : `/article/${c.slug}`;
 
-  if (loading) return <div style={{ padding: "12px 14px", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>Searching…</div>;
-  if (!results.length) return <div style={{ padding: "12px 14px", fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "var(--text-muted)" }}>No results for "{query}"</div>;
+  if (loading) return <div className="px-[14px] py-[12px] font-sans text-[0.82rem] text-[var(--text-muted)] animate-pulse">Searching…</div>;
+  if (!results.length) return <div className="px-[14px] py-[12px] font-sans text-[0.82rem] text-[var(--text-muted)]">No results for "{query}"</div>;
 
   return (
     <>
@@ -245,7 +255,7 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-main)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title}</div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: "var(--text-muted)", marginTop: 1 }}>{(r.tags ?? [])[0] ?? r.type} · {r.type}</div>
           </div>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <ChevronRight size={11} color="#aaa" />
         </a>
       ))}
     </>

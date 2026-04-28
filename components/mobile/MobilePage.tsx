@@ -3,15 +3,15 @@
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Heart, Bookmark, Share, ExternalLink, MoveLeft, MoveRight, Play, Pause, Loader2, Maximize2 } from "lucide-react";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
-import { MobileAboutView, MobileGrievanceView } from "@/components/mobile/MobileInfoPages";
+import { MobileAboutView, MobileGrievanceView, MobileTeamView } from "@/components/mobile/MobileInfoPages";
 import BeatsFilter from "@/components/mobile/BeatsFilter";
 import { useArticles, type Article } from "@/hooks/useArticles";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
-
 
 const RED = "#c0392b";
 const BLACK = "#111111";
@@ -24,72 +24,42 @@ const CARD_BG = WHITE;
 
 // ── Skeleton ──────────────────────────────────────────────────
 function Sk({ h = 16, w = "100%", r = 4 }: { h?: number; w?: string | number; r?: number }) {
-  return <div style={{ height: h, width: w as any, borderRadius: r, backgroundColor: "#e0d8d0", animation: "oksk 1.4s ease-in-out infinite" }} />;
+  return <div style={{ height: h, width: w as any, borderRadius: r }} className="bg-[#e0d8d0] animate-[oksk_1.4s_ease-in-out_infinite]" />;
 }
 
 // ── Section header ────────────────────────────────────────────
 const SectionHeader = memo(function SectionHeader({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
-    <button onClick={onClick} style={{
-      background: "none", border: "none",
-      cursor: onClick ? "pointer" : "default",
-      fontFamily: "'Inter', sans-serif",
-      fontWeight: 700,
-      fontSize: "0.72rem",
-      letterSpacing: "0.1em",
-      textTransform: "uppercase",
-      color: BLACK,
-      padding: "12px 0 8px",
-      display: "flex", alignItems: "baseline", gap: 2,
-    }}>
+    <button onClick={onClick} className={`bg-none border-none ${onClick ? "cursor-pointer" : "cursor-default"} font-sans font-bold text-[0.72rem] tracking-[0.1em] uppercase text-[#111111] pt-3 pb-2 flex items-baseline gap-[2px]`}>
       {label}<span>→</span>
     </button>
   );
 });
 
 // ── Tag chip — small pill/chip style with background ─
+// ── Tag chip — small pill/chip style with background ─
 function Tag({ label }: { label: string }) {
   return (
-    <span style={{
-      display: "inline-block",
-      padding: "1px 6px",
-      borderRadius: 999,
-      fontFamily: "'Inter', sans-serif",
-      fontSize: "0.40rem",
-      fontWeight: 700,
-      color: RED,
-      textTransform: "uppercase",
-      letterSpacing: "0.04em",
-      backgroundColor: "rgba(192,57,43,0.1)",
-      whiteSpace: "nowrap",
-    }}>
+    <span className="inline-block px-[6px] py-[1px] rounded-full font-sans text-[0.40rem] font-bold text-[#c0392b] uppercase tracking-[0.04em] bg-[#c0392b]/10 whitespace-nowrap">
       {label}
     </span>
   );
 }
 
 // ── Read pill — desktop style ─────────────────────────────────
+// ── Read pill — desktop style ─────────────────────────────────
 function ReadPill({ label = "Read" }: { label?: string }) {
   return (
-    <span style={{
-      display: "inline-block",
-      padding: "2px 9px",
-      borderRadius: 999,
-      fontSize: "0.58rem",
-      fontWeight: 700,
-      fontFamily: "'Inter', sans-serif",
-      backgroundColor: "rgba(211,139,136,0.18)",
-      color: "#a94438",
-      whiteSpace: "nowrap",
-    }}>
+    <span className="inline-block px-[9px] py-[2px] rounded-full text-[0.58rem] font-bold font-sans bg-[#d38b88]/20 text-[#a94438] whitespace-nowrap">
       {label}
     </span>
   );
 }
 
 // ── Thin section divider (like desktop) ───────────────────────
+// ── Thin section divider (like desktop) ───────────────────────
 function SectionDivider() {
-  return <hr style={{ border: "none", borderTop: `1px solid ${BORDER}`, margin: "4px 0" }} />;
+  return <hr className="border-none border-t border-[#e0d8d0] my-1" />;
 }
 
 // ── HERO ARTICLE ──────────────────────────────────────────────
@@ -98,37 +68,29 @@ const MobileHeroArticle = memo(function MobileHeroArticle({ a }: { a: Article })
     ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
     : "";
   return (
-    <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ marginBottom: 4 }}>
+    <Link href={`/article/${a.slug}`} className="no-underline text-inherit block">
+      <article className="mb-1">
         {a.coverImage
-          ? <img src={a.coverImage} alt={a.title} loading="lazy" decoding="async" style={{ width: "100%", height: 196, objectFit: "cover", borderRadius: 4, display: "block", marginBottom: 10, backgroundColor: "#2a2a2a" }} />
-          : <div style={{ width: "100%", height: 196, backgroundColor: "#2a2a2a", borderRadius: 4, marginBottom: 10 }} />
+          ? <img src={a.coverImage} alt={a.title} loading="lazy" decoding="async" className="w-full h-[196px] object-cover rounded-[4px] block mb-[10px] bg-[#2a2a2a]" />
+          : <div className="w-full h-[196px] bg-[#2a2a2a] rounded-[4px] mb-[10px]" />
         }
 
         {a.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
+          <div className="flex gap-[6px] flex-wrap mb-[5px]">
             {a.tags.map(t => <Tag key={t} label={t} />)}
           </div>
         )}
 
-        {/* Normal weight title — not bold */}
-        <h3 style={{
-          fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
-          fontSize: "1.25rem",
-          fontWeight: 400,        /* normal, not bold */
-          color: BLACK,
-          margin: "0 0 5px",
-          lineHeight: 1.25,
-        }}>
+        <h3 className="font-serif text-[1.25rem] font-normal text-[#111111] m-0 mb-[5px] leading-[1.25]">
           {a.title}
         </h3>
 
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: MUTED, marginBottom: 8 }}>
+        <div className="font-sans text-[0.68rem] text-[#666666] mb-2">
           {date}{date && a.author ? " · " : ""}{a.author}
         </div>
 
         {a.excerpt && (
-          <p style={{ fontFamily: "'Radley', serif", fontSize: "0.88rem", color: MUTED, lineHeight: 1.6, margin: "0 0 10px" }}>
+          <p className="font-serif text-[0.88rem] text-[#666666] leading-[1.6] m-0 mb-[10px]">
             {a.excerpt.slice(0, 130)}{a.excerpt.length > 130 ? "..." : ""}
           </p>
         )}
@@ -144,32 +106,23 @@ const MobileArticleItem = memo(function MobileArticleItem({ a, noBorder }: { a: 
     ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
     : "";
   return (
-    <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{
-        display: "flex", gap: 10, padding: "10px 0",
-        borderBottom: noBorder ? "none" : `1px solid ${BORDER}`,
-        alignItems: "flex-start",
-      }}>
+    <Link href={`/article/${a.slug}`} className="no-underline text-inherit">
+      <article className={`flex gap-[10px] py-[10px] items-start ${noBorder ? "border-none" : "border-b border-[#e0d8d0]"}`}>
         {a.coverImage
-          ? <img src={a.coverImage} alt={a.title} loading="lazy" style={{ width: 70, height: 56, objectFit: "cover", borderRadius: 3, flexShrink: 0, backgroundColor: "#2a2a2a" }} />
-          : <div style={{ width: 70, height: 56, backgroundColor: "#2a2a2a", borderRadius: 3, flexShrink: 0 }} />
+          ? <img src={a.coverImage} alt={a.title} loading="lazy" className="w-[70px] h-[56px] object-cover rounded-[3px] flex-shrink-0 bg-[#2a2a2a]" />
+          : <div className="w-[70px] h-[56px] bg-[#2a2a2a] rounded-[3px] flex-shrink-0" />
         }
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex-1 min-w-0">
           {a.tags?.length > 0 && (
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 3 }}>
+            <div className="flex gap-1 flex-wrap mb-1">
               {a.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
             </div>
           )}
           {/* Normal weight */}
-          <h4 style={{
-            fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
-            fontSize: "0.85rem", fontWeight: 400,
-            color: BLACK, lineHeight: 1.3, margin: "0 0 4px",
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-          } as any}>
+          <h4 className="font-serif text-[0.85rem] font-normal text-[#111111] leading-[1.3] mb-1 line-clamp-2">
             {a.title}
           </h4>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.63rem", color: MUTED }}>
+          <div className="flex justify-between items-center font-sans text-[0.63rem] text-[#666666]">
             <span>{date} · {a.author}</span>
             <ReadPill />
           </div>
@@ -185,26 +138,20 @@ const MobileArticleCard = memo(function MobileArticleCard({ a }: { a: Article })
     ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
     : "";
   return (
-    <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ backgroundColor: BG }}>
+    <Link href={`/article/${a.slug}`} className="no-underline text-inherit block">
+      <article className="bg-[#f5f0eb]">
         {a.coverImage
-          ? <img src={a.coverImage} alt={a.title} loading="lazy" style={{ width: "100%", height: 108, objectFit: "cover", borderRadius: 3, display: "block", backgroundColor: "#2a2a2a" }} />
-          : <div style={{ width: "100%", height: 108, backgroundColor: "#2a2a2a", borderRadius: 3 }} />
+          ? <img src={a.coverImage} alt={a.title} loading="lazy" className="w-full h-[108px] object-cover rounded-[3px] block bg-[#2a2a2a]" />
+          : <div className="w-full h-[108px] bg-[#2a2a2a] rounded-[3px]" />
         }
-        {/* Normal weight title */}
-        <h3 style={{
-          fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
-          fontSize: "0.82rem", fontWeight: 400,
-          color: BLACK, margin: "6px 0 4px", lineHeight: 1.28,
-          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-        } as any}>
+        <h3 className="font-serif text-[0.82rem] font-normal text-[#111111] mt-[6px] mb-1 leading-[1.28] line-clamp-2">
           {a.title}
         </h3>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", color: MUTED, marginBottom: 4 }}>
+        <div className="font-sans text-[0.6rem] text-[#666666] mb-1">
           {date} · {a.author}
         </div>
         {a.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <div className="flex gap-1 flex-wrap">
             {a.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
           </div>
         )}
@@ -291,14 +238,14 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
     setSaving(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) { setSaved(s => !s); return; } // fallback: toggle locally if not logged in
+      if (!token) { setSaved(s => !s); return; } 
       await fetch(`/api/articles/${p.slug}/save`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       setSaved(s => !s);
     } catch {
-      setSaved(s => !s); // optimistic fallback
+      setSaved(s => !s); 
     } finally {
       setSaving(false);
     }
@@ -314,138 +261,96 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
   return (
     <div
       onClick={handleCardClick}
-      style={{
-        backgroundColor: "transparent",
-        border: `1.5px solid ${BLACK}`,
-        borderRadius: 8, padding: "10px 12px", marginBottom: 10,
-        cursor: "pointer", userSelect: "none",
-      }}
+      className="bg-transparent border-[1.5px] border-[#111111] rounded-[12px] p-[16px] mb-[12px] cursor-pointer select-none transition-all duration-200 ease-in-out"
     >
-      {/* ── Top row ── */}
-      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-
-        {/* Thumbnail */}
+      {/* Top section: Image + Title */}
+      <div className="flex gap-3 items-start">
         {p.coverImage
           ? <img src={p.coverImage} alt={p.title} loading="lazy"
-              style={{ width: 76, height: 76, objectFit: "cover", borderRadius: 5, flexShrink: 0 }} />
-          : <div style={{ width: 76, height: 76, backgroundColor: "#2a2a2a", borderRadius: 5, flexShrink: 0,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem" }}>🎙</div>
+              className="w-[84px] h-[84px] object-cover rounded-[8px] flex-shrink-0" />
+          : <div className="w-[84px] h-[84px] bg-[#2a2a2a] rounded-[8px] flex-shrink-0 flex items-center justify-center text-[1.4rem]">🎙</div>
         }
-
-        {/* Tags + title + duration */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex-1 min-w-0">
           {showTag && p.tags?.length > 0 && (
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 4 }}>
+            <div className="flex gap-[6px] flex-wrap mb-[6px]">
               {p.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
             </div>
           )}
-          <h4 style={{
-            fontFamily: "'Playfair Display', 'DM Serif Display', Georgia, serif",
-            fontSize: "0.88rem", fontWeight: 400,
-            color: BLACK, lineHeight: 1.3, margin: 0,
-            display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-          } as any}>{p.title}</h4>
+          <h4 className="font-serif text-[1.05rem] font-normal text-[#111111] leading-[1.3] m-0 line-clamp-3">{p.title}</h4>
           {!isPlaying && (
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", color: MUTED, marginTop: 3, display: "block" }}>
+            <span className="font-sans text-[0.7rem] text-[#666666] mt-1 block">
               {totalDur}
             </span>
           )}
         </div>
-
-        {/* Right side: play button (collapsed) OR vertical actions (playing) */}
-        {!isPlaying ? (
-          /* ── Collapsed: single play button ── */
+        {!isPlaying && (
           <button
             onClick={(e) => { e.stopPropagation(); handleCardClick(); }}
-            style={{
-              width: 36, height: 36, borderRadius: "50%",
-              backgroundColor: BLACK, border: "none",
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0, alignSelf: "center",
-            }}
+            className="w-[40px] h-[40px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center flex-shrink-0 self-center"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
+            <Play size={18} color="white" fill="white" className="ml-[2px]" />
           </button>
-        ) : (
-          /* ── Playing: vertical action column ── */
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, flexShrink: 0, paddingTop: 2 }}>
-            {/* Open podcast page — external link icon */}
-            <a
-              href={`/podcasts/${p.slug}`}
-              onClick={(e) => e.stopPropagation()}
-              style={{ display: "flex", color: MUTED, textDecoration: "none" }}
-              title="Open podcast page"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-              </svg>
-            </a>
-
-            {/* Like */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: liked ? RED : MUTED, display: "flex" }}
-              title="Like"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </button>
-
-            {/* Save / Bookmark */}
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{ background: "none", border: "none", cursor: saving ? "wait" : "pointer", padding: 0, color: saved ? RED : MUTED, display: "flex", opacity: saving ? 0.5 : 1, transition: "opacity 0.15s" }}
-              title={saved ? "Saved" : "Save"}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-              </svg>
-            </button>
-
-            {/* Share */}
-            <button
-              onClick={handleShare}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: MUTED, display: "flex" }}
-              title="Share"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-            </button>
-          </div>
         )}
       </div>
 
-      {/* ── Playing: skip controls + seek bar + time ── */}
       {isPlaying && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", marginTop: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", color: BLACK, display: "flex", alignItems: "center", gap: 6, padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", fontWeight: 500 }}>
-              <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>←</span>
-              10
+        <div className="mt-5">
+          {/* Playback Row */}
+          <div className="flex items-center justify-center gap-8 mb-4">
+            <button onClick={(e) => skip(e, -10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
+              <MoveLeft size={20} /> 10
             </button>
-            <button onClick={(e) => { e.stopPropagation(); handleCardClick(); }} style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: BLACK, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <button onClick={(e) => { e.stopPropagation(); handleCardClick(); }} className="w-[52px] h-[52px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center">
+              {isPlaying ? <Pause size={24} color="white" fill="white" /> : <Play size={24} color="white" fill="white" className="ml-[3px]" />}
             </button>
-            <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", color: BLACK, display: "flex", alignItems: "center", gap: 6, padding: 0, fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", fontWeight: 500 }}>
-              10
-              <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>→</span>
+            <button onClick={(e) => skip(e, 10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
+              10 <MoveRight size={20} />
             </button>
           </div>
-          
-          <div style={{ width: "85%", padding: "0" }}>
-            <div ref={seekRef} onClick={handleSeek} style={{ width: "100%", height: 3, backgroundColor: "#d9d5ce", borderRadius: 1.5, cursor: "pointer", position: "relative" }}>
-              <div style={{ height: "100%", width: `${progress}%`, backgroundColor: RED, borderRadius: 1.5, transition: "width 0.2s linear" }} />
+
+          {/* Progress Bar */}
+          <div className="w-[80%] mx-auto mb-3">
+            <div ref={seekRef} onClick={handleSeek} className="w-full h-[3px] bg-[#d9d5ce] rounded-[1.5px] cursor-pointer relative">
+              <div style={{ width: `${progress}%` }} className="h-full bg-[#c0392b] rounded-[1.5px] transition-[width] duration-200 linear" />
             </div>
           </div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", color: BLACK, fontVariantNumeric: "tabular-nums" }}>
-            {current} / {totalDur}
+
+          {/* Bottom Interactions Bar */}
+          <div className="flex items-center justify-between px-[4px]">
+            <div className="flex gap-4">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
+                className={`bg-none border-none cursor-pointer p-0 flex ${liked ? "text-[#c0392b]" : "text-[#111111]"}`}
+              >
+                <Heart size={22} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} />
+              </button>
+              <button 
+                onClick={handleShare}
+                className="bg-none border-none cursor-pointer p-0 text-[#111111] flex"
+              >
+                <Share size={20} strokeWidth={1.5} />
+              </button>
+            </div>
+
+            <div className="font-sans text-[0.9rem] font-medium text-[#111111] tabular-nums">
+              {current} / {totalDur}
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={handleSave}
+                className={`bg-none border-none cursor-pointer p-0 flex ${saved ? "text-[#c0392b]" : "text-[#111111]"} ${saving ? "opacity-50" : "opacity-100"}`}
+              >
+                <Bookmark size={22} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} />
+              </button>
+              <Link 
+                href={`/podcasts/${p.slug}`} 
+                onClick={(e) => e.stopPropagation()}
+                className="text-[#111111] flex no-underline"
+              >
+                <Maximize2 size={20} strokeWidth={1.5} />
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -456,40 +361,30 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
 
 // ── SHORT ARTICLE CARD ────────────────────────────────────────
 const MobileShortCard = memo(function MobileShortCard({ s }: { s: Article }) {
+  const views = (s as any).views || 0;
   return (
-    <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{
-        backgroundColor: "transparent",
-        border: `1.5px solid ${BLACK}`,
-        borderRadius: 6, padding: 10,
-        display: "flex", flexDirection: "column", minHeight: 105,
-      }}>
+    <Link href={`/shorts/${s.slug}`} className="no-underline text-inherit">
+      <article className="bg-transparent border-[1.5px] border-[#111111] rounded-[6px] p-[10px] flex flex-col min-h-[105px]">
         {/* Tags top-left */}
         {s.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 4 }}>
+          <div className="flex gap-1 flex-wrap mb-1">
             {s.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
           </div>
         )}
         {/* Normal weight title */}
-        <h4 style={{
-          fontFamily: "'Inter', sans-serif",
-          fontSize: "0.76rem", fontWeight: 500,
-          color: BLACK, lineHeight: 1.35,
-          margin: "0 0 auto", paddingBottom: 8,
-          display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-        } as any}>
+        <h4 className="font-sans text-[0.76rem] font-medium text-[#111111] leading-[1.35] mb-auto pb-2 line-clamp-3">
           {s.title}
         </h4>
         {/* Bottom: duration left, views right */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto" }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", color: LIGHT_TEXT }}>
+        <div className="flex justify-between items-center mt-auto">
+          <span className="font-sans text-[0.6rem] text-[#999999]">
             {s.readTime ?? "2 min read"}
           </span>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.6rem", color: LIGHT_TEXT, display: "flex", alignItems: "center", gap: 3 }}>
+          <span className="font-sans text-[0.6rem] text-[#999999] flex items-center gap-[3px]">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
             </svg>
-            {((s as any).views || 0).toLocaleString()} views
+            {views.toLocaleString()} {views === 1 ? 'view' : 'views'}
           </span>
         </div>
       </article>
@@ -524,13 +419,13 @@ function MobileHomeView({ articles, podcasts, shorts, loading, onTabChange, acti
 
       {/* Other Articles */}
       {(loading || others.length > 0) && (
-        <section style={{ marginBottom: 14 }}>
+        <section className="mb-[14px]">
           <SectionHeader label="OTHER ARTICLES" onClick={() => onTabChange("articles")} />
           {loading
             ? [1, 2, 3].map(i => (
-              <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: `1px solid ${BORDER}` }}>
+              <div key={i} className="flex gap-[10px] py-[10px] border-b border-[#e0d8d0]">
                 <Sk h={56} w={70} r={3} />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}><Sk h={13} w="70%" /><Sk h={10} w="50%" /></div>
+                <div className="flex-1 flex flex-col gap-[7px]"><Sk h={13} w="70%" /><Sk h={10} w="50%" /></div>
               </div>
             ))
             : others.map((a, i) => <MobileArticleItem key={a._id} a={a} noBorder={i === others.length - 1} />)
@@ -543,10 +438,10 @@ function MobileHomeView({ articles, podcasts, shorts, loading, onTabChange, acti
 
       {/* Podcasts */}
       {(loading || podcasts.length > 0) && (
-        <section style={{ marginBottom: 14 }}>
+        <section className="mb-[14px]">
           <SectionHeader label="PODCASTS" onClick={() => onTabChange("podcasts")} />
           {loading
-            ? [1, 2].map(i => <div key={i} style={{ height: 96, borderRadius: 6, backgroundColor: CARD_BG, border: `1.5px solid ${BLACK}`, marginBottom: 10, animation: "oksk 1.4s ease-in-out infinite" }} />)
+            ? [1, 2].map(i => <div key={i} className="h-[96px] rounded-[6px] bg-white border-[1.5px] border-[#111111] mb-[10px] animate-[oksk_1.4s_ease-in-out_infinite]" />)
             : podcasts.slice(0, 3).map(p => <MobilePodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)
           }
         </section>
@@ -555,15 +450,15 @@ function MobileHomeView({ articles, podcasts, shorts, loading, onTabChange, acti
       {/* Thin divider before shorts */}
       {!loading && shorts.length > 0 && <SectionDivider />}
 
-      {/* Short Reads */}
+      {/* Short Articles */}
       {(loading || shorts.length > 0) && (
-        <section style={{ marginBottom: 24 }}>
-          <SectionHeader label="SHORT READS" onClick={() => onTabChange("shorts")} />
+        <section className="mb-[24px]">
+          <SectionHeader label="SHORT ARTICLES" onClick={() => onTabChange("shorts")} />
           {loading
-            ? <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {[1, 2, 3, 4].map(i => <div key={i} style={{ height: 105, borderRadius: 6, backgroundColor: CARD_BG, border: `1.5px solid ${BLACK}`, animation: "oksk 1.4s ease-in-out infinite" }} />)}
+            ? <div className="grid grid-cols-2 gap-[10px]">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-[105px] rounded-[6px] bg-white border-[1.5px] border-[#111111] animate-[oksk_1.4s_ease-in-out_infinite]" />)}
             </div>
-            : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            : <div className="grid grid-cols-2 gap-[10px]">
               {shorts.slice(0, 4).map(s => <MobileShortCard key={s._id} s={s} />)}
             </div>
           }
@@ -611,23 +506,23 @@ function MobileArticlesView({ articles, loading, onTabChange }: { articles: Arti
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", gap: 8 }}>
-        <button onClick={() => onTabChange("home")} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: BLACK, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" }}>← Home</button>
-        <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+      <div className="flex items-center justify-between py-[10px] gap-2">
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Home</button>
+        <div className="flex gap-[6px] ml-auto">
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
           <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
         </div>
       </div>
 
       {isLoading
-        ? <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          {[1, 2, 3, 4].map(i => <div key={i} style={{ display: "flex", flexDirection: "column", gap: 8 }}><Sk h={108} r={3} /><Sk h={13} w="80%" /><Sk h={10} w="50%" /></div>)}
+        ? <div className="grid grid-cols-2 gap-[14px]">
+          {[1, 2, 3, 4].map(i => <div key={i} className="flex flex-col gap-2"><Sk h={108} r={3} /><Sk h={13} w="80%" /><Sk h={10} w="50%" /></div>)}
         </div>
         : displayList.length === 0
-          ? <p style={{ textAlign: "center", color: MUTED, fontFamily: "'Inter', sans-serif", padding: "48px 0", fontSize: "0.88rem" }}>
+          ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
             {selectedBeat ? `No articles in "${selectedBeat}" beat.` : "No articles yet."}
           </p>
-          : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, paddingBottom: 20 }}>
+          : <div className="grid grid-cols-2 gap-[14px] pb-5">
             {displayList.map(a => <MobileArticleCard key={a._id} a={a} />)}
           </div>
       }
@@ -647,14 +542,14 @@ function MobilePodcastsView({ podcasts, loading, onTabChange, activeSlug, setAct
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0" }}>
-        <button onClick={() => onTabChange("home")} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: BLACK, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" }}>← Home</button>
-        <div style={{ marginLeft: "auto" }}><BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} /></div>
+      <div className="flex items-center justify-between py-[10px]">
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Home</button>
+        <div className="ml-auto"><BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} /></div>
       </div>
       {loading
-        ? [1, 2, 3].map(i => <div key={i} style={{ height: 96, borderRadius: 6, backgroundColor: CARD_BG, border: `1.5px solid ${BLACK}`, marginBottom: 10, animation: "oksk 1.4s ease-in-out infinite" }} />)
+        ? [1, 2, 3].map(i => <div key={i} className="h-[96px] rounded-[6px] bg-white border-[1.5px] border-[#111111] mb-[10px] animate-[oksk_1.4s_ease-in-out_infinite]" />)
         : filtered.length === 0
-          ? <p style={{ textAlign: "center", color: MUTED, fontFamily: "'Inter', sans-serif", padding: "48px 0", fontSize: "0.88rem" }}>
+          ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
             {selectedBeat ? `No podcasts in "${selectedBeat}" beat.` : "No podcasts yet."}
           </p>
           : filtered.map(p => <MobilePodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)
@@ -681,22 +576,22 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", gap: 8 }}>
-        <button onClick={() => onTabChange("home")} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: BLACK, background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" }}>← Home</button>
-        <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+      <div className="flex items-center justify-between py-[10px] gap-2">
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Home</button>
+        <div className="flex gap-[6px] ml-auto">
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
           <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
         </div>
       </div>
       {loading
-        ? <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {[1, 2, 3, 4].map(i => <div key={i} style={{ height: 105, borderRadius: 6, backgroundColor: CARD_BG, border: `1.5px solid ${BLACK}`, animation: "oksk 1.4s ease-in-out infinite" }} />)}
+        ? <div className="grid grid-cols-2 gap-[10px]">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-[105px] rounded-[6px] bg-white border-[1.5px] border-[#111111] animate-[oksk_1.4s_ease-in-out_infinite]" />)}
         </div>
         : sorted.length === 0
-          ? <p style={{ textAlign: "center", color: MUTED, fontFamily: "'Inter', sans-serif", padding: "48px 0", fontSize: "0.88rem" }}>
+          ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
             {selectedBeat ? `No short reads in "${selectedBeat}" beat.` : "No short reads yet."}
           </p>
-          : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, paddingBottom: 20 }}>
+          : <div className="grid grid-cols-2 gap-[10px] pb-5">
             {sorted.map(s => <MobileShortCard key={s._id} s={s} />)}
           </div>
       }
@@ -737,27 +632,27 @@ export default function MobilePage() {
       case "podcasts": return <MobilePodcastsView podcasts={podcasts} loading={loading} onTabChange={handleTabChange} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
       case "shorts": return <MobileShortsView shorts={shorts} loading={loading} onTabChange={handleTabChange} />;
       case "about": return <MobileAboutView onTabChange={handleTabChange} />;
+      case "team": return <MobileTeamView onTabChange={handleTabChange} />;
       case "grievance": return <MobileGrievanceView onTabChange={handleTabChange} />;
       default: return <MobileHomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={handleTabChange} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
     }
   };
 
   return (
-    <div style={{ backgroundColor: BG, minHeight: "100vh" }}>
+    <div className="bg-[#f5f0eb] min-h-screen flex flex-col">
       <style>{`
         @keyframes oksk { 0%,100%{opacity:1} 50%{opacity:0.45} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
         * { -webkit-tap-highlight-color: transparent; }
       `}</style>
 
       <MobileSideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={handleTabChange} onBeatSelect={() => handleTabChange("articles")} />
       <MobileHeader activeTab={activeTab} onTabChange={handleTabChange} onMenuOpen={() => setMenuOpen(true)} />
 
-      <main style={{ padding: "0 16px", animation: "fadeIn 0.22s ease forwards" }} key={activeTab}>
+      <main className="px-4 animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-forwards flex-1" key={activeTab}>
         {error && (
-          <div style={{ padding: "10px 14px", borderRadius: 6, backgroundColor: "rgba(192,57,43,0.08)", border: "1px solid rgba(192,57,43,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", color: RED, marginBottom: 16, marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="px-[14px] py-[10px] rounded-[6px] bg-[#c0392b]/[0.08] border border-[#c0392b]/20 font-sans text-[0.8rem] text-[#c0392b] mb-4 mt-3 flex items-center justify-between">
             {error}
-            <button onClick={refetch} style={{ background: BLACK, border: "none", color: "white", padding: "3px 10px", borderRadius: 4, cursor: "pointer", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif" }}>Retry</button>
+            <button onClick={refetch} className="bg-[#111111] border-none text-white px-[10px] py-[3px] rounded-[4px] cursor-pointer text-[0.72rem] font-sans">Retry</button>
           </div>
         )}
         {renderTab()}

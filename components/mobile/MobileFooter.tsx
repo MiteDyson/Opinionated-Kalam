@@ -26,31 +26,24 @@ export default function MobileFooter() {
     {
       title: "Learn",
       links: [
-        { label: "Our Team", href: "#" },
+        { label: "Our Team", href: "/?tab=team" },
         { label: "About Us", href: "/?tab=about" },
       ]
     }
   ];
 
   return (
-    <footer style={{ backgroundColor: "#222222", color: "#F8F8F8", padding: "40px 20px 30px", marginTop: 40, borderTopLeftRadius: 10, borderTopRightRadius: 10 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 60 }}>
-        
+    <footer className="bg-[#222222] text-[#F8F8F8] px-4 pt-[40px] pb-[30px] mt-10 rounded-t-[10px]">
+      <div className="grid grid-cols-3 gap-[10px] mb-[60px]">
         {COLUMNS.map((col, idx) => (
-          <div key={idx} style={{ textAlign: "center" }}>
-            <h4 style={{
-              fontFamily: "'DM Serif Display', serif", fontWeight: 400, fontSize: "1.1rem",
-              marginBottom: 20, color: "#e8e5e0", letterSpacing: "0.02em",
-            }}>
+          <div key={idx} className="text-center">
+            <h4 className="font-serif font-normal text-[1.1rem] mb-5 text-[#e8e5e0] tracking-[0.02em]">
               {col.title}
             </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+            <ul className="list-none p-0 m-0 flex flex-col gap-3">
               {col.links.map(link => (
                 <li key={link.label}>
-                  <Link href={link.href} style={{
-                    color: "#d0ccc5", fontSize: "0.7rem", fontFamily: "'Inter', sans-serif",
-                    textDecoration: "none",
-                  }}>
+                  <Link href={link.href} className="text-[#d0ccc5] text-[0.7rem] font-sans no-underline hover:text-white transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -58,21 +51,14 @@ export default function MobileFooter() {
             </ul>
           </div>
         ))}
-        
       </div>
 
       {/* Brand */}
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: "2.4rem", color: "#e8e5e0", lineHeight: 1,
-        }}>
+      <div className="text-center">
+        <div className="font-serif text-[2.4rem] text-[#e8e5e0] leading-none">
           Opinionated Kalam
         </div>
-        <p style={{
-          color: "#999", fontSize: "0.65rem", marginTop: 10,
-          fontFamily: "'Inter', sans-serif",
-        }}>
+        <p className="text-[#999999] text-[0.65rem] mt-[10px] font-sans">
           © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
         </p>
       </div>

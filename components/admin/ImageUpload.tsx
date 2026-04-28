@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { uploadToImageKit } from "@/lib/imagekit";
+import { Loader2, Upload, X } from "lucide-react";
 
 const ACCENT = "#1B2A47";
 const TEXT   = "#1A1A1A";
@@ -118,16 +119,9 @@ export default function ImageUpload({
           onMouseLeave={(e) => { if (!uploading) { (e.currentTarget as HTMLElement).style.borderColor = "#CFCBC3"; (e.currentTarget as HTMLElement).style.color = MUTED; } }}
         >
           {uploading ? (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 0.8s linear infinite" }}>
-              <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="0.9"/>
-              <circle cx="12" cy="12" r="10" strokeOpacity="0.15"/>
-            </svg>
+            <Loader2 size={13} style={{ animation: "spin 0.8s linear infinite" }} />
           ) : (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+            <Upload size={13} />
           )}
         </button>
         <style>{`@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}`}</style>
@@ -174,9 +168,9 @@ export default function ImageUpload({
                 backgroundColor: "rgba(0,0,0,0.6)", border: "none",
                 cursor: "pointer", color: "white",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "1rem", lineHeight: 1, zIndex: 2,
+                zIndex: 2,
               }}
-            >×</button>
+            ><X size={16} /></button>
           </div>
 
           {/* Dimension badge */}

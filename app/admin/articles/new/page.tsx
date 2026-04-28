@@ -161,9 +161,15 @@ export default function NewArticlePage() {
       if (!files.length) return;
       setImgUploading(true);
       try {
+        const urls: string[] = [];
         for (const file of files) {
           const url = await uploadToImageKit(file, "articles");
-          editor?.commands.setImage({ src: url });
+          urls.push(url);
+        }
+        if (urls.length) {
+          editor?.chain().focus().insertContent(
+            urls.map(url => ({ type: "image", attrs: { src: url } }))
+          ).run();
         }
       } catch (err: any) { setError("Image upload failed: " + err.message); }
       finally { setImgUploading(false); }

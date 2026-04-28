@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { Heart, Bookmark, Share, Eye, ChevronLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -74,7 +75,7 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
       `}</style>
 
       <MobileSideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={(t) => router.push(`/?tab=${t}`)} onBeatSelect={() => router.push("/")} />
-      <MobileHeader activeTab="" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMenuOpen(true)} />
+      <MobileHeader activeTab="shorts" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMenuOpen(true)} />
 
       <div style={{ padding: "12px 16px 0" }}>
         {/* Back button */}
@@ -84,7 +85,7 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
           color: MUTED, background: "none", border: `1px solid ${BORDER}`,
           borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12,
         }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <ChevronLeft size={14} strokeWidth={2.5} />
           Back
         </button>
       </div>
@@ -102,8 +103,8 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
           <span>{short.author}</span>
           <span style={{ opacity: 0.4 }}>·</span>
           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            {(views || 0).toLocaleString()}
+            <Eye size={12} />
+            {(views || 0).toLocaleString()} {views === 1 ? 'View' : 'Views'}
           </span>
         </div>
 
@@ -121,15 +122,15 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
         {/* Interactions */}
         <div style={{ display: "flex", gap: 10, marginTop: 28, flexWrap: "wrap" }}>
           <button style={actionBtn(liked)} onClick={onLike} disabled={actionLoading}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            {likes.toLocaleString()} {liked ? "Liked" : "Like"}
+            <Heart size={14} fill={liked ? "currentColor" : "none"} />
+            {likes.toLocaleString()} {likes === 1 ? 'Like' : 'Likes'}
           </button>
           <button style={actionBtn(saved)} onClick={onSave} disabled={actionLoading}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
             {saved ? "Saved" : "Save"}
           </button>
           <button style={actionBtn(copied)} onClick={onShare}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <Share size={14} />
             {copied ? "Copied!" : "Share"}
           </button>
         </div>
@@ -261,10 +262,10 @@ export default function ShortPage() {
       `}</style>
       <SideMenu isOpen={desktopMenuOpen} onClose={() => setDesktopMenuOpen(false)} onTabChange={() => router.push("/")} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
-        <Header onMenuOpen={() => setDesktopMenuOpen(true)} activeTab="" onTabChange={() => router.push("/")} />
+        <Header onMenuOpen={() => setDesktopMenuOpen(true)} activeTab="shorts" onTabChange={() => router.push("/")} />
         <div style={{ maxWidth: 680, margin: "0 auto 80px" }}>
           <button onClick={() => router.push("/")} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: "0.9rem", fontWeight: 600, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: 30, fontFamily: "'Inter', sans-serif", padding: 0 }}>
-            <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: "currentColor", strokeWidth: 2, fill: "none" }}><polyline points="15 18 9 12 15 6"/></svg>
+            <ChevronLeft size={16} />
             Home
           </button>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
@@ -279,23 +280,23 @@ export default function ShortPage() {
             <span>{short.author}</span>
             <span style={{ opacity: 0.4 }}>|</span>
             <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              {(views || 0).toLocaleString()}
+              <Eye size={14} />
+              {(views || 0).toLocaleString()} {views === 1 ? 'View' : 'Views'}
             </span>
           </div>
 
           <div className="short-body" dangerouslySetInnerHTML={{ __html: short.content }} />
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 40, paddingTop: 28, borderTop: "1px solid var(--border)" }}>
             <button style={actionBtn(liked)} onClick={handleLike} disabled={actionLoading}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              {likes.toLocaleString()} {liked ? "Liked" : "Like"}
+              <Heart size={16} fill={liked ? "currentColor" : "none"} />
+              {likes.toLocaleString()} {likes === 1 ? 'Like' : 'Likes'}
             </button>
             <button style={actionBtn(saved)} onClick={handleSave} disabled={actionLoading}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
               {saved ? "Saved" : "Save"}
             </button>
             <button style={actionBtn(copied)} onClick={handleShare}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <Share size={16} />
               {copied ? "Copied!" : "Share"}
             </button>
           </div>
@@ -305,3 +306,4 @@ export default function ShortPage() {
     </>
   );
 }
+

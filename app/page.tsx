@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
+import { MobileAboutView, MobileGrievanceView, MobileTeamView } from "@/components/mobile/MobileInfoPages";
 
 // Lazy-load the mobile page to avoid SSR issues
 const MobilePage = dynamic(() => import("@/components/mobile/MobilePage"), { ssr: false });
@@ -35,6 +36,7 @@ interface Article {
   readTime: string;
   publishedAt: string;
   likes: number;
+  views?: number;
   episode?: string;
   duration?: string;
   audioUrl?: string;
@@ -224,7 +226,13 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
         </div>
         <div style={{ padding: "10px 14px 14px" }}>
           {showTag && <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{s.tags[0] ?? "Short"} &nbsp;·&nbsp; {s.readTime}</div>}
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>{s.title}</h3>
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: "0 0 8px" }}>{s.title}</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-muted)", fontSize: "0.68rem", fontFamily: "'Inter', sans-serif" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+            {(s.views || 0).toLocaleString()} {(s.views || 0) === 1 ? 'View' : 'Views'}
+          </div>
         </div>
       </article>
     </Link>
@@ -334,7 +342,7 @@ function ShortsView({ shorts, loading }: { shorts: Article[]; loading: boolean }
     <div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: 12, marginBottom: 28 }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", margin: 0 }}>Short Reads</h1>
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", margin: 0 }}>Short Articles</h1>
         <BeatsDropdown selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
       </div>
       {loading ? (
@@ -343,7 +351,7 @@ function ShortsView({ shorts, loading }: { shorts: Article[]; loading: boolean }
         </div>
       ) : filtered.length === 0 ? (
         <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif" }}>
-          {selectedBeat ? `No short reads in the "${selectedBeat}" beat.` : "No short reads yet."}
+          {selectedBeat ? `No short articles in the "${selectedBeat}" beat.` : "No short articles yet."}
         </p>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 20, marginBottom: 60 }}>
@@ -421,7 +429,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
           </div>
 
           <div style={{ paddingLeft: 32 }}>
-            <SectionLabel onClick={() => onTabChange("recent")}>Recent Stories</SectionLabel>
+            <SectionLabel onClick={() => onTabChange("articles")}>Articles</SectionLabel>
             {others.length === 0 ? <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>No other stories yet.</p> : (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {others.map((a, i) => (
@@ -470,7 +478,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
 
       {shorts.length > 0 && (
         <section style={{ marginBottom: 60 }}>
-          <SectionLabel onClick={() => onTabChange("shorts")}>Short Reads</SectionLabel>
+          <SectionLabel onClick={() => onTabChange("shorts")}>Short Articles</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             {shorts.slice(0, 4).map(s => <ShortCard key={s._id} s={s} showTag={false} />)}
           </div>
@@ -506,6 +514,7 @@ export default function HomePage() {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab");
     if (tab) setActiveTab(tab);
+    else setActiveTab("home");
   }, []);
 
   // Don't render anything until mobile detection is ready (prevents flash)
@@ -522,9 +531,12 @@ export default function HomePage() {
   const renderTab = () => {
     switch (activeTab) {
       case "home":     return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
-      case "recent":   return <RecentView articles={articles} loading={loading} />;
+      case "articles": return <RecentView articles={articles} loading={loading} />;
       case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
       case "shorts":   return <ShortsView shorts={shorts} loading={loading} />;
+      case "about":     return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileAboutView onTabChange={setActiveTab} /></div>;
+      case "team":      return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileTeamView onTabChange={setActiveTab} /></div>;
+      case "grievance": return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileGrievanceView onTabChange={setActiveTab} /></div>;
       // Legacy beats tab kept for deep links
       case "beats":    return <RecentView articles={articles} loading={loading} />;
       default:         return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
@@ -532,9 +544,9 @@ export default function HomePage() {
   };
 
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onTabChange={setActiveTab} />
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", flex: 1, width: "100%" }}>
         <Header onMenuOpen={() => setMenuOpen(true)} activeTab={activeTab} onTabChange={setActiveTab} />
         <main key={activeTab} style={{ animation: "fadeIn 0.25s ease forwards" }}>
           <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -542,6 +554,6 @@ export default function HomePage() {
         </main>
       </div>
       <Footer />
-    </>
+    </div>
   );
 }
