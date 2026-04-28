@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   }
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -24,7 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <Toaster position="top-center" containerStyle={{ zIndex: 99999 }} toastOptions={{ duration: 3000, style: { background: "#1A1A1A", color: "#fff", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif" } }} />
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

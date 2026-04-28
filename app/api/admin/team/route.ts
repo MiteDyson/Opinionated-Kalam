@@ -72,3 +72,18 @@ export async function DELETE(req: NextRequest) {
   await Admin.findOneAndDelete({ email: email.toLowerCase() });
   return NextResponse.json({ success: true });
 }
+// PATCH — update admin role (main admin only)
+export async function PATCH(req: NextRequest) {
+  const admin = await verifyAdmin(req);
+  if (!admin || !admin.isMain) {
+    return NextResponse.json({ error: "Forbidden — main admin only" }, { status: 403 });
+  }
+
+  const { email, role } = await req.json();
+  if (!email || !role) return NextResponse.json({ error: "Email and role required" }, { status: 400 });
+
+  await connectDB();
+  const Admin = getAdminModel();
+  await Admin.findOneAndUpdate({ email: email.toLowerCase() }, { role });
+  return NextResponse.json({ success: true });
+}

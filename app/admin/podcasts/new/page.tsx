@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TagSelector from "@/components/admin/TagSelector";
 
@@ -17,6 +18,7 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 
 export default function NewPodcastPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [title, setTitle]       = useState("");
   const [coverImage, setCover]  = useState("");
   const [audioUrl, setAudioUrl] = useState("");
@@ -35,7 +37,7 @@ export default function NewPodcastPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, coverImage, audioUrl, episode, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: "Vineet Mestry" }),
+        body: JSON.stringify({ title, coverImage, audioUrl, episode, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: user?.displayName || "Unknown Author" }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");

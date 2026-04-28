@@ -156,10 +156,8 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
           {user ? (
             <div ref={dropdownRef} className="relative">
               <button onClick={() => setDropdownOpen(o => !o)} className={`flex items-center gap-[6px] bg-none border ${!hasUsername ? "border-[#d38b88]/60 text-[#b85c58]" : "border-[var(--border)] text-[var(--text-main)]"} cursor-pointer px-[12px] py-[5px] rounded-full text-[0.82rem] font-sans font-semibold transition-all hover:bg-black/5`}>
-                <User size={14} />
                 {displayName}
-                {!hasUsername && <span className="text-[0.62rem] text-[#b85c58]">!</span>}
-                <ChevronDown size={10} className={`transition-transform duration-150 ${dropdownOpen ? "rotate-180" : "rotate-0"}`} />
+                {!hasUsername && <span className="ml-1 text-[0.62rem] text-[#b85c58]">!</span>}
               </button>
 
               {dropdownOpen && (
@@ -171,9 +169,8 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
                     <div className="text-[0.7rem] text-[var(--text-muted)] font-sans mt-[2px]">{user.email}</div>
                   </div>
 
-                  {!hasUsername && (
+                   {!hasUsername && (
                     <a href="/login" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#b85c58] text-[0.82rem] font-sans font-semibold border-b border-[var(--border)] bg-[#d38b88]/[0.06] hover:bg-[#d38b88]/10 transition-colors">
-                      <User size={13} />
                       Set your username →
                     </a>
                   )}
@@ -186,16 +183,14 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
 
                   {isMainAdmin && (
                     <a href="/admin/team" className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#1B2A47] text-[0.85rem] font-sans font-semibold border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
-                      <User size={13} />
                       Manage Team
                     </a>
                   )}
 
                   <button 
                     onClick={() => { logout(); setDropdownOpen(false); }} 
-                    className="flex items-center gap-[10px] w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
+                    className="flex items-center w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
                   >
-                    <LogOut size={14} />
                     Sign out
                   </button>
                 </div>

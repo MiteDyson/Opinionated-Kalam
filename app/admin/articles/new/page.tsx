@@ -12,30 +12,31 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { uploadToImageKit } from "@/lib/imagekit";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AudioUpload from "@/components/admin/AudioUpload";
 import TagSelector from "@/components/admin/TagSelector";
 
 const ACCENT = "#1B2A47";
-const BG     = "#D5D2CB";
-const TERRA  = "#D38B88";
-const TEXT   = "#1A1A1A";
-const MUTED  = "#555555";
-const WPM    = 200;
+const BG = "#D5D2CB";
+const TERRA = "#D38B88";
+const TEXT = "#1A1A1A";
+const MUTED = "#555555";
+const WPM = 200;
 
-const FONT_SIZES    = ["12","14","16","18","20","24","28","32","36","48"];
+const FONT_SIZES = ["12", "14", "16", "18", "20", "24", "28", "32", "36", "48"];
 const FONT_FAMILIES = [
-  { label: "Default (Radley)", value: "'Radley', serif" },
-  { label: "DM Serif",         value: "'DM Serif Display', serif" },
-  { label: "Georgia",          value: "Georgia, serif" },
-  { label: "Times New Roman",  value: "'Times New Roman', serif" },
-  { label: "Courier New",      value: "'Courier New', monospace" },
-  { label: "Arial",            value: "Arial, sans-serif" },
-  { label: "Inter",            value: "Inter, sans-serif" },
+  { label: "Radley", value: "'Radley', serif" },
+  { label: "DM Serif", value: "'DM Serif Display', serif" },
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Times New Roman", value: "'Times New Roman', serif" },
+  { label: "Courier New", value: "'Courier New', monospace" },
+  { label: "Arial", value: "Arial, sans-serif" },
+  { label: "Inter", value: "Inter, sans-serif" },
 ];
-const TEXT_COLORS      = ["#1A1A1A","#D92323","#1B2A47","#D38B88","#555555","#3a7a3e","#8a6a00","#ffffff"];
-const HIGHLIGHT_COLORS = ["#FFF3CD","#D1ECF1","#D4EDDA","#F8D7DA","#E2E3E5","#FFE0F0","#D5D2CB"];
+const TEXT_COLORS = ["#1A1A1A", "#D92323", "#1B2A47", "#D38B88", "#555555", "#3a7a3e", "#8a6a00", "#ffffff"];
+const HIGHLIGHT_COLORS = ["#FFF3CD", "#D1ECF1", "#D4EDDA", "#F8D7DA", "#E2E3E5", "#FFE0F0", "#D5D2CB"];
 
 function TBtn({ active, onClick, children, title }: { active?: boolean; onClick: () => void; children: React.ReactNode; title?: string }) {
   return (
@@ -106,18 +107,19 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const [title, setTitle]         = useState("");
-  const [excerpt, setExcerpt]     = useState("");
-  const [coverImage, setCover]    = useState("");
-  const [audioUrl, setAudioUrl]   = useState("");
+  const { user } = useAuth();
+  const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [coverImage, setCover] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
   const [audioDuration, setAudioDuration] = useState("");
-  const [type, setType]           = useState<"article" | "short">("article");
-  const [tags, setTags]           = useState<string[]>([]);
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState("");
+  const [type, setType] = useState<"article" | "short">("article");
+  const [tags, setTags] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
-  const [fontSize, setFontSize]   = useState("16");
+  const [fontSize, setFontSize] = useState("16");
   const [fontFamily, setFontFamily] = useState("'Radley', serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
 
@@ -133,8 +135,8 @@ export default function NewArticlePage() {
         name: "textStyle",
         addAttributes() {
           return {
-            color:      { default: null, parseHTML: el => el.style.color || null,      renderHTML: a => a.color      ? { style: `color: ${a.color}` }           : {} },
-            fontSize:   { default: null, parseHTML: el => el.style.fontSize || null,   renderHTML: a => a.fontSize   ? { style: `font-size: ${a.fontSize}` }     : {} },
+            color: { default: null, parseHTML: el => el.style.color || null, renderHTML: a => a.color ? { style: `color: ${a.color}` } : {} },
+            fontSize: { default: null, parseHTML: el => el.style.fontSize || null, renderHTML: a => a.fontSize ? { style: `font-size: ${a.fontSize}` } : {} },
             fontFamily: { default: null, parseHTML: el => el.style.fontFamily || null, renderHTML: a => a.fontFamily ? { style: `font-family: ${a.fontFamily}` } : {} },
           };
         },
@@ -183,14 +185,14 @@ export default function NewArticlePage() {
     editor?.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
-  const applyFontSize   = (size: string)   => { setFontSize(size);     editor?.chain().focus().setMark("textStyle", { fontSize: `${size}px` }).run(); };
+  const applyFontSize = (size: string) => { setFontSize(size); editor?.chain().focus().setMark("textStyle", { fontSize: `${size}px` }).run(); };
   const applyFontFamily = (family: string) => { setFontFamily(family); editor?.chain().focus().setMark("textStyle", { fontFamily: family }).run(); };
 
   const copyFormat = () => {
     if (!editor) return;
     const marks: Record<string, any> = {};
-    if (editor.isActive("bold"))      marks.bold = true;
-    if (editor.isActive("italic"))    marks.italic = true;
+    if (editor.isActive("bold")) marks.bold = true;
+    if (editor.isActive("italic")) marks.italic = true;
     if (editor.isActive("underline")) marks.underline = true;
     if (editor.isActive("textStyle")) marks.textStyle = editor.getAttributes("textStyle");
     if (editor.isActive("highlight")) marks.highlight = editor.getAttributes("highlight");
@@ -200,8 +202,8 @@ export default function NewArticlePage() {
   const pasteFormat = () => {
     if (!editor || !copiedFormat) return;
     const chain = editor.chain().focus();
-    if (copiedFormat.bold)      chain.setBold();
-    if (copiedFormat.italic)    chain.setItalic();
+    if (copiedFormat.bold) chain.setBold();
+    if (copiedFormat.italic) chain.setItalic();
     if (copiedFormat.underline) chain.setUnderline();
     // if (copiedFormat.textStyle?.color) chain.setColor(copiedFormat.textStyle.color);
     if (copiedFormat.highlight?.color) chain.setHighlight({ color: copiedFormat.highlight.color });
@@ -214,8 +216,8 @@ export default function NewArticlePage() {
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
     setSaving(true); setError("");
     try {
-      if (!auth.currentUser) { setError("Not signed in."); setSaving(false); return; }
-      const token = await auth.currentUser.getIdToken(true);
+      if (!user) { setError("Not signed in."); setSaving(false); return; }
+      const token = await auth.currentUser?.getIdToken(true);
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -224,7 +226,7 @@ export default function NewArticlePage() {
           audioUrl: audioUrl.trim() || undefined,
           duration: audioDuration || undefined,
           status: publishNow ? "published" : "draft",
-          author: "Vineet Mestry",
+          author: user.displayName || "Unknown Author",
           readTime,
         }),
       });
@@ -261,7 +263,7 @@ export default function NewArticlePage() {
       <div style={{ backgroundColor: TEXT, padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10, gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <button onClick={() => router.push("/admin/create")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
             Back
           </button>
           <span style={{ color: "rgba(255,255,255,0.12)", flexShrink: 0 }}>|</span>
@@ -285,7 +287,7 @@ export default function NewArticlePage() {
 
         {/* Type toggle */}
         <div style={{ display: "flex", backgroundColor: "white", borderRadius: 8, padding: 3, border: "1px solid #CFCBC3", width: "fit-content" }}>
-          {(["article","short"] as const).map(t => (
+          {(["article", "short"] as const).map(t => (
             <button key={t} onClick={() => setType(t)} style={{ padding: "6px 18px", borderRadius: 6, border: "none", cursor: "pointer", backgroundColor: type === t ? ACCENT : "transparent", color: type === t ? "white" : MUTED, fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", transition: "all 0.14s" }}>
               {t === "article" ? "📄 Article" : "⚡ Short Read"}
             </button>
@@ -330,10 +332,10 @@ export default function NewArticlePage() {
               <TDivider />
               <TSelect title="Font size" value={fontSize} onChange={applyFontSize} width={56} options={FONT_SIZES.map(s => ({ label: s, value: s }))} />
               <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().toggleBold().run()}      active={editor?.isActive("bold")}      title="Bold"><b>B</b></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleItalic().run()}    active={editor?.isActive("italic")}    title="Italic"><i>I</i></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="Bold"><b>B</b></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")} title="Italic"><i>I</i></TBtn>
               <TBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")} title="Underline"><u>U</u></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleStrike().run()}    active={editor?.isActive("strike")}    title="Strike"><s>S</s></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")} title="Strike"><s>S</s></TBtn>
               <TDivider />
               <ColorPicker colors={TEXT_COLORS} label="Text color" currentColor={currentTextColor} onSelect={(c) => editor?.chain().focus().setMark("textStyle", { color: c }).run()} />
               <HighlightPicker colors={HIGHLIGHT_COLORS} label="Highlight" currentColor={currentHighlight} onSelect={(c) => c ? editor?.chain().focus().setHighlight({ color: c }).run() : editor?.chain().focus().unsetHighlight().run()} />
@@ -341,25 +343,25 @@ export default function NewArticlePage() {
               <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="Heading 2">H2</TBtn>
               <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="Heading 3">H3</TBtn>
               <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()}   active={editor?.isActive({ textAlign: "left" })}   title="Left"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="Center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()}  active={editor?.isActive({ textAlign: "right" })}  title="Right"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })} title="Left"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="15" y2="12" /><line x1="3" y1="18" x2="18" y2="18" /></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })} title="Center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="6" y1="12" x2="18" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })} title="Right"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="9" y1="12" x2="21" y2="12" /><line x1="6" y1="18" x2="21" y2="18" /></svg></TBtn>
               <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()}  active={editor?.isActive("bulletList")}  title="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="9" y1="6" x2="20" y2="6" /><line x1="9" y1="12" x2="20" y2="12" /><line x1="9" y1="18" x2="20" y2="18" /><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none" /><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none" /></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" y1="6" x2="21" y2="6" /><line x1="10" y1="12" x2="21" y2="12" /><line x1="10" y1="18" x2="21" y2="18" /><path d="M4 6h1v4" /><path d="M4 10h2" /><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" /></svg></TBtn>
               <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Blockquote"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")} title="Code block"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="Blockquote"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zm12 0c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" /></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")} title="Code block"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg></TBtn>
               <TBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Divider">—</TBtn>
               <TDivider />
-              <TBtn onClick={setLink} active={editor?.isActive("link")} title="Add link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></TBtn>
-              <TBtn onClick={imgUploading ? () => {} : addImage} active={imgUploading} title={imgUploading ? "Uploading…" : "Add image"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></TBtn>
+              <TBtn onClick={setLink} active={editor?.isActive("link")} title="Add link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg></TBtn>
+              <TBtn onClick={imgUploading ? () => { } : addImage} active={imgUploading} title={imgUploading ? "Uploading…" : "Add image"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg></TBtn>
               <TDivider />
-              <TBtn onClick={copiedFormat ? pasteFormat : copyFormat} active={!!copiedFormat} title={copiedFormat ? "Paste formatting" : "Copy formatting"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()} title="Clear formatting"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></TBtn>
+              <TBtn onClick={copiedFormat ? pasteFormat : copyFormat} active={!!copiedFormat} title={copiedFormat ? "Paste formatting" : "Copy formatting"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" /><line x1="6" y1="1" x2="6" y2="4" /><line x1="10" y1="1" x2="10" y2="4" /><line x1="14" y1="1" x2="14" y2="4" /></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()} title="Clear formatting"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></TBtn>
               <TDivider />
-              <TBtn onClick={() => editor?.chain().focus().undo().run()} title="Undo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></TBtn>
-              <TBtn onClick={() => editor?.chain().focus().redo().run()} title="Redo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().undo().run()} title="Undo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg></TBtn>
+              <TBtn onClick={() => editor?.chain().focus().redo().run()} title="Redo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4" /><path d="M4 20v-7a4 4 0 0 1 4-4h12" /></svg></TBtn>
             </div>
 
             <EditorContent editor={editor} />

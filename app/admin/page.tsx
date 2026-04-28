@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 
@@ -22,6 +23,7 @@ interface Article {
   likes: number;
   publishedAt?: string;
   createdAt: string;
+  author?: string;
 }
 
 type Tab     = "all" | "article" | "short" | "podcast";
@@ -30,13 +32,14 @@ type SortDir = "asc" | "desc";
 
 const IconEye = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>);
 const IconEdit = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
-const IconTrash = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>);
+const IconTrash = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1-1v2"/></svg>);
 const IconSignOut = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>);
 const IconHome = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>);
 const IconPlus = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
 const IconSort = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M6 12h12M9 18h6"/></svg>);
 const IconChevUp = () => (<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15"/></svg>);
 const IconChevDown = () => (<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>);
+const IconFilter = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>);
 
 function SkeletonRow({ isMobile }: { isMobile: boolean }) {
   if (isMobile) {
@@ -84,13 +87,18 @@ const typeBadge = (type: string) => {
 };
 
 // Mobile card row for an article
-function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, router }: {
+function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, router, isMainAdmin, userDisplayName, adminRole }: {
   a: Article; i: number; filtered: Article[];
   onToggleStatus: (a: Article) => void;
   onDelete: (slug: string, title: string) => void;
   deleting: string | null;
   router: ReturnType<typeof useRouter>;
+  isMainAdmin: boolean;
+  userDisplayName?: string | null;
+  adminRole: string | null;
 }) {
+  const canDelete = isMainAdmin || adminRole === "author"; // DB role 'author' is UI 'Admin'
+  const canEdit   = canDelete || (userDisplayName && a.author === userDisplayName);
   return (
     <div
       key={a._id}
@@ -102,37 +110,46 @@ function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, 
       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
     >
-      {/* Row 1: title + action buttons */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {a.title}
           </div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED, marginTop: 3 }}>
-            {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 3 }}>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED }}>
+              {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+            </span>
+            {a.author && (
+              <>
+                <span style={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "#CFCBC3" }} />
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: ACCENT, fontWeight: 600 }}>{a.author}</span>
+              </>
+            )}
           </div>
         </div>
-        {/* Action buttons */}
         <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-          <Link
-            href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`}
-            title="Edit"
-            style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-          ><IconEdit /></Link>
+          {canEdit && (
+            <Link
+              href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`}
+              title="Edit"
+              style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+            ><IconEdit /></Link>
+          )}
           <Link
             href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`}
             title="View"
             style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
           ><IconEye /></Link>
-          <button
-            onClick={() => onDelete(a.slug, a.title)}
-            disabled={deleting === a.slug}
-            title="Delete"
-            style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: deleting === a.slug ? 0.4 : 1 }}
-          ><IconTrash /></button>
+          {canDelete && (
+            <button
+              onClick={() => onDelete(a.slug, a.title)}
+              disabled={deleting === a.slug}
+              title="Delete"
+              style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: deleting === a.slug ? 0.4 : 1 }}
+            ><IconTrash /></button>
+          )}
         </div>
       </div>
-      {/* Row 2: type badge + status toggle + stats */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         {typeBadge(a.type)}
         <button
@@ -160,10 +177,11 @@ function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, 
 }
 
 export default function AdminDashboard() {
-  const { logout } = useAuth();
+  const { user, logout, isMainAdmin, isAdmin, adminRole } = useAuth();
   const router     = useRouter();
 
   const [tab, setTab]           = useState<Tab>("all");
+  const [authorFilter, setAuthorFilter] = useState("all");
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading]   = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -171,10 +189,11 @@ export default function AdminDashboard() {
   const [sortKey, setSortKey]   = useState<SortKey>("createdAt");
   const [sortDir, setSortDir]   = useState<SortDir>("desc");
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
-  // Detect mobile
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -185,6 +204,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -221,8 +241,12 @@ export default function AdminDashboard() {
       const token = await auth.currentUser?.getIdToken();
       await fetch(`/api/articles/${slug}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       setArticles(prev => prev.filter(a => a.slug !== slug));
-    } catch (e: any) { alert("Delete failed: " + e.message); }
-    finally { setDeleting(null); }
+      toast.success(`"${title}" deleted`);
+    } catch (e: any) {
+      toast.error(`Delete failed: ${e.message}`);
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleToggleStatus = async (article: Article) => {
@@ -235,8 +259,14 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus, publishedAt: newStatus === "published" ? new Date() : null }),
       });
-    } catch { setArticles(prev => prev.map(a => a.slug === article.slug ? { ...a, status: article.status } : a)); }
+      toast.success(`Post ${newStatus === "published" ? "published" : "moved to drafts"}`);
+    } catch {
+      setArticles(prev => prev.map(a => a.slug === article.slug ? { ...a, status: article.status } : a));
+      toast.error("Failed to update status.");
+    }
   };
+
+  const isFullAdmin = isMainAdmin || adminRole === "author";
 
   const sorted = [...articles].sort((a, b) => {
     let cmp = 0;
@@ -246,7 +276,14 @@ export default function AdminDashboard() {
     if (sortKey === "createdAt") cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     return sortDir === "asc" ? cmp : -cmp;
   });
-  const filtered = tab === "all" ? sorted : sorted.filter(a => a.type === tab);
+
+  const authors = Array.from(new Set(articles.map(a => a.author).filter(Boolean))) as string[];
+
+  const filtered = sorted.filter(a => {
+    const matchTab    = tab === "all" || a.type === tab;
+    const matchAuthor = authorFilter === "all" || a.author === authorFilter;
+    return matchTab && matchAuthor;
+  });
 
   const published  = articles.filter(a => a.status === "published").length;
   const drafts     = articles.filter(a => a.status === "draft").length;
@@ -304,7 +341,7 @@ export default function AdminDashboard() {
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "16px 12px" : "24px" }}>
 
-        {/* Stats — 2-col on mobile, 4-col on desktop */}
+        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
           {loading
             ? [0,1,2,3].map(i => <SkeletonStat key={i} />)
@@ -327,7 +364,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Content table / card list */}
-        <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", overflow: "hidden" }}>
+        <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", overflow: "visible" }}>
 
           {/* Table toolbar */}
           <div style={{ padding: isMobile ? "10px 14px" : "12px 18px", borderBottom: "1px solid #CFCBC3", display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>
@@ -336,16 +373,13 @@ export default function AdminDashboard() {
             <div ref={sortRef} style={{ position: "relative", flexShrink: 0 }}>
               <button onClick={() => setSortOpen(o => !o)} title={`Sort by ${sortLabels[sortKey]}`}
                 style={{ ...iconBtn(sortOpen ? ACCENT : MUTED, sortOpen ? "rgba(27,42,71,0.07)" : "transparent", sortOpen ? "rgba(27,42,71,0.3)" : "#CFCBC3"), position: "relative" }}
-                onMouseEnter={(e) => { if (!sortOpen) { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; } }}
-                onMouseLeave={(e) => { if (!sortOpen) { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; } }}
               >
                 <IconSort />
                 <span style={{ position: "absolute", top: 4, right: 4, width: 5, height: 5, borderRadius: "50%", backgroundColor: ACCENT, opacity: sortKey !== "createdAt" || sortDir !== "desc" ? 1 : 0, transition: "opacity 0.2s" }} />
               </button>
 
               {sortOpen && (
-                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 50, backgroundColor: "white", borderRadius: 10, border: "1px solid #CFCBC3", boxShadow: "0 8px 28px rgba(0,0,0,0.1)", overflow: "hidden", minWidth: 160, animation: "fadeDown 0.12s ease" }}>
-                  <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}`}</style>
+                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100, backgroundColor: "white", borderRadius: 10, border: "1px solid #CFCBC3", boxShadow: "0 8px 28px rgba(0,0,0,0.1)", overflow: "hidden", minWidth: 160, animation: "fadeDown 0.12s ease" }}>
                   <div style={{ padding: "8px 12px 6px", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid #f5f5f3" }}>Sort by</div>
                   {(["title","views","likes","createdAt"] as SortKey[]).map((key, i, arr) => (
                     <button key={key} onClick={() => handleSort(key)} style={{
@@ -355,10 +389,7 @@ export default function AdminDashboard() {
                       color: sortKey === key ? ACCENT : TEXT, fontWeight: sortKey === key ? 700 : 400,
                       backgroundColor: sortKey === key ? "rgba(27,42,71,0.04)" : "transparent",
                       borderBottom: i < arr.length - 1 ? "1px solid #f5f5f3" : "none",
-                    }}
-                      onMouseEnter={(e) => { if (sortKey !== key) (e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = sortKey === key ? "rgba(27,42,71,0.04)" : "transparent"; }}
-                    >
+                    }}>
                       <span>{sortLabels[key]}</span>
                       {sortKey === key && (
                         <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "0.65rem", padding: "1px 5px", borderRadius: 3, backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT }}>
@@ -371,11 +402,43 @@ export default function AdminDashboard() {
               )}
             </div>
 
+            {/* Author Filter (Available to all admins/authors) */}
+            {isAdmin && authors.length > 0 && (
+              <div ref={filterRef} style={{ position: "relative", flexShrink: 0 }}>
+                <button onClick={() => setFilterOpen(o => !o)} title="Filter by Author"
+                  style={{ ...iconBtn(filterOpen ? ACCENT : MUTED, filterOpen ? "rgba(27,42,71,0.07)" : "transparent", filterOpen ? "rgba(27,42,71,0.3)" : "#CFCBC3"), position: "relative" }}
+                >
+                  <IconFilter />
+                  <span style={{ position: "absolute", top: 4, right: 4, width: 5, height: 5, borderRadius: "50%", backgroundColor: ACCENT, opacity: authorFilter !== "all" ? 1 : 0, transition: "opacity 0.2s" }} />
+                </button>
+
+                {filterOpen && (
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100, backgroundColor: "white", borderRadius: 10, border: "1px solid #CFCBC3", boxShadow: "0 8px 28px rgba(0,0,0,0.1)", overflow: "hidden", minWidth: 180, animation: "fadeDown 0.12s ease" }}>
+                    <div style={{ padding: "8px 12px 6px", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid #f5f5f3" }}>Filter Author</div>
+                    <button onClick={() => { setAuthorFilter("all"); setFilterOpen(false); }} style={{
+                      display: "flex", width: "100%", padding: "9px 14px", background: "none", border: "none",
+                      cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.83rem",
+                      color: authorFilter === "all" ? ACCENT : TEXT, fontWeight: authorFilter === "all" ? 700 : 400,
+                      backgroundColor: authorFilter === "all" ? "rgba(27,42,71,0.04)" : "transparent",
+                      borderBottom: "1px solid #f5f5f3",
+                    }}>All Authors</button>
+                    {authors.map((authName) => (
+                      <button key={authName} onClick={() => { setAuthorFilter(authName); setFilterOpen(false); }} style={{
+                        display: "flex", width: "100%", padding: "9px 14px", background: "none", border: "none",
+                        cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.83rem",
+                        color: authorFilter === authName ? ACCENT : TEXT, fontWeight: authorFilter === authName ? 700 : 400,
+                        backgroundColor: authorFilter === authName ? "rgba(27,42,71,0.04)" : "transparent",
+                      }}>{authName}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ width: 1, height: 18, backgroundColor: "#e0ddd8", flexShrink: 0 }} />
             <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: isMobile ? "0.82rem" : "0.86rem", color: TEXT, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Content</span>
 
-            {/* Tab filters — scrollable strip on mobile */}
-            <div className="tab-scroll" style={{ display: "flex", gap: 4, flexShrink: 0, maxWidth: isMobile ? "50vw" : "none" }}>
+            <div className="tab-scroll" style={{ display: "flex", gap: 4, flexShrink: 0, maxWidth: isMobile ? "40vw" : "none" }}>
               {(["all","article","short","podcast"] as Tab[]).map(t => (
                 <button key={t} onClick={() => setTab(t)} style={{
                   padding: isMobile ? "4px 8px" : "5px 11px",
@@ -386,44 +449,31 @@ export default function AdminDashboard() {
                   fontSize: isMobile ? "0.68rem" : "0.72rem",
                   fontFamily: "'Inter', sans-serif", textTransform: "capitalize" as const,
                   transition: "all 0.13s", whiteSpace: "nowrap" as const, flexShrink: 0,
-                }}>
-                  {t}
-                </button>
+                }}>{t}</button>
               ))}
             </div>
           </div>
 
-          {/* ── DESKTOP: column headers + grid rows ── */}
           {!isMobile && (
             <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "8px 20px", borderBottom: "1px solid #CFCBC3", backgroundColor: "#faf9f7" }}>
-              {["Title","Type","Status","Views","Likes","Actions"].map(h => (
+              {["Title & Author","Type","Status","Views","Likes","Actions"].map(h => (
                 <span key={h} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.66rem", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
               ))}
             </div>
           )}
 
-          {/* Rows */}
           {loading ? (
             <>{[0,1,2,3,4].map(i => <SkeletonRow key={i} isMobile={isMobile} />)}</>
           ) : filtered.length === 0 ? (
             <div style={{ padding: "40px 20px", textAlign: "center", color: MUTED, fontFamily: "'Inter', sans-serif", fontSize: "0.85rem" }}>
-              No content yet.{" "}
-              <button onClick={() => router.push("/admin/create")} style={{ color: ACCENT, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>Create something →</button>
+              No content found.{" "}
+              <button onClick={() => { setTab("all"); setAuthorFilter("all"); }} style={{ color: ACCENT, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>Clear filters</button>
             </div>
           ) : isMobile ? (
-            // ── MOBILE: card rows ──
             filtered.map((a, i) => (
-              <MobileArticleRow
-                key={a._id}
-                a={a} i={i} filtered={filtered}
-                onToggleStatus={handleToggleStatus}
-                onDelete={handleDelete}
-                deleting={deleting}
-                router={router}
-              />
+              <MobileArticleRow key={a._id} a={a} i={i} filtered={filtered} onToggleStatus={handleToggleStatus} onDelete={handleDelete} deleting={deleting} router={router} isMainAdmin={isMainAdmin} userDisplayName={user?.displayName} adminRole={adminRole} />
             ))
           ) : (
-            // ── DESKTOP: grid rows ──
             filtered.map((a, i) => (
               <div key={a._id}
                 style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "12px 20px", alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f3" : "none", transition: "background 0.1s" }}
@@ -432,8 +482,16 @@ export default function AdminDashboard() {
               >
                 <div>
                   <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>{a.title}</div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED, marginTop: 2 }}>
-                    {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED }}>
+                      {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    {a.author && (
+                      <>
+                        <span style={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "#CFCBC3" }} />
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: ACCENT, fontWeight: 600 }}>{a.author}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div>{typeBadge(a.type)}</div>
@@ -445,23 +503,19 @@ export default function AdminDashboard() {
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{(a.views ?? 0).toLocaleString()}</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
                 <div style={{ display: "flex", gap: 5 }}>
-                  <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
-                    style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(27,42,71,0.08)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-                  ><IconEdit /></Link>
-
+                  {(isFullAdmin || (user?.displayName && a.author === user.displayName)) && (
+                    <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
+                      style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
+                    ><IconEdit /></Link>
+                  )}
                   <Link href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`} title="View"
                     style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "#f0f0ee"; (e.currentTarget as HTMLElement).style.color = TEXT; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = MUTED; }}
                   ><IconEye /></Link>
-
-                  <button onClick={() => handleDelete(a.slug, a.title)} disabled={deleting === a.slug} title="Delete"
-                    style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.13s", opacity: deleting === a.slug ? 0.4 : 1 }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(192,57,43,0.06)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-                  ><IconTrash /></button>
+                  {isFullAdmin && (
+                    <button onClick={() => handleDelete(a.slug, a.title)} disabled={deleting === a.slug} title="Delete"
+                      style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.13s", opacity: deleting === a.slug ? 0.4 : 1 }}
+                    ><IconTrash /></button>
+                  )}
                 </div>
               </div>
             ))

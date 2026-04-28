@@ -10,6 +10,7 @@ import { uploadToImageKit } from "@/lib/imagekit";
 import { auth } from "@/lib/firebase";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TagSelector from "@/components/admin/TagSelector";
+import { useAuth } from "@/context/AuthContext";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -33,6 +34,7 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 
 export default function NewShortPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [title, setTitle]         = useState("");
   const [excerpt, setExcerpt]     = useState("");
   const [coverImage, setCover]    = useState("");
@@ -92,7 +94,7 @@ export default function NewShortPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, excerpt, content, coverImage, type: "short", tags, status: publishNow ? "published" : "draft", author: "Vineet Mestry", readTime }),
+        body: JSON.stringify({ title, excerpt, content, coverImage, type: "short", tags, status: publishNow ? "published" : "draft", author: user?.displayName || "Unknown Author", readTime }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");

@@ -12,7 +12,7 @@ function getArticleModel() {
     excerpt:     { type: String, default: "" },
     content:     { type: String, default: "" },
     coverImage:  { type: String, default: "" },
-    author:      { type: String, default: "Vineet Mestry" },
+    author:      { type: String, default: "Author" },
     tags:        [String],
     status:      { type: String, default: "draft" },
     likes:       { type: Number, default: 0 },
