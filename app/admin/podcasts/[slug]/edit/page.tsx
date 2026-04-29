@@ -37,8 +37,8 @@ export default function EditPodcastPage() {
   const [title, setTitle]       = useState("");
   const [coverImage, setCover]  = useState("");
   const [audioUrl, setAudioUrl] = useState("");
-  const [episode, setEpisode]   = useState("");
   const [duration, setDuration] = useState("");
+  const [excerpt, setExcerpt]   = useState("");
   const [tags, setTags]         = useState<string[]>([]);
   const [status, setStatus]     = useState("draft");
   const [loading, setLoading]   = useState(true);
@@ -58,8 +58,8 @@ export default function EditPodcastPage() {
         setTitle(data.title ?? "");
         setCover(data.coverImage ?? "");
         setAudioUrl(data.audioUrl ?? "");
-        setEpisode(data.episode ?? "");
         setDuration(data.duration ?? "");
+        setExcerpt(data.excerpt ?? "");
         setTags(data.tags ?? []);
         setStatus(data.status ?? "draft");
       } catch (e: any) {
@@ -81,7 +81,7 @@ export default function EditPodcastPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          title, coverImage, audioUrl, episode, duration, tags,
+          title, excerpt, coverImage, audioUrl, duration, tags,
           status: newStatus,
           publishedAt: newStatus === "published" ? new Date() : null,
         }),
@@ -169,13 +169,17 @@ export default function EditPodcastPage() {
               </p>
             </div>
 
-            {/* 4. Episode Number */}
             <div>
-              <label style={labelStyle}>Episode Number</label>
-              <input value={episode} onChange={(e) => setEpisode(e.target.value)} placeholder="EP01" style={field} />
+              <label style={labelStyle}>Description / Episode Notes</label>
+              <textarea 
+                value={excerpt} 
+                onChange={(e) => setExcerpt(e.target.value)} 
+                placeholder="Tell listeners what this episode is about…" 
+                style={{ ...field, minHeight: 120, resize: "vertical" }} 
+              />
             </div>
 
-            {/* 5. Tags */}
+            {/* 6. Tags */}
             <TagSelector selected={tags} onChange={setTags} />
           </>
         )}

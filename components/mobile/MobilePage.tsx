@@ -7,7 +7,7 @@ import { Heart, Bookmark, Share, ExternalLink, MoveLeft, MoveRight, Play, Pause,
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
-import { MobileAboutView, MobileGrievanceView, MobileTeamView } from "@/components/mobile/MobileInfoPages";
+import { MobileAboutView, MobileGrievanceView, MobileTeamView, MobileContactView } from "@/components/mobile/MobileInfoPages";
 import BeatsFilter from "@/components/mobile/BeatsFilter";
 import { useArticles, type Article } from "@/hooks/useArticles";
 import { useAuth } from "@/context/AuthContext";
@@ -501,7 +501,7 @@ function MobileArticlesView({ articles, loading, onTabChange }: { articles: Arti
   return (
     <div>
       <div className="flex items-center justify-between py-[10px] gap-2">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Home</button>
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
         <div className="flex gap-[6px] ml-auto">
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
           <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
@@ -537,7 +537,7 @@ function MobilePodcastsView({ podcasts, loading, onTabChange, activeSlug, setAct
   return (
     <div>
       <div className="flex items-center justify-between py-[10px]">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Home</button>
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
         <div className="ml-auto"><BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} /></div>
       </div>
       {loading
@@ -571,7 +571,7 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
   return (
     <div>
       <div className="flex items-center justify-between py-[10px] gap-2">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Home</button>
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
         <div className="flex gap-[6px] ml-auto">
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
           <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
@@ -630,6 +630,7 @@ export default function MobilePage({ initialData }: {
       case "about": return <MobileAboutView onTabChange={handleTabChange} />;
       case "team": return <MobileTeamView onTabChange={handleTabChange} />;
       case "grievance": return <MobileGrievanceView onTabChange={handleTabChange} />;
+      case "contact": return <MobileContactView onTabChange={handleTabChange} />;
       default: return <MobileHomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={handleTabChange} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
     }
   };

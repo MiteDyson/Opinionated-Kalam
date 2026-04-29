@@ -20,7 +20,7 @@ export default function MobileFooter() {
       title: "Connect",
       links: [
         { label: "Grievance Redressal", href: "/?tab=grievance" },
-        { label: "Contact Us", href: "#" },
+        { label: "Contact Us", href: "/?tab=contact" },
       ]
     },
     {

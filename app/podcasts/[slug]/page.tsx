@@ -264,7 +264,7 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
               <span key={t} style={{
                 display: "inline-block", padding: "2px 10px", borderRadius: 999,
                 fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700,
-                color: RED, backgroundColor: "rgba(217,35,35,0.1)",
+                color: "#c0392b", backgroundColor: "rgba(192,57,43,0.1)",
               }}>{t}</span>
             ))}
           </div>
@@ -614,8 +614,16 @@ export default function PodcastPage() {
           </div>
           <div style={{ paddingTop: 8 }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-              {podcast.tags[0] && <span style={{ fontSize: "0.65rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>{podcast.tags[0]}</span>}
-              {podcast.episode && <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: "2px 8px", borderRadius: 4, backgroundColor: "rgba(0,0,0,0.06)" }}>{podcast.episode}</span>}
+              {podcast.tags[0] && (
+                <span style={{ 
+                  fontSize: "0.65rem", fontWeight: 800, color: RED, 
+                  fontFamily: "'Inter', sans-serif", textTransform: "uppercase", 
+                  letterSpacing: "0.07em", backgroundColor: "rgba(217,35,35,0.1)",
+                  padding: "3px 10px", borderRadius: 999
+                }}>
+                  {podcast.tags[0]}
+                </span>
+              )}
             </div>
             <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", lineHeight: 1.1, color: "var(--text-main)", marginBottom: 16, fontWeight: 400 }}>{podcast.title}</h1>
             <div style={{ display: "flex", gap: 14, color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif", marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>

@@ -31,7 +31,7 @@ function MobileTag({ label }: { label: string }) {
     <span style={{
       display: "inline-block", padding: "2px 8px", borderRadius: 999,
       fontFamily: "'Inter', sans-serif", fontSize: "0.55rem", fontWeight: 700,
-      color: RED, textTransform: "uppercase", letterSpacing: "0.05em",
+      color: "#c0392b", textTransform: "uppercase", letterSpacing: "0.05em",
       backgroundColor: "rgba(192,57,43,0.1)", whiteSpace: "nowrap",
     }}>
       {label}
@@ -278,7 +278,16 @@ export default function ShortPage() {
             Home
           </button>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
-            {short.tags?.map(t => <span key={t} style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: "0.65rem", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT }}>{t}</span>)}
+            {short.tags?.map(t => (
+              <span key={t} style={{ 
+                display: "inline-block", padding: "3px 10px", borderRadius: 999, 
+                fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase" as const, 
+                letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", 
+                backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT 
+              }}>
+                {t}
+              </span>
+            ))}
           </div>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.6rem", lineHeight: 1.1, marginBottom: 16, color: "var(--text-main)" }}>{short.title}</h1>
           

@@ -79,7 +79,6 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
 
       <div className="text-center pt-6">
         <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] flex items-center justify-center gap-4 mx-auto">
-          <img src="/favicon.svg" alt="Logo" className="w-[clamp(50px,8vw,80px)] h-[clamp(50px,8vw,80px)]" />
           Opinionated Kalam
         </button>
       </div>

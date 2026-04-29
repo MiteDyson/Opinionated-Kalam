@@ -193,3 +193,62 @@ export function MobileTeamView({ onTabChange }: { onTabChange: (t: string) => vo
     </div>
   );
 }
+
+export function MobileContactView({ onTabChange }: { onTabChange: (t: string) => void }) {
+  return (
+    <div className="py-[10px] pb-[40px]">
+      <div className="flex items-center mb-6">
+        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+      </div>
+
+      <h1 className="font-serif text-[2.8rem] font-normal text-[#111111] m-0 mb-[35px] text-center">
+        Contact Us
+      </h1>
+
+      <div className="space-y-[1.8em]">
+        <p className="font-serif text-[1.1rem] leading-[1.6] text-[#1a1a1a]">
+          Have a question, a news tip, or just want to talk about one of our investigations? We value direct communication and honest feedback.
+        </p>
+        <p className="font-serif text-[1.1rem] leading-[1.6] text-[#1a1a1a]">
+          Since we are a small, independent team, reaching out via email is the best way to get a timely response.
+        </p>
+
+        <div className="pt-4">
+          <h2 className="font-sans text-[1.35rem] font-normal text-[#111111] mb-[0.6em] tracking-[-0.02em] flex items-center gap-2">
+            General Enquiries <span className="text-[1.2rem]">→</span>
+          </h2>
+          <p className="font-serif text-[1.05rem] leading-[1.6] text-[#1a1a1a] mb-3">
+            For general questions about our platform, Partnership Ideas, or just want to say “Hello!”.
+          </p>
+          <div className="font-serif text-[1.05rem] text-[#111111]">
+            Email - <a href="mailto:hello@opinionatedkalam.com" className="text-[#111111] underline">hello@opinionatedkalam.com</a>
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <h2 className="font-sans text-[1.35rem] font-normal text-[#111111] mb-[0.6em] tracking-[-0.02em] flex items-center gap-2">
+            Report an Error <span className="text-[1.2rem]">→</span>
+          </h2>
+          <p className="font-serif text-[1.05rem] leading-[1.6] text-[#1a1a1a] mb-3">
+            Accuracy is our top priority, if you spot a factual error in any of our articles or podcasts, please let us know immediately so we can fix it.
+          </p>
+          <p className="font-serif text-[1.05rem] leading-[1.6] text-[#1a1a1a]">
+            For formal complaints, please visit our <button onClick={() => onTabChange("grievance")} className="bg-none border-none p-0 underline font-serif text-[1.05rem] cursor-pointer">Grievance Redressal</button> page.
+          </p>
+        </div>
+
+        <div className="pt-4">
+          <h2 className="font-sans text-[1.35rem] font-normal text-[#111111] mb-[0.6em] tracking-[-0.02em] flex items-center gap-2">
+            Want to Collaborate/Advertise <span className="text-[1.2rem]">→</span>
+          </h2>
+          <p className="font-serif text-[1.05rem] leading-[1.6] text-[#1a1a1a] mb-3">
+            We welcome incredible ideas with utmost honesty and respect, and if you want to advertise your brand, product, etc, you may contact us through this email.
+          </p>
+          <div className="font-serif text-[1.05rem] text-[#111111]">
+            Email - <a href="mailto:business@opinionatedkalam.com" className="text-[#111111] underline">business@opinionatedkalam.com</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

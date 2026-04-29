@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "react-hot-toast";
+import Preloader from "@/components/ui/Preloader";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <Preloader />
         <Toaster position="top-center" containerStyle={{ zIndex: 99999 }} toastOptions={{ duration: 3000, style: { background: "#1A1A1A", color: "#fff", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif" } }} />
         <AuthProvider>
           {children}

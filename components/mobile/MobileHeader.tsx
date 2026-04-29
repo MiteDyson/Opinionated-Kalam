@@ -155,7 +155,6 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
             onClick={() => onTabChange("home")}
             className="bg-none border-none cursor-pointer font-serif text-[2.25rem] text-[#111111] leading-[1.1] tracking-[-0.01em] flex items-center justify-center gap-3 mx-auto"
           >
-            <img src="/favicon.svg" alt="Logo" className="w-[50px] h-[50px]" />
             Opinionated Kalam
           </button>
         </div>

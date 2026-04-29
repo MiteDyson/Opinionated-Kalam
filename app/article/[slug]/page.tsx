@@ -30,7 +30,12 @@ interface Article {
 // ── Desktop tag ───────────────────────────────────────────────
 function DesktopTag({ label }: { label: string }) {
   return (
-    <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 4, fontSize: "0.65rem", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT }}>
+    <span style={{ 
+      display: "inline-block", padding: "3px 10px", borderRadius: 999, 
+      fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", 
+      letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", 
+      backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT 
+    }}>
       {label}
     </span>
   );
@@ -42,7 +47,7 @@ function MobileTag({ label }: { label: string }) {
     <span style={{
       display: "inline-block", padding: "2px 8px", borderRadius: 999,
       fontFamily: "'Inter', sans-serif", fontSize: "0.55rem", fontWeight: 700,
-      color: RED, textTransform: "uppercase", letterSpacing: "0.05em",
+      color: "#c0392b", textTransform: "uppercase", letterSpacing: "0.05em",
       backgroundColor: "rgba(192,57,43,0.1)", whiteSpace: "nowrap",
     }}>
       {label}

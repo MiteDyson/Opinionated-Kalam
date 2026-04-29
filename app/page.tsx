@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
-import { MobileAboutView, MobileGrievanceView, MobileTeamView } from "@/components/mobile/MobileInfoPages";
+import { MobileAboutView, MobileGrievanceView, MobileTeamView, MobileContactView } from "@/components/mobile/MobileInfoPages";
 import { BookOpen } from "lucide-react";
 
 // Lazy-load the mobile page to avoid SSR issues
@@ -188,7 +188,7 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
             : <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: "2rem" }}>🎙</span></div>}
         </div>
         <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {showTag && <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>{p.tags[0] ?? "Podcast"}{p.episode ? ` → ${p.episode}` : ""}</div>}
+          {showTag && <div style={{ fontSize: "0.6rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em" }}>{p.tags[0] ?? "Podcast"}</div>}
           <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>{p.title}</h3>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
             <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>← 10</button>
@@ -539,6 +539,7 @@ export default function HomePage() {
       case "about":     return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileAboutView onTabChange={setActiveTab} /></div>;
       case "team":      return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileTeamView onTabChange={setActiveTab} /></div>;
       case "grievance": return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileGrievanceView onTabChange={setActiveTab} /></div>;
+      case "contact":   return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileContactView onTabChange={setActiveTab} /></div>;
       // Legacy beats tab kept for deep links
       case "beats":    return <RecentView articles={articles} loading={loading} />;
       default:         return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;

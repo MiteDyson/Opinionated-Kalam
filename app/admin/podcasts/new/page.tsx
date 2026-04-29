@@ -22,8 +22,8 @@ export default function NewPodcastPage() {
   const [title, setTitle]       = useState("");
   const [coverImage, setCover]  = useState("");
   const [audioUrl, setAudioUrl] = useState("");
-  const [episode, setEpisode]   = useState("EP01");
   const [duration, setDuration] = useState("");
+  const [excerpt, setExcerpt]   = useState("");
   const [tags, setTags]         = useState<string[]>([]);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
@@ -37,7 +37,7 @@ export default function NewPodcastPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, coverImage, audioUrl, episode, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: user?.displayName || "Unknown Author" }),
+        body: JSON.stringify({ title, excerpt, coverImage, audioUrl, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: user?.displayName || "Unknown Author" }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");
@@ -105,13 +105,17 @@ export default function NewPodcastPage() {
           </p>
         </div>
 
-        {/* 4. Episode Number */}
         <div>
-          <label style={labelStyle}>Episode Number</label>
-          <input value={episode} onChange={(e) => setEpisode(e.target.value)} placeholder="EP01" style={field} />
+          <label style={labelStyle}>Description / Episode Notes</label>
+          <textarea 
+            value={excerpt} 
+            onChange={(e) => setExcerpt(e.target.value)} 
+            placeholder="Tell listeners what this episode is about…" 
+            style={{ ...field, minHeight: 120, resize: "vertical" }} 
+          />
         </div>
 
-        {/* 5. Tags */}
+        {/* 6. Tags */}
         <TagSelector selected={tags} onChange={setTags} />
 
         {/* Preview card */}
@@ -125,7 +129,7 @@ export default function NewPodcastPage() {
               }
               <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div>
-                  {tags[0] && <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#D92323", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{tags[0]}{episode ? ` → ${episode}` : ""}</div>}
+                  {tags[0] && <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "#D92323", fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{tags[0]}</div>}
                   <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.92rem", color: TEXT, lineHeight: 1.2 }}>{title || "Episode title"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
