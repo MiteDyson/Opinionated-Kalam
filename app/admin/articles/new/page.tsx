@@ -119,7 +119,7 @@ export default function NewArticlePage() {
   const [error, setError] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
-  const [fontSize, setFontSize] = useState("16");
+  const [fontSize, setFontSize] = useState("18");
   const [fontFamily, setFontFamily] = useState("'Radley', serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
 
@@ -241,7 +241,7 @@ export default function NewArticlePage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
-        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Radley', serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Radley', serif; font-size: 18px; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
         .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: ${TEXT}; margin: 1.4em 0 0.5em; }
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; color: ${TEXT}; margin: 1.2em 0 0.4em; }

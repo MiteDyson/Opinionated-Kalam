@@ -40,7 +40,7 @@ const SectionHeader = memo(function SectionHeader({ label, onClick }: { label: s
 // ── Tag chip — small pill/chip style with background ─
 function Tag({ label }: { label: string }) {
   return (
-    <span className="inline-block px-[6px] py-[1px] rounded-full font-sans text-[0.40rem] font-bold text-[#c0392b] uppercase tracking-[0.04em] bg-[#c0392b]/10 whitespace-nowrap">
+    <span className="inline-block px-[6px] py-[1.5px] rounded-full font-sans text-[0.52rem] font-bold text-[#c0392b] uppercase tracking-[0.04em] bg-[#c0392b]/10 whitespace-nowrap">
       {label}
     </span>
   );
@@ -113,7 +113,7 @@ const MobileArticleItem = memo(function MobileArticleItem({ a, noBorder }: { a: 
             </div>
           )}
           {/* Normal weight */}
-          <h4 className="font-serif text-[0.85rem] font-normal text-[#111111] leading-[1.3] mb-1">
+          <h4 className="font-serif text-[1.05rem] font-normal text-[#111111] leading-[1.3] mb-1">
             {a.title}
           </h4>
           <div className="flex justify-between items-center font-sans text-[0.63rem] text-[#666666]">
@@ -137,7 +137,7 @@ const MobileArticleCard = memo(function MobileArticleCard({ a }: { a: Article })
           ? <img src={a.coverImage} alt={a.title} loading="lazy" className="w-full aspect-video object-cover rounded-[3px] block bg-[#2a2a2a]" />
           : <div className="w-full aspect-video bg-[#2a2a2a] rounded-[3px]" />
         }
-        <h3 className="font-serif text-[0.82rem] font-normal text-[#111111] mt-[6px] mb-1 leading-[1.28]">
+        <h3 className="font-serif text-[0.95rem] font-normal text-[#111111] mt-[6px] mb-1 leading-[1.28]">
           {a.title}
         </h3>
         <div className="flex justify-between items-center font-sans text-[0.6rem] text-[#666666] mb-1">
@@ -167,7 +167,9 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const isPlaying = activeSlug === p.slug;
+  const [playing, setPlaying] = useState(false);
+  
+  const isExpanded = activeSlug === p.slug;
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current || !p.audioUrl) return;
@@ -188,27 +190,42 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
         setTotalDur(`${m}:${s}`);
       }
     };
-    audio.onended = () => setActiveSlug(null);
+    audio.onended = () => {
+      setPlaying(false);
+      setActiveSlug(null);
+    };
   }, [p.audioUrl, setActiveSlug]);
 
-  useEffect(() => () => { audioRef.current?.pause(); }, []);
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
-    if (isPlaying) audio.play().catch(() => { });
-    else audio.pause();
-  }, [isPlaying]);
+    if (!isExpanded && audio) {
+      audio.pause();
+      setPlaying(false);
+    }
+  }, [isExpanded]);
 
-  const handleCardClick = useCallback(() => {
+  const togglePlay = useCallback(() => {
     if (!p.audioUrl) return;
     ensureAudio();
     setTimeout(() => {
-      const audio = audioRef.current; if (!audio) return;
-      if (isPlaying) { audio.pause(); setActiveSlug(null); }
-      else { audio.play().catch(() => { }); setActiveSlug(p.slug); }
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (playing) {
+        audio.pause();
+        setPlaying(false);
+      } else {
+        audio.play().catch(() => { });
+        setPlaying(true);
+        setActiveSlug(p.slug);
+      }
     }, 0);
-  }, [p.audioUrl, p.slug, isPlaying, ensureAudio, setActiveSlug]);
+  }, [p.audioUrl, p.slug, playing, ensureAudio, setActiveSlug]);
 
   const skip = useCallback((e: React.MouseEvent, sec: number) => {
     e.stopPropagation();
@@ -253,7 +270,7 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
 
   return (
     <div
-      onClick={handleCardClick}
+      onClick={togglePlay}
       className="bg-transparent border-[1.5px] border-[#111111] rounded-[12px] p-[16px] mb-[12px] cursor-pointer select-none transition-all duration-200 ease-in-out"
     >
       {/* Top section: Image + Title */}
@@ -270,15 +287,15 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
             </div>
           )}
           <h4 className="font-serif text-[1.05rem] font-normal text-[#111111] leading-[1.3] m-0">{p.title}</h4>
-          {!isPlaying && (
+          {!isExpanded && (
             <span className="font-sans text-[0.7rem] text-[#666666] mt-1 block">
               {totalDur}
             </span>
           )}
         </div>
-        {!isPlaying && (
+        {!isExpanded && (
           <button
-            onClick={(e) => { e.stopPropagation(); handleCardClick(); }}
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="w-[40px] h-[40px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center flex-shrink-0 self-center"
           >
             <Play size={18} color="white" fill="white" className="ml-[2px]" />
@@ -286,15 +303,15 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
         )}
       </div>
 
-      {isPlaying && (
+      {isExpanded && (
         <div className="mt-5">
           {/* Playback Row */}
           <div className="flex items-center justify-center gap-8 mb-4">
             <button onClick={(e) => skip(e, -10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
               <MoveLeft size={20} /> 10
             </button>
-            <button onClick={(e) => { e.stopPropagation(); handleCardClick(); }} className="w-[52px] h-[52px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center">
-              {isPlaying ? <Pause size={24} color="white" fill="white" /> : <Play size={24} color="white" fill="white" className="ml-[3px]" />}
+            <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} className="w-[52px] h-[52px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center">
+              {playing ? <Pause size={24} color="white" fill="white" /> : <Play size={24} color="white" fill="white" className="ml-[3px]" />}
             </button>
             <button onClick={(e) => skip(e, 10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
               10 <MoveRight size={20} />

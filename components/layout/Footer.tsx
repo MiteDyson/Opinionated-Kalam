@@ -16,7 +16,7 @@ export default function Footer() {
             {
               title: "Connect",
               links: [
-                { label: "Contact Us", href: "#" },
+                { label: "Contact Us", href: "/?tab=contact" },
                 { label: "Grievance Redressal", href: "/?tab=grievance" },
               ],
             },
@@ -48,10 +48,13 @@ export default function Footer() {
           ))}
         </div>
         <div className="text-center">
-          <div className="font-serif text-[clamp(2.5rem,7vw,5rem)] text-white leading-none">
-            Opinionated Kalam
+          <div className="flex items-center justify-center gap-8 mb-6">
+            <img src="/logo_footer.png" alt="OK Footer Logo" className="h-[60px] md:h-[100px] w-auto opacity-90" />
+            <div className="font-serif text-[clamp(2.5rem,7vw,5rem)] text-white leading-none">
+              Opinionated Kalam
+            </div>
           </div>
-          <p className="text-[#555555] text-[0.75rem] mt-4 font-sans">
+          <p className="text-[#555555] text-[0.75rem] font-sans">
             © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
           </p>
         </div>

@@ -200,7 +200,7 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
 
       <div style={{ padding: "12px 16px 20px" }}>
         {/* Row 1: Back | Filter / Sort */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
           <button onClick={() => router.back()} style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", fontWeight: 400,
@@ -259,11 +259,11 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
 
         {/* Tags */}
         {podcast.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
             {podcast.tags.map(t => (
               <span key={t} style={{
-                display: "inline-block", padding: "2px 10px", borderRadius: 999,
-                fontFamily: "'Inter', sans-serif", fontSize: "0.65rem", fontWeight: 700,
+                display: "inline-block", padding: "2px 8px", borderRadius: 999,
+                fontFamily: "'Inter', sans-serif", fontSize: "0.58rem", fontWeight: 700,
                 color: "#c0392b", backgroundColor: "rgba(192,57,43,0.1)",
               }}>{t}</span>
             ))}
@@ -317,10 +317,10 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
               <MoveLeft size={22} /> 10
             </button>
 
-            <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} style={{ width: 68, height: 68, borderRadius: "50%", backgroundColor: BLACK, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+            <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} style={{ width: 58, height: 58, borderRadius: "50%", backgroundColor: BLACK, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
               {playing 
-                ? <Pause size={28} color="white" fill="white" />
-                : <Play size={28} color="white" fill="white" style={{ marginLeft: 4 }} />
+                ? <Pause size={24} color="white" fill="white" />
+                : <Play size={24} color="white" fill="white" style={{ marginLeft: 4 }} />
               }
             </button>
 
@@ -376,57 +376,57 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
         </div>
 
         {/* Interaction Bar (Now below Audio Controls) */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 40, borderTop: `1px solid ${BORDER}`, paddingTop: 24 }}>
-          <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 40, borderTop: `1px solid ${BORDER}`, paddingTop: 24 }}>
+          <div style={{ display: "flex", gap: 8, flex: "1 1 auto", justifyContent: "flex-start" }}>
             <button
               onClick={onLike}
               style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 16px",
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
                 borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: liked ? RED : BLACK,
-                cursor: "pointer"
+                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: liked ? RED : BLACK,
+                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
               }}
             >
-              <Heart size={15} fill={liked ? RED : "none"} />
+              <Heart size={14} fill={liked ? RED : "none"} />
               Like
             </button>
             <button
               onClick={onShare}
               style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 16px",
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
                 borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: BLACK,
-                cursor: "pointer"
+                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: BLACK,
+                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
               }}
             >
-              <Share size={15} />
+              <Share size={14} />
               Share
             </button>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8, flex: "1 1 auto", justifyContent: "flex-end" }}>
             <button
               onClick={onSave}
               style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 16px",
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
                 borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: saved ? RED : BLACK,
-                cursor: "pointer"
+                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: saved ? RED : BLACK,
+                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
               }}
             >
-              <Bookmark size={15} fill={saved ? RED : "none"} />
+              <Bookmark size={14} fill={saved ? RED : "none"} />
               Save
             </button>
             <button
               onClick={() => router.push("/")}
               style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 10px",
                 borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600, color: BLACK,
-                cursor: "pointer"
+                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: BLACK,
+                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
               }}
             >
-              <Minimize2 size={16} />
-              Minimize
+              <Minimize2 size={15} />
+              Min
             </button>
           </div>
         </div>

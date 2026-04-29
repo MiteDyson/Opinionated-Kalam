@@ -104,7 +104,7 @@ export default function NewShortPage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
-        .tiptap-editor { min-height: 300px; padding: 22px 26px; font-family: 'Radley', serif; font-size: 1rem; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor { min-height: 300px; padding: 22px 26px; font-family: 'Radley', serif; font-size: 18px; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
         .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.4rem; font-weight: 400; margin: 1.2em 0 0.4em; }
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; margin: 1em 0 0.4em; }

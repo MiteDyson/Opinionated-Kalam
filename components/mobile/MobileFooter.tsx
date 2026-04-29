@@ -55,10 +55,13 @@ export default function MobileFooter() {
 
       {/* Brand */}
       <div className="text-center">
-        <div className="font-serif text-[2.4rem] text-[#e8e5e0] leading-none">
-          Opinionated Kalam
+        <div className="flex items-center justify-center gap-4 mb-4">
+          <img src="/logo_footer.png" alt="OK Footer Logo" className="h-[50px] w-auto opacity-90" />
+          <div className="font-serif text-[1.8rem] text-[#e8e5e0] leading-none">
+            Opinionated Kalam
+          </div>
         </div>
-        <p className="text-[#999999] text-[0.65rem] mt-[10px] font-sans">
+        <p className="text-[#999999] text-[0.65rem] font-sans">
           © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
         </p>
       </div>

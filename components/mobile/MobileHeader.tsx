@@ -153,8 +153,9 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
         <div className="text-center px-[16px] pt-[14px] pb-[25px]">
           <button
             onClick={() => onTabChange("home")}
-            className="bg-none border-none cursor-pointer font-serif text-[2.25rem] text-[#111111] leading-[1.1] tracking-[-0.01em] flex items-center justify-center gap-3 mx-auto"
+            className="bg-none border-none cursor-pointer font-serif text-[1.85rem] text-[#111111] leading-[1.1] tracking-[-0.01em] flex items-center justify-center gap-3 mx-auto"
           >
+            <img src="/logo.png" alt="OK Logo" style={{ height: "2rem", width: "auto" }} />
             Opinionated Kalam
           </button>
         </div>
