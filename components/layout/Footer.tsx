@@ -2,8 +2,9 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#151515] text-[#F8F8F8] pt-[60px] pb-[40px] mt-[80px]">
-      <div className="max-w-[1100px] mx-auto px-6">
+    <footer className="mt-[80px] px-6">
+      {/* Contained card — same max-width as header, with rounded corners */}
+      <div className="max-w-[1100px] mx-auto bg-[#151515] text-[#F8F8F8] rounded-t-2xl pt-[60px] pb-[40px] px-10">
         <div className="flex justify-center gap-[120px] mb-[80px]">
           {[
             {
@@ -16,8 +17,8 @@ export default function Footer() {
             {
               title: "Connect",
               links: [
-                { label: "Contact Us", href: "/?tab=contact" },
                 { label: "Grievance Redressal", href: "/?tab=grievance" },
+                { label: "Contact Us", href: "/?tab=contact" },
               ],
             },
             {
@@ -47,13 +48,21 @@ export default function Footer() {
             </div>
           ))}
         </div>
+
         <div className="text-center">
-          <div className="flex items-center justify-center gap-8 mb-6">
-            <img src="/logo_footer.png" alt="OK Footer Logo" className="h-[60px] md:h-[100px] w-auto opacity-90" />
-            <div className="font-serif text-[clamp(2.5rem,7vw,5rem)] text-white leading-none">
+          <Link href="/" className="flex items-center justify-center gap-4 mb-6 no-underline hover:opacity-90 transition-opacity">
+            <img
+              src="/logo_footer.png"
+              alt="OK Footer Logo"
+              style={{ height: "clamp(3.5rem, 8vw, 5rem)", width: "auto" }}
+            />
+            <div
+              className="font-serif text-white leading-none tracking-[-0.5px]"
+              style={{ fontSize: "clamp(2rem, 4.5vw, 3.2rem)" }}
+            >
               Opinionated Kalam
             </div>
-          </div>
+          </Link>
           <p className="text-[#555555] text-[0.75rem] font-sans">
             © {new Date().getFullYear()} Opinionated Kalam. All Rights Reserved.
           </p>

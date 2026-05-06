@@ -600,9 +600,15 @@ export default function PodcastPage() {
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
         <Header onMenuOpen={() => setDesktopMenuOpen(true)} activeTab="podcasts" onTabChange={() => router.push("/")} />
       </div>
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px 80px" }}>
-        <button onClick={() => router.back()} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: "0.88rem", fontWeight: 600, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: 32, fontFamily: "'Inter', sans-serif", padding: 0 }}>
-          <ChevronLeft size={14} />
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 80px" }}>
+        {/* Back button */}
+        <button onClick={() => router.back()} style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
+          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
+          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32,
+        }}>
+          <ChevronLeft size={14} strokeWidth={2.5} />
           Back
         </button>
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 40, marginBottom: 36, alignItems: "start" }}>
@@ -613,17 +619,17 @@ export default function PodcastPage() {
             }
           </div>
           <div style={{ paddingTop: 8 }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-              {podcast.tags[0] && (
-                <span style={{ 
-                  fontSize: "0.65rem", fontWeight: 800, color: RED, 
+            <div style={{ display: "flex", gap: 4, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+              {podcast.tags.map(t => (
+                <span key={t} style={{ 
+                  fontSize: "0.55rem", fontWeight: 700, color: RED, 
                   fontFamily: "'Inter', sans-serif", textTransform: "uppercase", 
-                  letterSpacing: "0.07em", backgroundColor: "rgba(217,35,35,0.1)",
-                  padding: "3px 10px", borderRadius: 999
+                  letterSpacing: "0.03em", backgroundColor: "rgba(217,35,35,0.06)",
+                  padding: "1.5px 7px", borderRadius: 3
                 }}>
-                  {podcast.tags[0]}
+                  {t}
                 </span>
-              )}
+              ))}
             </div>
             <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", lineHeight: 1.1, color: "var(--text-main)", marginBottom: 16, fontWeight: 400 }}>{podcast.title}</h1>
             <div style={{ display: "flex", gap: 14, color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif", marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
@@ -635,10 +641,20 @@ export default function PodcastPage() {
           </div>
         </div>
         {podcast.audioUrl ? <DesktopAudioPlayer src={podcast.audioUrl} /> : <div style={{ padding: "32px 24px", borderRadius: 16, backgroundColor: "#e8e5e0", textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: "var(--text-muted)" }}>Audio not available yet.</div>}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
-          <button style={actionBtn(liked)} onClick={handleLike} disabled={actionLoading}><Heart size={16} fill={liked ? "currentColor" : "none"} />{likes.toLocaleString()} {likes === 1 ? 'Like' : 'Likes'}</button>
-          <button style={actionBtn(copied)} onClick={handleShare}><Share size={16} />{copied ? "Link Copied!" : "Share"}</button>
-          <button style={actionBtn(saved)} onClick={handleSave} disabled={actionLoading}><Bookmark size={16} fill={saved ? "currentColor" : "none"} />{saved ? "Saved" : "Save"}</button>
+        {/* Interaction Bar — barefoot */}
+        <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
+          <button onClick={handleLike} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
+            <Heart size={20} fill={liked ? "currentColor" : "none"} />
+            Like
+          </button>
+          <button onClick={handleSave} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? ACCENT : "var(--text-main)", padding: 0 }}>
+            <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
+            Save
+          </button>
+          <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", padding: 0 }}>
+            <Share size={20} />
+            Share
+          </button>
         </div>
         {podcast.excerpt && <div style={{ marginTop: 36 }}><h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", color: "var(--text-main)", marginBottom: 14, fontWeight: 400 }}>Episode Notes</h2><p style={{ fontFamily: "'Radley', serif", fontSize: "1rem", lineHeight: 1.75, color: "var(--text-muted)" }}>{podcast.excerpt}</p></div>}
       </div>

@@ -31,10 +31,10 @@ interface Article {
 function DesktopTag({ label }: { label: string }) {
   return (
     <span style={{ 
-      display: "inline-block", padding: "3px 10px", borderRadius: 999, 
-      fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", 
-      letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", 
-      backgroundColor: "rgba(27,42,71,0.1)", color: ACCENT 
+      display: "inline-block", padding: "1.5px 7px", borderRadius: 3, 
+      fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", 
+      letterSpacing: "0.03em", fontFamily: "'Inter', sans-serif", 
+      backgroundColor: "rgba(217,35,35,0.06)", color: "#D92323"
     }}>
       {label}
     </span>
@@ -378,39 +378,66 @@ export default function ArticlePage() {
       <SideMenu isOpen={desktopMenuOpen} onClose={() => setDesktopMenuOpen(false)} onTabChange={() => router.push("/")} />
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
         <Header onMenuOpen={() => setDesktopMenuOpen(true)} activeTab="articles" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
-        <div style={{ maxWidth: 780, margin: "0 auto 80px" }}>
-          <button onClick={() => router.push("/")} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: "0.88rem", fontWeight: 600, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", marginBottom: 32, fontFamily: "'Inter', sans-serif", padding: 0 }}>
-            <ChevronLeft size={16} />
-            Home
+        <div style={{ maxWidth: 900, margin: "0 auto 80px" }}>
+          {/* Back button */}
+          <button onClick={() => router.back()} style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
+            color: MUTED, background: "none", border: `1px solid ${BORDER}`,
+            borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32,
+          }}>
+            <ChevronLeft size={14} strokeWidth={2.5} />
+            Back
           </button>
+
+          {/* Cover image above title */}
+          {article.coverImage && <img src={article.coverImage} alt={article.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 12, display: "block", marginBottom: 28 }} />}
+
+          {/* Title */}
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.4rem", lineHeight: 1.15, marginBottom: 12, color: "var(--text-main)", fontWeight: 400 }}>{article.title}</h1>
+          
+          {/* Metadata */}
+          <div style={{ display: "flex", gap: 14, color: "var(--text-muted)", fontSize: "0.75rem", fontFamily: "'Inter', sans-serif", marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+            {dateStr && <span>{dateStr}</span>}
+            <span style={{ opacity: 0.3 }}>·</span>
+            <span>{article.author}</span>
+          </div>
+
+          {/* Tags */}
           {article.tags.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 20 }}>
               {article.tags.map(t => <DesktopTag key={t} label={t} />)}
             </div>
           )}
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(2rem, 5vw, 3rem)", lineHeight: 1.1, marginBottom: 16, color: "var(--text-main)", fontWeight: 400 }}>{article.title}</h1>
-          <div style={{ display: "flex", gap: 16, color: "var(--text-muted)", fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", marginBottom: 32, flexWrap: "wrap", alignItems: "center" }}>
-            {dateStr && <span>{dateStr}</span>}
-            <span style={{ opacity: 0.4 }}>|</span>
-            <span>{article.author}</span>
-            {views > 0 && (<><span style={{ opacity: 0.4 }}>|</span><span style={{ display: "flex", alignItems: "center", gap: 4 }}><Eye size={14} />{views.toLocaleString()} {views === 1 ? 'View' : 'Views'}</span></>)}
-            {article.readTime && (<><span style={{ opacity: 0.4 }}>|</span><span style={{ display: "flex", alignItems: "center", gap: 6 }}><BookOpen size={16} />{article.readTime} minute read</span></>)}
-          </div>
-          {article.coverImage && <img src={article.coverImage} alt={article.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block", marginBottom: 40 }} />}
+
           {article.audioUrl && <ListenPlayer src={article.audioUrl} readTime={article.readTime} />}
+          
           <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
-            <button style={actionBtn(liked)} onClick={handleLike} disabled={actionLoading}>
-              <Heart size={16} fill={liked ? "currentColor" : "none"} />
-              {likes.toLocaleString()} {likes === 1 ? 'Like' : 'Likes'}
+
+          {/* Interaction Bar — barefoot style */}
+          <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
+            <button 
+              onClick={handleLike} 
+              disabled={actionLoading}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}
+            >
+              <Heart size={20} fill={liked ? "currentColor" : "none"} />
+              Like
             </button>
-            <button style={actionBtn(saved)} onClick={handleSave} disabled={actionLoading}>
-              <Bookmark size={16} fill={saved ? "currentColor" : "none"} />
-              {saved ? "Saved" : "Save"}
+            <button 
+              onClick={handleSave} 
+              disabled={actionLoading}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? "#1B2A47" : "var(--text-main)", padding: 0 }}
+            >
+              <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
+              Save
             </button>
-            <button style={actionBtn(copied)} onClick={handleShare}>
-              <Share size={16} />
-              {copied ? "Link Copied!" : "Share"}
+            <button 
+              onClick={handleShare}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", padding: 0 }}
+            >
+              <Share size={20} />
+              Share
             </button>
           </div>
         </div>

@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
-import { Menu, Search, X, User, ChevronDown, LogOut, ChevronRight } from "lucide-react";
+import { Menu, Search, ChevronRight, User } from "lucide-react";
 
 const ACCENT = "#1B2A47";
 const RED    = "#D92323";
@@ -19,23 +18,20 @@ const TABS = [
 
 interface HeaderProps {
   onMenuOpen: () => void;
+  onSearchOpen?: () => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderProps) {
+export default function Header({ onMenuOpen, onSearchOpen, activeTab, onTabChange }: HeaderProps) {
   const router = useRouter();
   const { user, logout, isAdmin, isMainAdmin } = useAuth();
-  const [dateStr, setDateStr]           = useState("");
-  const [searchOpen, setSearchOpen]     = useState(false);
-  const [searchQuery, setSearchQuery]   = useState("");
+  const [dateStr, setDateStr] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchRef   = useRef<HTMLDivElement>(null);
-  const inputRef    = useRef<HTMLInputElement>(null);
 
   const hasUsername = !!(user?.displayName?.trim());
-  const displayName = hasUsername ? user!.displayName!.trim().slice(0, 15) : "Set name";
+  const displayName = hasUsername ? user!.displayName!.trim().slice(0, 18) : "Set name";
 
   useEffect(() => {
     const d = new Date();
@@ -47,35 +43,13 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false);
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) { setSearchOpen(false); setSearchQuery(""); }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const openSearch = () => { setSearchOpen(true); setTimeout(() => inputRef.current?.focus(), 20); };
-  const closeSearch = () => { setSearchOpen(false); setSearchQuery(""); };
-
   return (
     <header>
-      <style>{`
-        .ok-search::placeholder { color: #908e8a; }
-        .ok-search:focus        { border-color: #908e8a !important; outline: none; }
-      `}</style>
-
-      {user && !hasUsername && (
-        <div className="bg-[#1B2A47]/[0.07] border border-[#1B2A47]/15 rounded-[8px] p-[9px_14px] mb-[10px] flex items-center justify-between gap-[12px]">
-          <div className="flex items-center gap-2">
-            <User size={14} color="#1B2A47" />
-            <span className="font-sans text-[0.82rem] text-[#1B2A47]">
-              <strong>You haven't set a username yet.</strong> Add one to personalise your profile.
-            </span>
-          </div>
-          <button onClick={() => router.push("/login")} className="shrink-0 px-[14px] py-[5px] rounded-[6px] border-none bg-[#1B2A47] text-white font-sans text-[0.78rem] font-bold cursor-pointer">
-            Set Username
-          </button>
-        </div>
-      )}
 
       <div className="text-center pt-6">
         <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] flex items-center justify-center gap-4 mx-auto">
@@ -86,55 +60,33 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
 
       <div className="flex items-center justify-between py-[10px] border-b border-[var(--border)]">
         <span className="text-[0.78rem] text-[var(--text-muted)] font-sans">{dateStr}</span>
-        <div className="flex items-center gap-[10px]">
-          {isAdmin && (
-            <a href="/admin" className="bg-[#1B2A47] text-white px-3 py-1 rounded-[6px] text-[0.75rem] font-semibold font-sans no-underline">Admin</a>
-          )}
-          <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FF0000] text-white shrink-0">
-            {/* Social media icons remain as SVGs per user request */}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        {/* Social icons only — Admin button moved to SideMenu */}
+        <div className="flex items-center gap-[8px]">
+          {/* Instagram — bare icon, no circle */}
+          <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center text-[var(--text-main)] shrink-0 hover:opacity-60 transition-opacity p-[3px]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          {/* X (Twitter) — bare icon, no circle */}
+          <a href="https://www.x.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center text-[var(--text-main)] shrink-0 hover:opacity-60 transition-opacity p-[3px]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          {/* YouTube — bare icon, red brand color */}
+          <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center text-[#FF0000] shrink-0 hover:opacity-60 transition-opacity p-[3px]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
           </a>
         </div>
       </div>
 
       <nav className="grid grid-cols-[1fr_auto_1fr] items-center py-[10px] mb-8 relative">
-        <div ref={searchRef} className="flex items-center gap-2 relative">
+        <div className="flex items-center gap-2">
           <button onClick={onMenuOpen} className="bg-none border-none cursor-pointer text-[var(--text-main)] p-0 flex shrink-0 hover:text-[#1B2A47] transition-colors">
             <Menu size={20} />
           </button>
-
-          {searchOpen ? (
-            <div className="relative w-[220px] animate-in fade-in slide-in-from-left-2 duration-200">
-              <Search size={13} className="absolute left-[9px] top-1/2 -translate-y-1/2 text-[#908e8a] pointer-events-none" />
-              <input 
-                ref={inputRef} 
-                type="text" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                onKeyDown={(e) => { if (e.key === "Escape") closeSearch(); }} 
-                placeholder="Search..." 
-                className="w-full pl-[28px] pr-[26px] py-[6px] rounded-[8px] border-[1.5px] border-[#d5d2cb] bg-transparent font-sans text-[0.84rem] text-[var(--text-main)] focus:outline-none focus:border-[#908e8a] placeholder:text-[#908e8a]"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery("")} 
-                  className="absolute right-[7px] top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-[#908e8a] p-0 flex hover:text-[var(--text-main)]"
-                >
-                  <X size={14} />
-                </button>
-              )}
-              {searchQuery.trim().length > 1 && (
-                <div className="absolute top-[calc(100%+6px)] left-0 w-[300px] z-[200] bg-white rounded-[10px] border border-[var(--border)] shadow-[0_8px_28px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                  <SearchResults query={searchQuery} onClose={closeSearch} />
-                </div>
-              )}
-            </div>
-          ) : (
-            <button onClick={openSearch} className="bg-none border-none cursor-pointer p-0 flex items-center gap-[5px] group">
-              <Search size={15} className="text-[var(--text-main)] group-hover:text-[#1B2A47] transition-colors" />
-              <span className="text-[0.85rem] font-sans text-[var(--text-main)] group-hover:text-[#1B2A47] transition-colors">Search</span>
-            </button>
-          )}
+          {/* Search button — opens side drawer in search mode */}
+          <button onClick={onSearchOpen} className="bg-none border-none cursor-pointer p-0 flex items-center gap-[5px] group ml-1">
+            <Search size={15} className="text-[var(--text-main)] group-hover:text-[#1B2A47] transition-colors" />
+            <span className="text-[0.85rem] font-sans text-[var(--text-main)] group-hover:text-[#1B2A47] transition-colors">Search</span>
+          </button>
         </div>
 
         <div className="flex gap-6 items-center">
@@ -155,40 +107,31 @@ export default function Header({ onMenuOpen, activeTab, onTabChange }: HeaderPro
         <div className="flex items-center gap-[14px] justify-end">
           {user ? (
             <div ref={dropdownRef} className="relative">
-              <button onClick={() => setDropdownOpen(o => !o)} className={`flex items-center gap-[6px] bg-none border ${!hasUsername ? "border-[#d38b88]/60 text-[#b85c58]" : "border-[var(--border)] text-[var(--text-main)]"} cursor-pointer px-[12px] py-[5px] rounded-full text-[0.82rem] font-sans font-semibold transition-all hover:bg-black/5`}>
+              <button
+                onClick={() => setDropdownOpen(o => !o)}
+                className={`flex items-center gap-[6px] bg-none border ${
+                  !hasUsername ? "border-[#d38b88]/60 text-[#b85c58]" : "border-[var(--border)] text-[var(--text-main)]"
+                } cursor-pointer px-[12px] py-[5px] rounded-full text-[0.82rem] font-sans font-semibold transition-all hover:bg-black/5`}
+              >
                 {displayName}
                 {!hasUsername && <span className="ml-1 text-[0.62rem] text-[#b85c58]">!</span>}
               </button>
 
               {dropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] right-0 bg-white rounded-[10px] min-w-[180px] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-[50] py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-[calc(100%+8px)] right-0 bg-white rounded-[10px] min-w-[180px] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-[50] py-1">
                   <div className="px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]">
                     <div className="text-[0.78rem] font-bold text-[var(--text-main)] font-sans">
                       {hasUsername ? displayName : <span className="text-[#b85c58]">No username set</span>}
                     </div>
                     <div className="text-[0.7rem] text-[var(--text-muted)] font-sans mt-[2px]">{user.email}</div>
                   </div>
-
-                   {!hasUsername && (
-                    <a href="/login" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#b85c58] text-[0.82rem] font-sans font-semibold border-b border-[var(--border)] bg-[#d38b88]/[0.06] hover:bg-[#d38b88]/10 transition-colors">
-                      Set your username →
-                    </a>
-                  )}
-
                   {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
                     <a key={item.label} href={item.href} className="flex items-center px-[14px] py-[10px] no-underline text-[var(--text-main)] text-[0.85rem] font-sans border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
-                      {item.label}
+                      {item.label} <ChevronRight size={12} className="ml-auto text-[var(--text-muted)]" />
                     </a>
                   ))}
-
-                  {isMainAdmin && (
-                    <a href="/admin/team" className="flex items-center gap-2 px-[14px] py-[10px] no-underline text-[#1B2A47] text-[0.85rem] font-sans font-semibold border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
-                      Manage Team
-                    </a>
-                  )}
-
-                  <button 
-                    onClick={() => { logout(); setDropdownOpen(false); }} 
+                  <button
+                    onClick={() => { logout(); setDropdownOpen(false); }}
                     className="flex items-center w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
                   >
                     Sign out
