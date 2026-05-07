@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
 import { verifyAdmin } from "@/lib/verifyAdmin";
+import { updateArticleSchema, validateBody } from "@/lib/validators";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -67,11 +69,24 @@ export async function PATCH(
   try {
     const admin = await verifyAdmin(req);
     if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const rawBody = await req.json();
+    const parsed = validateBody(updateArticleSchema, rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const body = parsed.data as any;
+
+    // Sanitize HTML content before saving to DB
+    if (body.content) {
+      body.content = sanitizeHtml(body.content);
+    }
+
     await connectDB();
     const Article = getArticleModel();
-    const body = await req.json();
     const article = await Article.findOneAndUpdate(
-      { slug: params.slug },
+      { slug: String(params.slug) },
       { ...body, updatedAt: new Date() },
       { returnDocument: 'after' }
     );
@@ -94,7 +109,7 @@ export async function DELETE(
     }
     await connectDB();
     const Article = getArticleModel();
-    await Article.findOneAndDelete({ slug: params.slug });
+    await Article.findOneAndDelete({ slug: String(params.slug) });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/models/User";
+import { registerSchema, validateBody } from "@/lib/validators";
 
 export async function POST(req: NextRequest) {
-  const { name, email, password } = await req.json();
-  if (!name || !email || !password) {
-    return NextResponse.json({ error: "All fields required" }, { status: 400 });
+  const rawBody = await req.json();
+  const parsed = validateBody(registerSchema, rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
+
+  const { name, email, password } = parsed.data;
+
   await connectDB();
-  const existing = await (User as any).findOne({ email });
+  const existing = await (User as any).findOne({ email: String(email) });
   if (existing) return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   const hashed = await bcrypt.hash(password, 12);
   await (User as any).create({ name, email, password: hashed, role: "user" });

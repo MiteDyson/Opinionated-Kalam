@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin, getAdminModel, isMainAdmin } from "@/lib/verifyAdmin";
 import { connectDB } from "@/lib/mongodb";
+import { addTeamMemberSchema, removeTeamMemberByEmailSchema, updateTeamMemberRoleSchema, validateBody } from "@/lib/validators";
 
 // GET — list all admins (main admin only)
 export async function GET(req: NextRequest) {
@@ -22,29 +23,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden — main admin only" }, { status: 403 });
   }
 
-  const { email, name, role } = await req.json();
-  if (!email || !name) {
-    return NextResponse.json({ error: "Email and name are required" }, { status: 400 });
+  const rawBody = await req.json();
+  const parsed = validateBody(addTeamMemberSchema, rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
+  const { email, name, role } = parsed.data;
 
-  // Can't add the main admin (they always exist)
-  if (await isMainAdmin(normalizedEmail)) {
+  if (await isMainAdmin(email)) {
     return NextResponse.json({ error: "Cannot add main admin through this panel" }, { status: 400 });
   }
 
   await connectDB();
   const Admin = getAdminModel();
 
-  const existing = await Admin.findOne({ email: normalizedEmail });
+  const existing = await Admin.findOne({ email });
   if (existing) {
     return NextResponse.json({ error: "This email already has admin access" }, { status: 409 });
   }
 
   const record = await Admin.create({
-    email: normalizedEmail,
-    name: name.trim(),
+    email,
+    name,
     role: role ?? "author",
     addedBy: admin.email,
     isMain: false,
@@ -60,8 +61,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden — main admin only" }, { status: 403 });
   }
 
-  const { email } = await req.json();
-  if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+  const rawBody = await req.json();
+  const parsed = validateBody(removeTeamMemberByEmailSchema, rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const { email } = parsed.data;
 
   if (await isMainAdmin(email)) {
     return NextResponse.json({ error: "Cannot remove the main admin" }, { status: 400 });
@@ -79,8 +85,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden — main admin only" }, { status: 403 });
   }
 
-  const { email, role } = await req.json();
-  if (!email || !role) return NextResponse.json({ error: "Email and role required" }, { status: 400 });
+  const rawBody = await req.json();
+  const parsed = validateBody(updateTeamMemberRoleSchema, rawBody);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const { email, role } = parsed.data;
 
   await connectDB();
   const Admin = getAdminModel();

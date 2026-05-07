@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin, getAdminModel } from "@/lib/verifyAdmin";
 import { connectDB } from "@/lib/mongodb";
+import { addTeamMemberSchema, removeTeamMemberSchema, validateBody } from "@/lib/validators";
 
 // GET — list all current team members (admins/authors)
 export async function GET(req: NextRequest) {
@@ -35,18 +36,23 @@ export async function POST(req: NextRequest) {
   if (!admin.isMain) return NextResponse.json({ error: "Only main admin can add members" }, { status: 403 });
 
   try {
-    const { email, name, role } = await req.json();
-    if (!email || !name) return NextResponse.json({ error: "Email and Name required" }, { status: 400 });
+    const rawBody = await req.json();
+    const parsed = validateBody(addTeamMemberSchema, rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const { email, name, role } = parsed.data;
 
     await connectDB();
     const AdminModel = getAdminModel();
 
     // Check if already exists
-    const existing = await AdminModel.findOne({ email: String(email).toLowerCase() });
+    const existing = await AdminModel.findOne({ email });
     if (existing) return NextResponse.json({ error: "Member already exists" }, { status: 400 });
 
     const newMember = await AdminModel.create({
-      email: email.toLowerCase(),
+      email,
       name,
       role: role || "author",
       addedBy: admin.email,
@@ -72,8 +78,13 @@ export async function DELETE(req: NextRequest) {
   if (!admin.isMain) return NextResponse.json({ error: "Only main admin can remove members" }, { status: 403 });
 
   try {
-    const { uid } = await req.json();
-    if (!uid) return NextResponse.json({ error: "UID required" }, { status: 400 });
+    const rawBody = await req.json();
+    const parsed = validateBody(removeTeamMemberSchema, rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const { uid } = parsed.data;
 
     await connectDB();
     const AdminModel = getAdminModel();

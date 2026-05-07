@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
 import { verifyAdmin } from "@/lib/verifyAdmin";
+import { createArticleSchema, validateBody } from "@/lib/validators";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -117,24 +119,35 @@ export async function POST(req: NextRequest) {
     const admin = await verifyAdmin(req);
     if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    await connectDB();
-    const Article = getArticleModel();
-    const body = await req.json();
+    const rawBody = await req.json();
+    const parsed = validateBody(createArticleSchema, rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const body = parsed.data as any;
+
+    // Sanitize HTML content before saving to DB
+    if (body.content) {
+      body.content = sanitizeHtml(body.content);
+      body.readTime = calcReadTime(body.content);
+    }
 
     body.slug = body.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
+    await connectDB();
+    const Article = getArticleModel();
+
     const existing = await Article.findOne({ slug: String(body.slug) });
     if (existing) body.slug = `${body.slug}-${Date.now()}`;
 
     body.publishedAt = body.status === "published" ? new Date() : null;
     body.updatedAt = new Date();
-    if (body.content) body.readTime = calcReadTime(body.content);
 
     const article = await Article.create(body);
-    console.log("[POST /api/articles] Created:", article.slug);
     return NextResponse.json(article, { status: 201 });
   } catch (err: any) {
     console.error("[POST /api/articles]", err.message);
