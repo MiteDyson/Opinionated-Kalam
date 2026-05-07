@@ -1,4 +1,5 @@
 import React from "react";
+import { MoveLeft } from "lucide-react";
 
 const BLACK = "#111111";
 const BORDER = "#e0d8d0";
@@ -7,7 +8,7 @@ export function MobileAboutView({ onTabChange }: { onTabChange: (t: string) => v
   return (
     <div className="py-[10px] pb-[40px]">
       <div className="flex items-center mb-6">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
       </div>
 
       <h1 className="font-serif text-[2.2rem] font-normal text-[#111111] m-0 mb-[30px] leading-[1.1]">
@@ -72,7 +73,7 @@ export function MobileGrievanceView({ onTabChange }: { onTabChange: (t: string) 
   return (
     <div className="py-[10px] pb-[40px]">
       <div className="flex items-center mb-6">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
       </div>
 
       <h1 className="font-serif text-[2.2rem] font-normal text-[#111111] m-0 mb-[30px] leading-[1.1]">
@@ -114,7 +115,7 @@ export function MobileGrievanceView({ onTabChange }: { onTabChange: (t: string) 
           <li><span className="underline">Acknowledgement</span> - You will receive a confirmation of receipt from our team within 24 hours.</li>
           <li><span className="underline">Investigation</span> - Our editorial team, independent of the original author, will review the provided evidence against our reporting data.</li>
           <li><span className="underline">Resolution</span> - We aim to resolve all grievances within 15 days of receipt.</li>
-          <li><span className="underline">Action</span> - If a factual error is found, we will immediately update the content and append a clear, transparent "Correction" note at the bottom of the article detailing what was changed and when.</li>
+          <li><span className="underline">Action</span> - If a factual error is found, we will immediately update the content and append a clear, transparent \"Correction\" note at the bottom of the article detailing what was changed and when.</li>
         </ul>
 
         <h2 className="font-sans text-[1.35rem] font-normal text-[#111111] mt-[2em] mb-[0.8em] tracking-[-0.02em] leading-[1.3]">Grievance Redressal Officer</h2>
@@ -143,7 +144,7 @@ export function MobileTeamView({ onTabChange }: { onTabChange: (t: string) => vo
   return (
     <div className="py-[10px] pb-[40px]">
       <div className="flex items-center mb-6">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
       </div>
 
       <h1 className="font-serif text-[2.8rem] font-normal text-[#111111] m-0 mb-[30px] text-center">
@@ -198,7 +199,7 @@ export function MobileContactView({ onTabChange }: { onTabChange: (t: string) =>
   return (
     <div className="py-[10px] pb-[40px]">
       <div className="flex items-center mb-6">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
       </div>
 
       <h1 className="font-serif text-[2.8rem] font-normal text-[#111111] m-0 mb-[35px] text-center">

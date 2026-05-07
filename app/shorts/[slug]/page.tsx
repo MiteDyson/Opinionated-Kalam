@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Eye, ChevronLeft, BookOpen } from "lucide-react";
+import { Heart, Bookmark, Share, Eye, MoveLeft, BookOpen } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -81,12 +81,12 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
       <div style={{ padding: "12px 16px 0" }}>
         {/* Back button */}
         <button onClick={() => router.back()} style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
-          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
-          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12,
+          background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+          padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+          fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+          color: MUTED, marginBottom: 12,
         }}>
-          <ChevronLeft size={14} strokeWidth={2.5} />
+          <MoveLeft size={14} strokeWidth={2.5} />
           Back
         </button>
       </div>
@@ -118,7 +118,7 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
           )}
         </div>
 
-        {/* Tags */}
+        {/* Tags - Moved below metadata */}
         {short.tags?.length > 0 && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
             {short.tags.map(t => <MobileTag key={t} label={t} />)}
@@ -237,7 +237,15 @@ export default function ShortPage() {
   if (notFound || !short) return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
       <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Article not found</div>
-      <button onClick={() => router.push("/")} style={{ fontFamily: "'Inter', sans-serif", color: ACCENT, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>← Back</button>
+      <button onClick={() => router.push("/")} style={{
+        background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+        padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+        fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+        color: ACCENT,
+      }}>
+        <MoveLeft size={16} />
+        Back to home
+      </button>
     </div>
   );
 
@@ -275,29 +283,18 @@ export default function ShortPage() {
         <div style={{ maxWidth: 900, margin: "0 auto 80px" }}>
           {/* Back button */}
           <button onClick={() => router.back()} style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
-            color: MUTED, background: "none", border: `1px solid ${BORDER}`,
-            borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32,
+            background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+            padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+            fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+            color: MUTED, marginBottom: 32,
           }}>
-            <ChevronLeft size={14} strokeWidth={2.5} />
+            <MoveLeft size={14} strokeWidth={2.5} />
             Back
           </button>
-          <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
-            {short.tags?.map(t => (
-              <span key={t} style={{ 
-                display: "inline-block", padding: "1.5px 7px", borderRadius: 3, 
-                fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", 
-                letterSpacing: "0.03em", fontFamily: "'Inter', sans-serif", 
-                backgroundColor: "rgba(217,35,35,0.06)", color: "#D92323"
-              }}>
-                {t}
-              </span>
-            ))}
-          </div>
+
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.6rem", lineHeight: 1.1, marginBottom: 16, color: "var(--text-main)" }}>{short.title}</h1>
           
-          <div style={{ display: "flex", gap: 14, color: "var(--text-muted)", fontSize: "0.75rem", fontFamily: "'Inter', sans-serif", marginBottom: 32, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 14, color: "var(--text-muted)", fontSize: "0.75rem", fontFamily: "'Inter', sans-serif", marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
             {dateStr && <span>{dateStr}</span>}
             <span style={{ opacity: 0.3 }}>·</span>
             <span>{short.author}</span>
@@ -315,6 +312,20 @@ export default function ShortPage() {
                 </span>
               </>
             )}
+          </div>
+
+          {/* Tags - Moved below metadata */}
+          <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginBottom: 32 }}>
+            {short.tags?.map(t => (
+              <span key={t} style={{ 
+                display: "inline-block", padding: "1.5px 7px", borderRadius: 3, 
+                fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", 
+                letterSpacing: "0.03em", fontFamily: "'Inter', sans-serif", 
+                backgroundColor: "rgba(217,35,35,0.06)", color: "#D92323"
+              }}>
+                {t}
+              </span>
+            ))}
           </div>
 
           <div className="short-body" dangerouslySetInnerHTML={{ __html: short.content }} />
@@ -338,4 +349,3 @@ export default function ShortPage() {
     </>
   );
 }
-

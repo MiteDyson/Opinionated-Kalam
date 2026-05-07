@@ -11,6 +11,7 @@ import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
+import { MoveLeft } from "lucide-react";
 
 const ACCENT = "#1B2A47";
 const RED = "#D92323";
@@ -231,6 +232,9 @@ export default function SavedPage() {
         <MobileSideMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} onTabChange={(t) => router.push(`/?tab=${t}`)} onBeatSelect={() => router.push("/")} />
         <MobileHeader activeTab="" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMobileMenuOpen(true)} />
         <div style={{ padding: "12px 16px 60px" }}>
+          <button onClick={() => router.back()} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: MUTED, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12 }}>
+            <MoveLeft size={14} strokeWidth={2.5} /> Back
+          </button>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.7rem", fontWeight: 400, color: BLACK, margin: 0 }}>Saved</h1>
 
@@ -283,6 +287,9 @@ export default function SavedPage() {
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
         <Header onMenuOpen={() => setDesktopMenuOpen(true)} activeTab="" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
         <div style={{ maxWidth: 720, margin: "0 auto 80px" }}>
+          <button onClick={() => router.back()} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: MUTED, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32 }}>
+            <MoveLeft size={14} strokeWidth={2.5} /> Back
+          </button>
           <div style={{ marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.2rem", fontWeight: 400, color: "var(--text-main)", margin: 0 }}>Saved</h1>
             {!loading && items.length > 0 && (

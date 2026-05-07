@@ -6,30 +6,30 @@ import { verifyAdmin } from "@/lib/verifyAdmin";
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
   const schema = new mongoose.Schema({
-    title:       { type: String, required: true },
-    slug:        { type: String, required: true, unique: true },
-    type:        { type: String, default: "article" },
-    excerpt:     { type: String, default: "" },
-    content:     { type: String, default: "" },
-    coverImage:  { type: String, default: "" },
-    author:      { type: String, default: "Author" },
-    tags:        [String],
-    status:      { type: String, default: "draft" },
-    likes:       { type: Number, default: 0 },
-    views:       { type: Number, default: 0 },
-    readTime:    { type: String, default: "" },
-    likedBy:     [String],
-    savedBy:     [String],
-    audioUrl:    { type: String, default: "" },
-    episode:     { type: String, default: "" },
-    duration:    { type: String, default: "" },
+    title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    type: { type: String, default: "article" },
+    excerpt: { type: String, default: "" },
+    content: { type: String, default: "" },
+    coverImage: { type: String, default: "" },
+    author: { type: String, default: "Author" },
+    tags: [String],
+    status: { type: String, default: "draft" },
+    likes: { type: Number, default: 0 },
+    views: { type: Number, default: 0 },
+    readTime: { type: String, default: "" },
+    likedBy: [String],
+    savedBy: [String],
+    audioUrl: { type: String, default: "" },
+    episode: { type: String, default: "" },
+    duration: { type: String, default: "" },
     publishedAt: { type: Date },
-    createdAt:   { type: Date, default: Date.now },
-    updatedAt:   { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
   });
   schema.index({ status: 1, type: 1, createdAt: -1 });
   schema.index({ tags: 1 });
-  schema.index({ slug: 1 }, { unique: true });
+
 
   return mongoose.model("Article", schema);
 }
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
     await connectDB();
     const Article = getArticleModel();
     const { searchParams } = new URL(req.url);
-    const all    = searchParams.get("all") === "true";
-    const uid    = searchParams.get("uid");
+    const all = searchParams.get("all") === "true";
+    const uid = searchParams.get("uid");
     const status = searchParams.get("status") ?? "published";
 
     // Draft requests require admin auth
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       const structured = {
         articles: result.filter((a: any) => a.type === "article"),
         podcasts: result.filter((a: any) => a.type === "podcast"),
-        shorts:   result.filter((a: any) => a.type === "short"),
+        shorts: result.filter((a: any) => a.type === "short"),
       };
 
       const response = NextResponse.json(structured);
@@ -77,12 +77,12 @@ export async function GET(req: NextRequest) {
       return response;
     }
 
-    const type   = searchParams.get("type");
-    const tag    = searchParams.get("tag");
+    const type = searchParams.get("type");
+    const tag = searchParams.get("tag");
 
     const query: Record<string, any> = { status };
     if (type) query.type = type;
-    if (tag)  query.tags = tag;
+    if (tag) query.tags = tag;
 
     const articles = await Article.find(query).sort({ createdAt: -1 }).lean();
 
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
     if (existing) body.slug = `${body.slug}-${Date.now()}`;
 
     body.publishedAt = body.status === "published" ? new Date() : null;
-    body.updatedAt   = new Date();
+    body.updatedAt = new Date();
     if (body.content) body.readTime = calcReadTime(body.content);
 
     const article = await Article.create(body);

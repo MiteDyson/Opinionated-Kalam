@@ -6,6 +6,7 @@ import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import { useMobile } from "@/hooks/useMobile";
 import { useState } from "react";
+import { MoveLeft } from "lucide-react";
 
 const BLACK = "#111111";
 const BG    = "#f5f0eb";
@@ -27,8 +28,13 @@ export default function SubscriptionsPage() {
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: MUTED, maxWidth: 340, lineHeight: 1.7, marginBottom: 28 }}>
             Subscriptions are being built. Check back soon — we're working on something worth subscribing to.
           </p>
-          <button onClick={() => router.push("/")} style={{ padding: "10px 22px", backgroundColor: BLACK, color: "white", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", fontWeight: 600 }}>
-            ← Back to Home
+          <button onClick={() => router.push("/")} style={{ 
+            background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+            padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+            fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+            color: BLACK, fontWeight: 600
+          }}>
+            <MoveLeft size={16} /> Back to Home
           </button>
         </div>
       </div>
@@ -44,8 +50,13 @@ export default function SubscriptionsPage() {
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", color: "var(--text-muted)", maxWidth: 420, lineHeight: 1.75, marginBottom: 36 }}>
           Subscriptions are being built. Check back soon — we're working on something worth subscribing to.
         </p>
-        <button onClick={() => router.push("/")} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 22px", backgroundColor: "var(--text-main)", color: "white", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", fontWeight: 600 }}>
-          ← Back to Home
+        <button onClick={() => router.push("/")} style={{ 
+          background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+          padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+          fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+          color: "var(--text-main)", fontWeight: 600
+        }}>
+          <MoveLeft size={16} /> Back to Home
         </button>
       </div>
       <Footer />

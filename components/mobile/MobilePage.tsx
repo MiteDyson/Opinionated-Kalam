@@ -518,7 +518,7 @@ function MobileArticlesView({ articles, loading, onTabChange }: { articles: Arti
   return (
     <div>
       <div className="flex items-center justify-between py-[10px] gap-2">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
         <div className="flex gap-[6px] ml-auto">
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
           <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
@@ -554,7 +554,7 @@ function MobilePodcastsView({ podcasts, loading, onTabChange, activeSlug, setAct
   return (
     <div>
       <div className="flex items-center justify-between py-[10px]">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
         <div className="ml-auto"><BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} /></div>
       </div>
       {loading
@@ -588,7 +588,7 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
   return (
     <div>
       <div className="flex items-center justify-between py-[10px] gap-2">
-        <button onClick={() => onTabChange("home")} className="font-sans text-[0.72rem] text-[#111111] bg-transparent border border-[#e0d8d0] rounded-[4px] px-[10px] py-[4px] cursor-pointer whitespace-nowrap">← Back</button>
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
         <div className="flex gap-[6px] ml-auto">
           <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
           <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />

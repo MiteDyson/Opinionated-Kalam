@@ -202,12 +202,12 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
         {/* Row 1: Back | Filter / Sort */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
           <button onClick={() => router.back()} style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", fontWeight: 400,
-            color: BLACK, background: "white", border: `1px solid ${BORDER}`,
-            borderRadius: 4, padding: "4px 10px", cursor: "pointer",
+            background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+            padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+            fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+            color: BLACK,
           }}>
-            <ChevronLeft size={10} strokeWidth={3} />
+            <MoveLeft size={14} strokeWidth={2.5} />
             Back
           </button>
           <div style={{ display: "flex", gap: 6 }}>
@@ -551,7 +551,20 @@ export default function PodcastPage() {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
-  if (notFound) return <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}><div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Episode not found</div><button onClick={() => router.push("/")} style={{ fontFamily: "'Inter', sans-serif", color: ACCENT, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>← Back</button></div>;
+  if (notFound) return (
+    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Episode not found</div>
+      <button onClick={() => router.push("/")} style={{
+        background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+        padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+        fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+        color: ACCENT,
+      }}>
+        <MoveLeft size={16} />
+        Back
+      </button>
+    </div>
+  );
 
   if (loading) {
     if (isMobile) {
@@ -603,12 +616,12 @@ export default function PodcastPage() {
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 80px" }}>
         {/* Back button */}
         <button onClick={() => router.back()} style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
-          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
-          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32,
+          background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+          padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+          fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+          color: MUTED, marginBottom: 32,
         }}>
-          <ChevronLeft size={14} strokeWidth={2.5} />
+          <MoveLeft size={14} strokeWidth={2.5} />
           Back
         </button>
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 40, marginBottom: 36, alignItems: "start" }}>
@@ -641,7 +654,7 @@ export default function PodcastPage() {
           </div>
         </div>
         {podcast.audioUrl ? <DesktopAudioPlayer src={podcast.audioUrl} /> : <div style={{ padding: "32px 24px", borderRadius: 16, backgroundColor: "#e8e5e0", textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: "var(--text-muted)" }}>Audio not available yet.</div>}
-        {/* Interaction Bar — barefoot */}
+        {/* Interaction Bar — barefoot style */}
         <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
           <button onClick={handleLike} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
             <Heart size={20} fill={liked ? "currentColor" : "none"} />
@@ -662,4 +675,3 @@ export default function PodcastPage() {
     </>
   );
 }
-

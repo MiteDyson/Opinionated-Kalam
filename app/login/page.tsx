@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { MoveLeft } from "lucide-react";
 
 const MAX_USERNAME = 15;
 
@@ -289,8 +290,8 @@ export default function LoginPage() {
             <button onClick={handleForgotPassword} disabled={loading || !email.trim()} style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading || !email.trim() ? "not-allowed" : "pointer", opacity: loading || !email.trim() ? 0.6 : 1 }}>
               {loading ? "Sending…" : "Send Reset Link"}
             </button>
-            <button onClick={() => switchMode("login")} style={{ background: "none", border: "none", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", padding: 0, textAlign: "center" as const }}>
-              ← Back to Sign in
+            <button onClick={() => switchMode("login")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: "6px", justifyContent: "center" }}>
+              <MoveLeft size={16} /> Back to Sign in
             </button>
           </div>
         )}
@@ -409,6 +410,12 @@ export default function LoginPage() {
                 {mode === "login" ? "Sign up" : "Sign in"}
               </button>
             </p>
+
+            <div style={{ textAlign: "center", marginTop: 24 }}>
+               <button onClick={() => router.push("/")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                 <MoveLeft size={14} /> Back to home
+               </button>
+            </div>
           </>
         )}
       </div>

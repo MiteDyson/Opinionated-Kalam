@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
@@ -11,7 +11,7 @@ import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
 import { MobileAboutView, MobileGrievanceView, MobileTeamView, MobileContactView } from "@/components/mobile/MobileInfoPages";
-import { BookOpen } from "lucide-react";
+import { BookOpen, MoveLeft } from "lucide-react";
 
 // Lazy-load the mobile page to avoid SSR issues
 const MobilePage = dynamic(() => import("@/components/mobile/MobilePage"), { ssr: false });
@@ -84,17 +84,23 @@ function BeatsDropdown({ selectedBeat, onBeatChange }: { selectedBeat: string | 
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const RotateCcw = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+    </svg>
+  );
+
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
-          display: "flex", alignItems: "center", gap: 4,
-          padding: "4px 12px", borderRadius: 4,
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "6px 14px", borderRadius: 6,
           border: "1px solid #ddd",
           backgroundColor: "white",
-          color: "#555",
-          fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", fontWeight: 500,
+          color: "#333",
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 500,
           cursor: "pointer",
         }}
       >
@@ -103,45 +109,51 @@ function BeatsDropdown({ selectedBeat, onBeatChange }: { selectedBeat: string | 
 
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0,
-          backgroundColor: "#F9F7F2", borderRadius: 8,
-          border: "1px solid #e0dcd0", boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-          zIndex: 100, minWidth: 160, overflow: "hidden",
-          animation: "fadeDown 0.15s ease",
+          position: "absolute", top: "calc(100% + 6px)", right: 0,
+          backgroundColor: "white", borderRadius: 8,
+          border: "1px solid #eee", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+          zIndex: 100, minWidth: 180, overflow: "hidden",
+          animation: "fadeDown 0.1s ease",
         }}>
           <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}`}</style>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {ALL_TAGS.map((tag, i) => (
+          
+          <button
+            onClick={() => { onBeatChange(null); setOpen(false); }}
+            style={{
+              width: "100%", padding: "12px 16px", background: "none", border: "none",
+              cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
+              color: "#999", fontWeight: 600, textAlign: "left",
+              display: "flex", alignItems: "center", gap: "8px",
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9"}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
+          >
+            <RotateCcw /> Reset to Default
+          </button>
+          
+          <div style={{ height: "1px", backgroundColor: "#eee" }} />
+
+          <div style={{ display: "flex", flexDirection: "column", padding: "4px 0" }}>
+            {ALL_TAGS.map((tag) => (
               <button
                 key={tag}
                 onClick={() => { onBeatChange(tag); setOpen(false); }}
                 style={{
-                  width: "100%", padding: "8px 10px", background: "none", border: "none",
-                  borderBottom: "1px solid #ece9e0",
-                  cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem",
-                  color: selectedBeat === tag ? "#000" : "#555",
+                  width: "100%", padding: "10px 16px", background: "none", border: "none",
+                  cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem",
+                  color: selectedBeat === tag ? "#1B2A47" : "#444",
                   fontWeight: selectedBeat === tag ? 700 : 400,
-                  textAlign: "center",
-                  transition: "background 0.2s"
+                  textAlign: "left",
+                  transition: "background 0.2s",
+                  backgroundColor: selectedBeat === tag ? "#f5f2ed" : "transparent"
                 }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,0,0,0.03)"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
+                onMouseEnter={e => { if (selectedBeat !== tag) (e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9"; }}
+                onMouseLeave={e => { if (selectedBeat !== tag) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
               >
                 {tag}
               </button>
             ))}
-            <div style={{ padding: "8px 10px" }}>
-              <button
-                onClick={() => { onBeatChange(null); setOpen(false); }}
-                style={{
-                  width: "100%", padding: "8px", backgroundColor: "#bbb", color: "white",
-                  border: "none", borderRadius: 4, cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 700
-                }}
-              >
-                Reset to Default
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -152,7 +164,7 @@ function BeatsDropdown({ selectedBeat, onBeatChange }: { selectedBeat: string | 
 function SortDropdown({ selectedSort, onSortChange }: { selectedSort: string; onSortChange: (s: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const options = ["Trending", "Most Views", "Least Views", "Oldest", "Newest"];
+  const options = ["Trending", "Most Views", "Least Views", "Newest", "Oldest"];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -167,12 +179,12 @@ function SortDropdown({ selectedSort, onSortChange }: { selectedSort: string; on
       <button
         onClick={() => setOpen(o => !o)}
         style={{
-          display: "flex", alignItems: "center", gap: 4,
-          padding: "4px 12px", borderRadius: 4,
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "6px 14px", borderRadius: 6,
           border: "1px solid #ddd",
           backgroundColor: "white",
-          color: "#555",
-          fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", fontWeight: 500,
+          color: "#333",
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 500,
           cursor: "pointer",
         }}
       >
@@ -181,31 +193,33 @@ function SortDropdown({ selectedSort, onSortChange }: { selectedSort: string; on
 
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0,
-          backgroundColor: "#F9F7F2", borderRadius: 8,
-          border: "1px solid #e0dcd0", boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+          position: "absolute", top: "calc(100% + 6px)", right: 0,
+          backgroundColor: "white", borderRadius: 8,
+          border: "1px solid #eee", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
           zIndex: 100, minWidth: 160, overflow: "hidden",
-          animation: "fadeDown 0.15s ease",
+          animation: "fadeDown 0.1s ease",
         }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {options.map((opt, i) => (
-              <button
-                key={opt}
-                onClick={() => { onSortChange(opt); setOpen(false); }}
-                style={{
-                  width: "100%", padding: "8px 10px", background: "none", border: "none",
-                  borderBottom: i < options.length - 1 ? "1px solid #ece9e0" : "none",
-                  cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem",
-                  color: selectedSort === opt ? "#000" : "#555",
-                  fontWeight: selectedSort === opt ? 700 : 400,
-                  textAlign: "center",
-                  transition: "background 0.2s"
-                }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,0,0,0.03)"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
-              >
-                {opt}
-              </button>
+              <React.Fragment key={opt}>
+                <button
+                  onClick={() => { onSortChange(opt); setOpen(false); }}
+                  style={{
+                    width: "100%", padding: "12px 16px", background: "none", border: "none",
+                    cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem",
+                    color: selectedSort === opt ? "#1B2A47" : "#444",
+                    fontWeight: selectedSort === opt ? 700 : 400,
+                    textAlign: "left",
+                    transition: "background 0.2s",
+                    backgroundColor: selectedSort === opt ? "#f5f2ed" : "transparent"
+                  }}
+                  onMouseEnter={e => { if (selectedSort !== opt) (e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9"; }}
+                  onMouseLeave={e => { if (selectedSort !== opt) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                >
+                  {opt}
+                </button>
+                {i < options.length - 1 && <div style={{ height: "1px", backgroundColor: "#eee" }} />}
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -404,8 +418,8 @@ function RecentView({ articles, loading, onTabChange }: { articles: Article[]; l
     <div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 4 }}>
-          ← Back
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 4 }}>
+          <MoveLeft size={14} /> Back
         </button>
         <div style={{ flex: 1 }} />
         <BeatsDropdown selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
@@ -442,8 +456,8 @@ function PodcastsView({ podcasts, loading, activeSlug, setActiveSlug, onTabChang
     <div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 4 }}>
-          ← Back
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 4 }}>
+          <MoveLeft size={14} /> Back
         </button>
         <div style={{ flex: 1 }} />
         <BeatsDropdown selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
@@ -477,8 +491,8 @@ function ShortsView({ shorts, loading, onTabChange }: { shorts: Article[]; loadi
     <div>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 4 }}>
-          ← Back
+        <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 4 }}>
+          <MoveLeft size={14} /> Back
         </button>
         <div style={{ flex: 1 }} />
         <BeatsDropdown selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />

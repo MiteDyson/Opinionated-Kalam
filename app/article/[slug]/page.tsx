@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Eye, ChevronLeft, Play, Pause, Loader2, BookOpen } from "lucide-react";
+import { Heart, Bookmark, Share, Eye, MoveLeft, Play, Pause, Loader2, BookOpen } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -171,12 +171,12 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
       <div style={{ padding: "12px 16px 0" }}>
         {/* Back button */}
         <button onClick={() => router.back()} style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
-          color: MUTED, background: "none", border: `1px solid ${BORDER}`,
-          borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12,
+          background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+          padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+          fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+          color: MUTED, marginBottom: 12,
         }}>
-          <ChevronLeft size={14} strokeWidth={2.5} />
+          <MoveLeft size={14} strokeWidth={2.5} />
           Back
         </button>
       </div>
@@ -340,7 +340,15 @@ export default function ArticlePage() {
   if (notFound || !article) return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
       <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem" }}>Article not found</div>
-      <button onClick={() => router.push("/")} style={{ fontFamily: "'Inter', sans-serif", color: ACCENT, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>← Back to home</button>
+      <button onClick={() => router.push("/")} style={{
+        background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+        padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+        fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+        color: ACCENT,
+      }}>
+        <MoveLeft size={16} />
+        Back to home
+      </button>
     </div>
   );
 
@@ -381,12 +389,12 @@ export default function ArticlePage() {
         <div style={{ maxWidth: 900, margin: "0 auto 80px" }}>
           {/* Back button */}
           <button onClick={() => router.back()} style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
-            color: MUTED, background: "none", border: `1px solid ${BORDER}`,
-            borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32,
+            background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
+            padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+            fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px",
+            color: MUTED, marginBottom: 32,
           }}>
-            <ChevronLeft size={14} strokeWidth={2.5} />
+            <MoveLeft size={14} strokeWidth={2.5} />
             Back
           </button>
 
