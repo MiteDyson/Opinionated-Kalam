@@ -280,11 +280,18 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
   const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault(); e.stopPropagation();
     const audio = audioRef.current;
-    if (!audio || !seekBarRef.current) return;
+    if (!audio || !seekBarRef.current || !isFinite(audio.duration) || audio.duration === 0) return;
+    
     const rect = seekBarRef.current.getBoundingClientRect();
+    if (rect.width === 0) return;
+    
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = ratio * (audio.duration || 0);
-    setProgress(ratio * 100);
+    const targetTime = ratio * audio.duration;
+    
+    if (isFinite(targetTime)) {
+      audio.currentTime = targetTime;
+      setProgress(ratio * 100);
+    }
   };
 
   return (

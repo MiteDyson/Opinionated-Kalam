@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
+import { adminAuth } from "./firebase-admin";
 
 const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
@@ -23,38 +24,40 @@ export async function verifyAdmin(
   req: NextRequest
 ): Promise<{ uid: string; email: string; isMain: boolean; role: string } | null> {
   try {
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    
+    const token = authHeader.substring(7);
     if (!token) return null;
 
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
+    // SECURE: Verify the ID token using Firebase Admin SDK
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    const email: string = decodedToken.email ?? "";
+    const uid: string = decodedToken.uid;
 
-    const payload = JSON.parse(
-      Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8")
-    );
-    if (payload.exp * 1000 < Date.now()) return null;
-
-    const email: string = payload.email ?? "";
+    if (!email) return null;
 
     // Main admin always has full access
     if (email === MAIN_ADMIN_EMAIL) {
-      return { uid: payload.user_id ?? payload.sub, email, isMain: true, role: "admin" };
+      return { uid, email, isMain: true, role: "admin" };
     }
 
     // Check team admin collection
     await connectDB();
     const Admin = getAdminModel();
-    const adminRecord = await Admin.findOne({ email: email.toLowerCase() }).lean() as any;
+    // SECURE: Use a simple string for the query to prevent injection
+    const adminRecord = await Admin.findOne({ email: String(email).toLowerCase() }).lean() as any;
+    
     if (!adminRecord) return null;
 
     return {
-      uid: payload.user_id ?? payload.sub,
+      uid,
       email,
       isMain: false,
       role: adminRecord.role ?? "author",
     };
   } catch (err: any) {
-    console.log("[verifyAdmin] Error:", err.message);
+    console.error("[verifyAdmin] Verification Failed:", err.message);
     return null;
   }
 }

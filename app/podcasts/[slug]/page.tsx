@@ -59,9 +59,19 @@ function DesktopAudioPlayer({ src }: { src: string }) {
     if (playing) { a.pause(); setPlaying(false); } else { a.play(); setPlaying(true); }
   };
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const a = audioRef.current; const bar = progressRef.current; if (!a || !bar) return;
-    const pct = (e.clientX - bar.getBoundingClientRect().left) / bar.getBoundingClientRect().width;
-    a.currentTime = pct * a.duration;
+    const a = audioRef.current;
+    const bar = progressRef.current;
+    if (!a || !bar || !isFinite(a.duration) || a.duration === 0) return;
+    
+    const rect = bar.getBoundingClientRect();
+    if (rect.width === 0) return;
+    
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const targetTime = pct * a.duration;
+    
+    if (isFinite(targetTime)) {
+      a.currentTime = targetTime;
+    }
   };
   const skip = (s: number) => { if (audioRef.current) audioRef.current.currentTime += s; };
   const setVol = (v: number) => { setVolume(v); if (audioRef.current) audioRef.current.volume = v; if (v > 0) setMuted(false); };
@@ -184,11 +194,18 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
   const skip = (sec: number) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime + sec); };
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const a = audioRef.current;
-    if (!a || !seekRef.current) return;
+    if (!a || !seekRef.current || !isFinite(a.duration) || a.duration === 0) return;
+    
     const rect = seekRef.current.getBoundingClientRect();
+    if (rect.width === 0) return;
+    
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    a.currentTime = ratio * (a.duration || 0);
-    setProgress(ratio * 100);
+    const targetTime = ratio * a.duration;
+    
+    if (isFinite(targetTime)) {
+      a.currentTime = targetTime;
+      setProgress(ratio * 100);
+    }
   };
   const setVol = (v: number) => { setVolume(v); if (audioRef.current) audioRef.current.volume = v; };
   const applySpeed = (s: number) => { setSpeed(s); if (audioRef.current) audioRef.current.playbackRate = s; };

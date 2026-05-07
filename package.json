@@ -27,6 +27,7 @@
     "date-fns": "^3.6.0",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
+    "isomorphic-dompurify": "^3.12.0",
     "lucide-react": "^0.383.0",
     "mongoose": "^9.3.0",
     "next": "14.2.5",

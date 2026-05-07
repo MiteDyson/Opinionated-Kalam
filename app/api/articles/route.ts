@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
     const Article = getArticleModel();
     const { searchParams } = new URL(req.url);
     const all = searchParams.get("all") === "true";
-    const uid = searchParams.get("uid");
-    const status = searchParams.get("status") ?? "published";
+    const uid = String(searchParams.get("uid") || "");
+    const status = String(searchParams.get("status") ?? "published");
 
     // Draft requests require admin auth
     if (status === "draft") {
@@ -81,8 +81,8 @@ export async function GET(req: NextRequest) {
     const tag = searchParams.get("tag");
 
     const query: Record<string, any> = { status };
-    if (type) query.type = type;
-    if (tag) query.tags = tag;
+    if (type) query.type = String(type);
+    if (tag) query.tags = String(tag);
 
     const articles = await Article.find(query).sort({ createdAt: -1 }).lean();
 
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    const existing = await Article.findOne({ slug: body.slug });
+    const existing = await Article.findOne({ slug: String(body.slug) });
     if (existing) body.slug = `${body.slug}-${Date.now()}`;
 
     body.publishedAt = body.status === "published" ? new Date() : null;

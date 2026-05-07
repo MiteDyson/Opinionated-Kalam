@@ -3,6 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Heart, Bookmark, Share, Eye, MoveLeft, BookOpen } from "lucide-react";
+import DOMPurify from "isomorphic-dompurify";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -126,7 +127,7 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
         )}
 
         {/* Body */}
-        <div className="short-body-m" dangerouslySetInnerHTML={{ __html: short.content }} />
+        <div className="short-body-m" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(short.content) }} />
 
         {/* Interactions */}
         <div style={{ display: "flex", gap: 10, marginTop: 28, flexWrap: "wrap" }}>
@@ -328,7 +329,7 @@ export default function ShortPage() {
             ))}
           </div>
 
-          <div className="short-body" dangerouslySetInnerHTML={{ __html: short.content }} />
+          <div className="short-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(short.content) }} />
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 40, paddingTop: 28, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
             <button onClick={handleLike} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
               <Heart size={20} fill={liked ? "currentColor" : "none"} />

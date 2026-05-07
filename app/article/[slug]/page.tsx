@@ -3,6 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Heart, Bookmark, Share, Eye, MoveLeft, Play, Pause, Loader2, BookOpen } from "lucide-react";
+import DOMPurify from "isomorphic-dompurify";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/firebase";
 import { useMobile } from "@/hooks/useMobile";
@@ -83,10 +84,19 @@ function ListenPlayer({ src, readTime, compact = false }: { src: string; readTim
     if (playing) { a.pause(); setPlaying(false); } else { a.play().catch(() => {}); setPlaying(true); }
   };
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const a = audioRef.current; const bar = seekBarRef.current;
-    if (!a || !bar || !a.duration) return;
-    const pct = Math.max(0, Math.min(1, (e.clientX - bar.getBoundingClientRect().left) / bar.getBoundingClientRect().width));
-    a.currentTime = pct * a.duration;
+    const a = audioRef.current;
+    const bar = seekBarRef.current;
+    if (!a || !bar || !isFinite(a.duration) || a.duration === 0) return;
+    
+    const rect = bar.getBoundingClientRect();
+    if (rect.width === 0) return;
+    
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const targetTime = pct * a.duration;
+    
+    if (isFinite(targetTime)) {
+      a.currentTime = targetTime;
+    }
   };
   const applySpeed = (s: number) => { setSpeed(s); if (audioRef.current) audioRef.current.playbackRate = s; setSpeedOpen(false); };
   const fmt = (s: number) => { if (!s || isNaN(s)) return "0:00"; return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`; };
@@ -228,7 +238,7 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
         {article.audioUrl && <ListenPlayer src={article.audioUrl} readTime={article.readTime} compact />}
 
         {/* Body */}
-        <div className="art-body-m" dangerouslySetInnerHTML={{ __html: article.content }} />
+        <div className="art-body-m" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
 
         {/* Interactions */}
         <div style={{ display: "flex", gap: 10, marginTop: 28, flexWrap: "wrap" }}>
@@ -420,7 +430,7 @@ export default function ArticlePage() {
 
           {article.audioUrl && <ListenPlayer src={article.audioUrl} readTime={article.readTime} />}
           
-          <div className="article-body" dangerouslySetInnerHTML={{ __html: article.content }} />
+          <div className="article-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
 
           {/* Interaction Bar — barefoot style */}
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>

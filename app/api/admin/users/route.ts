@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const AdminModel = getAdminModel();
 
     // Check if already exists
-    const existing = await AdminModel.findOne({ email: email.toLowerCase() });
+    const existing = await AdminModel.findOne({ email: String(email).toLowerCase() });
     if (existing) return NextResponse.json({ error: "Member already exists" }, { status: 400 });
 
     const newMember = await AdminModel.create({
@@ -78,12 +78,12 @@ export async function DELETE(req: NextRequest) {
     await connectDB();
     const AdminModel = getAdminModel();
 
-    const target = await AdminModel.findById(uid);
+    const target = await AdminModel.findById(String(uid));
     if (!target) return NextResponse.json({ error: "Member not found" }, { status: 404 });
 
     if (target.isMain) return NextResponse.json({ error: "Cannot remove main admin" }, { status: 400 });
 
-    await AdminModel.findByIdAndDelete(uid);
+    await AdminModel.findByIdAndDelete(String(uid));
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("[DELETE /api/admin/users]", err.message);
