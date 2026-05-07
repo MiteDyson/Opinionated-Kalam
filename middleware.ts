@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
   // Note: Adjust this as needed for your specific external scripts/images
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; media-src 'self' https: blob: data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.mongodb.net https://*.firebaseapp.com https://*.google.com https://*.imagekit.io;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; media-src 'self' https: blob: data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.mongodb.net https://*.firebaseapp.com https://*.google.com https://*.imagekit.io; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
   )
 
   return response

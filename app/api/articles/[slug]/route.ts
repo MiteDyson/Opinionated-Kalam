@@ -35,7 +35,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get("uid") ?? "";
 
-    const article = await Article.findOne({ slug: params.slug }).lean() as any;
+    const article = await Article.findOne({ slug: String(params.slug) }).lean() as any;
     if (!article) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const body = {
