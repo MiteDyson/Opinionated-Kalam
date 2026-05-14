@@ -1,6 +1,19 @@
 import { NextResponse, NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ── Admin page guard ──
+  // Redirect unauthenticated users away from /admin pages instantly.
+  // Firebase token verification still happens in API routes;
+  // this just prevents the page from loading without a session.
+  if (pathname.startsWith('/admin')) {
+    const session = request.cookies.get('session')?.value
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
+
   const response = NextResponse.next()
 
   // Security Headers
@@ -34,3 +47,4 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
+

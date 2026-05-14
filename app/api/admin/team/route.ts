@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdmin, getAdminModel, isMainAdmin } from "@/lib/verifyAdmin";
-import { connectDB } from "@/lib/mongodb";
-import { addTeamMemberSchema, removeTeamMemberByEmailSchema, updateTeamMemberRoleSchema, validateBody } from "@/lib/validators";
+import { verifyAdmin, getAdminModel, isMainAdmin } from "@/lib/auth/verifyAdmin";
+import { connectDB } from "@/lib/db/mongodb";
+import { addTeamMemberSchema, removeTeamMemberByEmailSchema, updateTeamMemberRoleSchema, validateBody } from "@/lib/security/validators";
 
 // GET — list all admins (main admin only)
 export async function GET(req: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   await connectDB();
   const Admin = getAdminModel();
-  const admins = await Admin.find({}).sort({ addedAt: -1 }).lean();
+  const admins = await Admin.find({} as any).sort({ addedAt: -1 }).lean();
   return NextResponse.json(admins);
 }
 
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   await connectDB();
   const Admin = getAdminModel();
 
-  const existing = await Admin.findOne({ email });
+  const existing = await Admin.findOne({ email } as any);
   if (existing) {
     return NextResponse.json({ error: "This email already has admin access" }, { status: 409 });
   }
@@ -75,7 +75,7 @@ export async function DELETE(req: NextRequest) {
 
   await connectDB();
   const Admin = getAdminModel();
-  await Admin.findOneAndDelete({ email: email.toLowerCase() });
+  await Admin.findOneAndDelete({ email: email.toLowerCase() } as any);
   return NextResponse.json({ success: true });
 }
 // PATCH — update admin role (main admin only)
@@ -95,6 +95,6 @@ export async function PATCH(req: NextRequest) {
 
   await connectDB();
   const Admin = getAdminModel();
-  await Admin.findOneAndUpdate({ email: email.toLowerCase() }, { role });
+  await Admin.findOneAndUpdate({ email: email.toLowerCase() } as any, { role }, {} as any);
   return NextResponse.json({ success: true });
 }

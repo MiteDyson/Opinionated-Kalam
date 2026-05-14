@@ -150,7 +150,7 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
 
       <header className="bg-[#f5f0eb] relative">
         {/* ── Brand ─────────────────────────────────────── */}
-        <div className="text-center px-[16px] pt-[14px] pb-[25px]">
+        <div className="text-center px-[16px] pt-[14px] pb-[10px]">
           <button
             onClick={() => onTabChange("home")}
             className="bg-none border-none cursor-pointer font-serif text-[1.85rem] text-[#111111] leading-[1.1] tracking-[-0.01em] flex items-center justify-center gap-3 mx-auto"
@@ -181,7 +181,7 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
         </div>
 
         {/* ── Nav row 1: hamburger | centred tabs | search ─ */}
-        <div className="flex items-center px-4 border-none">
+        <div className="flex items-center px-4">
           {/* Hamburger */}
           <button onClick={onMenuOpen} className="bg-none border-none cursor-pointer p-[10px_8px_10px_0] flex items-center shrink-0">
             <Menu size={26} color="#111111" />
@@ -199,7 +199,7 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
         </div>
 
         {/* ── Nav row 2: centred tabs ───────────────────── */}
-        <div className="flex justify-center px-4 -mt-[6px]">
+        <div className="flex justify-center px-4 -mt-[6px] pb-2">
           {TABS_ROW2.map(tab => <TabBtn key={tab.id} tab={tab} />)}
         </div>
       </header>

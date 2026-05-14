@@ -9,8 +9,9 @@ A sharp, opinionated blogging platform for articles, podcasts, videos, and short
 | Layer        | Tech                          |
 |--------------|-------------------------------|
 | Framework    | Next.js 14 (App Router)       |
-| Database     | Supabase (PostgreSQL)         |
-| Auth         | Supabase Auth (Google + Email)|
+| Database     | MongoDB (Mongoose ODM)        |
+| Auth         | Firebase Auth (Google + Email)|
+| Media        | ImageKit (CDN + transforms)   |
 | Editor       | Tiptap (rich text)            |
 | Styling      | Tailwind CSS                  |
 | Deployment   | Vercel                        |
@@ -24,30 +25,25 @@ A sharp, opinionated blogging platform for articles, podcasts, videos, and short
 npm install
 ```
 
-### 2. Create a Supabase project
-Go to [supabase.com](https://supabase.com) → New Project.
+### 2. Set up MongoDB
+Create a MongoDB Atlas cluster (or use a local instance) and note the connection string.
 
-### 3. Run the database schema
-Copy the contents of `supabase-schema.sql` and run it in the **Supabase SQL Editor**.
+### 3. Set up Firebase
+- Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+- Enable **Authentication** → **Email/Password** and **Google** sign-in providers
+- Download your **Service Account Key** JSON from Project Settings → Service Accounts
 
-### 4. Set up Auth providers in Supabase
-- Go to **Authentication → Providers**
-- Enable **Email** (with email confirmation)
-- Enable **Google** (add your Google OAuth client ID + secret)
+### 4. Set up ImageKit
+- Create an account at [imagekit.io](https://imagekit.io)
+- Note your **Public Key**, **Private Key**, and **URL Endpoint**
 
-### 5. Create Storage buckets
-In Supabase → **Storage**, create:
-- `covers` — Public bucket (article cover images)
-- `audio` — Private bucket (podcast files)
-- `avatars` — Public bucket (author avatars)
-
-### 6. Configure environment variables
+### 5. Configure environment variables
 ```bash
 cp .env.local.example .env.local
 ```
-Fill in your Supabase URL and keys from **Project Settings → API**.
+Fill in your MongoDB URI, Firebase client & admin keys, and ImageKit credentials.
 
-### 7. Run the dev server
+### 6. Run the dev server
 ```bash
 npm run dev
 ```
@@ -81,11 +77,24 @@ components/
 └── admin/                → Editor, MediaUploader
 
 lib/
-├── supabase.ts           → Supabase client setup
-└── utils.ts              → Helpers (formatDate, slugify, etc.)
-
-types/
-└── index.ts              → TypeScript types
+├── db/                       → Database layer
+│   ├── mongodb.ts             → Mongoose connection setup
+│   ├── Article.ts             → Article schema & indexes
+│   └── User.ts                → User schema
+├── auth/                     → Authentication & authorization
+│   ├── firebase.ts            → Firebase client SDK
+│   ├── firebase-admin.ts      → Firebase Admin SDK
+│   ├── tokenCache.ts          → In-memory token cache
+│   ├── verifyToken.ts         → User-level token verification
+│   └── verifyAdmin.ts         → Admin authorization
+├── services/                 → External services
+│   ├── imagekit.ts            → ImageKit upload + CDN transforms
+│   └── cache.ts               → Client-side fetch cache
+├── security/                 → Input validation & sanitization
+│   ├── validators.ts          → Zod input schemas
+│   └── sanitize.ts            → DOMPurify HTML sanitization
+├── types.ts                  → TypeScript type definitions
+└── utils.ts                  → Helpers (formatDate, slugify, etc.)
 ```
 
 ---
@@ -93,7 +102,7 @@ types/
 ## Phase Roadmap
 
 - [x] **Phase 1** — Layout components (Header, Nav, Footer, Logo, Sidebar)
-- [x] **Phase 1** — TypeScript types & Supabase schema
+- [x] **Phase 1** — TypeScript types & MongoDB schemas
 - [ ] **Phase 2** — Public pages (Homepage, Article, Podcast, Video, Shorts)
 - [ ] **Phase 2** — Category & Search pages
 - [ ] **Phase 3** — Admin CRUD with Tiptap editor

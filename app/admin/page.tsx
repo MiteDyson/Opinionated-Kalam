@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/auth/firebase";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";

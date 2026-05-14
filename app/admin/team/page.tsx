@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
 
 const ACCENT = "#1B2A47";

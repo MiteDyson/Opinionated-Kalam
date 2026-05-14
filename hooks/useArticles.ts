@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { cachedFetch, clientCache } from "@/lib/cache";
+import { cachedFetch, clientCache } from "@/lib/services/cache";
 
 export interface Article {
   _id: string;

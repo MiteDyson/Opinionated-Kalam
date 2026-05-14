@@ -1,6 +1,30 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { DM_Serif_Display, Inter, Radley } from "next/font/google";
+
+const dmSerif = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-dm-serif",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const radley = Radley({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-radley",
+});
 
 export const metadata: Metadata = {
   title: "Opinionated Kalam",
@@ -17,18 +41,10 @@ import Preloader from "@/components/ui/Preloader";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Radley:ital@0;1&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>
+    <html lang="en" className={`${dmSerif.variable} ${inter.variable} ${radley.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+      <body suppressHydrationWarning>
         <Preloader />
-        <Toaster position="top-center" containerStyle={{ zIndex: 99999 }} toastOptions={{ duration: 3000, style: { background: "#1A1A1A", color: "#fff", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif" } }} />
+        <Toaster position="top-center" containerStyle={{ zIndex: 99999 }} toastOptions={{ duration: 3000, style: { background: "#1A1A1A", color: "#fff", fontSize: "0.85rem", fontFamily: "var(--font-inter), sans-serif" } }} />
         <AuthProvider>
           {children}
         </AuthProvider>
@@ -36,3 +52,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

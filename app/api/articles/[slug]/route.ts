@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
-import { verifyAdmin } from "@/lib/verifyAdmin";
-import { updateArticleSchema, validateBody } from "@/lib/validators";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { verifyAdmin } from "@/lib/auth/verifyAdmin";
+import { updateArticleSchema, validateBody } from "@/lib/security/validators";
+import { sanitizeHtml } from "@/lib/security/sanitize";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -29,15 +29,16 @@ function getArticleModel() {
 // Published articles cached at CDN for 2 min; uid-scoped skips CDN
 export async function GET(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     await connectDB();
     const Article = getArticleModel();
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get("uid") ?? "";
 
-    const article = await Article.findOne({ slug: String(params.slug) }).lean() as any;
+    const article = await Article.findOne({ slug: String(slug) } as any).lean() as any;
     if (!article) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const body = {
@@ -64,9 +65,10 @@ export async function GET(
 // PATCH /api/articles/[slug]
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const admin = await verifyAdmin(req);
     if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -86,9 +88,9 @@ export async function PATCH(
     await connectDB();
     const Article = getArticleModel();
     const article = await Article.findOneAndUpdate(
-      { slug: String(params.slug) },
+      { slug: String(slug) } as any,
       { ...body, updatedAt: new Date() },
-      { returnDocument: 'after' }
+      { new: true } as any
     );
     return NextResponse.json(article);
   } catch (err: any) {
@@ -99,9 +101,10 @@ export async function PATCH(
 // DELETE /api/articles/[slug]
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const admin = await verifyAdmin(req);
     if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     if (!admin.isMain && admin.role !== "admin") {
@@ -109,7 +112,7 @@ export async function DELETE(
     }
     await connectDB();
     const Article = getArticleModel();
-    await Article.findOneAndDelete({ slug: String(params.slug) });
+    await Article.findOneAndDelete({ slug: String(slug) } as any);
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

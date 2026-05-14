@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
 import { adminAuth } from "./firebase-admin";
+import { getCachedToken, setCachedToken } from "./tokenCache";
 
 const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
@@ -30,10 +31,23 @@ export async function verifyAdmin(
     const token = authHeader.substring(7);
     if (!token) return null;
 
-    // SECURE: Verify the ID token using Firebase Admin SDK
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    const email: string = decodedToken.email ?? "";
-    const uid: string = decodedToken.uid;
+    // Check cache first — avoids Firebase network round-trip
+    let uid: string;
+    let email: string;
+
+    const cached = getCachedToken(token);
+    if (cached) {
+      uid = cached.uid;
+      email = cached.email;
+    } else {
+      // SECURE: Verify the ID token using Firebase Admin SDK
+      const decodedToken = await adminAuth.verifyIdToken(token);
+      email = decodedToken.email ?? "";
+      uid = decodedToken.uid;
+
+      // Cache for subsequent requests
+      setCachedToken(token, uid, email, decodedToken.exp);
+    }
 
     if (!email) return null;
 
@@ -46,7 +60,7 @@ export async function verifyAdmin(
     await connectDB();
     const Admin = getAdminModel();
     // SECURE: Use a simple string for the query to prevent injection
-    const adminRecord = await Admin.findOne({ email: String(email).toLowerCase() }).lean() as any;
+    const adminRecord = await Admin.findOne({ email: String(email).toLowerCase() } as any).lean() as any;
     
     if (!adminRecord) return null;
 

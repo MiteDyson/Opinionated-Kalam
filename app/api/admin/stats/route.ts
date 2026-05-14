@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
 
-import { verifyAdmin } from "@/lib/verifyAdmin";
+import { verifyAdmin } from "@/lib/auth/verifyAdmin";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;

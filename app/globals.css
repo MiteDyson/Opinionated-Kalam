@@ -32,7 +32,7 @@ html {
 body {
   background-color: var(--bg);
   color: var(--text-main);
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-inter), "Inter", sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -41,7 +41,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: "DM Serif Display", serif;
+  font-family: var(--font-dm-serif), "DM Serif Display", serif;
   font-weight: 400;
   line-height: 1.15;
 }
@@ -62,18 +62,18 @@ button {
   font-size: 1.1rem;
   line-height: 1.8;
   color: #2a2a2a;
-  font-family: "Radley", serif;
+  font-family: var(--font-radley), "Radley", serif;
 }
 .article-body p {
   margin-bottom: 25px;
 }
 .article-body h2 {
-  font-family: "DM Serif Display", serif;
+  font-family: var(--font-dm-serif), "DM Serif Display", serif;
   font-size: 2rem;
   margin: 40px 0 15px;
 }
 .article-body h3 {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-inter), "Inter", sans-serif;
   font-size: 1.8rem;
   font-weight: 700;
   margin: 40px 0 15px;

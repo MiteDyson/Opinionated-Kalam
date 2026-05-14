@@ -11,7 +11,7 @@ import { MobileAboutView, MobileGrievanceView, MobileTeamView, MobileContactView
 import BeatsFilter from "@/components/mobile/BeatsFilter";
 import { useArticles, type Article } from "@/hooks/useArticles";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/auth/firebase";
 
 const RED = "#c0392b";
 const BLACK = "#111111";

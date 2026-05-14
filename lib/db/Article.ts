@@ -23,13 +23,18 @@ const ArticleSchema = new Schema({
   updatedAt:   { type: Date, default: Date.now },
 });
 
-ArticleSchema.pre("save", function(next) {
+// ── Indexes for common query patterns ──
+ArticleSchema.index({ slug: 1 });                         // single article lookups
+ArticleSchema.index({ status: 1, type: 1, createdAt: -1 }); // homepage feed & type filters
+ArticleSchema.index({ status: 1, createdAt: -1 });        // published feed sorting
+ArticleSchema.index({ tags: 1 });                         // tag filtering
+
+ArticleSchema.pre("save", function() {
   if (this.content) {
     const words = this.content.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
     this.readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
   }
   this.updatedAt = new Date();
-  next();
 });
 
 export const Article = models.Article ?? mongoose.model("Article", ArticleSchema);

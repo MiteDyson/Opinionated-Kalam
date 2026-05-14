@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { Heart, Bookmark, Share, Eye, MoveLeft, Play, Pause, Loader2, BookOpen } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/auth/firebase";
 import { useMobile } from "@/hooks/useMobile";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";

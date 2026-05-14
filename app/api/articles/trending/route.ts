@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
 
 function getArticleModel() {
@@ -24,6 +24,8 @@ function getViewLogModel() {
     viewedAt: { type: Date, default: Date.now },
   });
   schema.index({ uid: 1, slug: 1 }, { unique: true });
+  schema.index({ viewedAt: -1 });            // trending aggregation window
+  schema.index({ slug: 1, viewedAt: -1 });   // per-article view history
   return mongoose.model("ViewLog", schema);
 }
 
@@ -79,7 +81,7 @@ export async function GET(req: NextRequest) {
     const query: Record<string, any> = { status: "published" };
     if (type) query.type = type;
 
-    const articles = await Article.find(query)
+    const articles = await Article.find(query as any)
       .select("slug title excerpt coverImage author tags type readTime publishedAt likes views duration episode audioUrl")
       .lean();
 

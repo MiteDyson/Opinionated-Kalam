@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { MoveLeft } from "lucide-react";
 

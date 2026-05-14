@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
-import { verifyToken } from "@/lib/verifyToken";
+import { verifyToken } from "@/lib/auth/verifyToken";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     const saved = await Article.find({
       savedBy: uid,
       status: "published",
-    })
+    } as any)
       .sort({ publishedAt: -1 })
       .select("slug title excerpt coverImage author type tags readTime duration publishedAt likes")
       .lean();

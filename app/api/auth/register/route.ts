@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { connectDB } from "@/lib/mongodb";
-import { User } from "@/models/User";
-import { registerSchema, validateBody } from "@/lib/validators";
+import { connectDB } from "@/lib/db/mongodb";
+import { User } from "@/lib/db/User";
+import { registerSchema, validateBody } from "@/lib/security/validators";
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.json();

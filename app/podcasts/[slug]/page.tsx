@@ -11,7 +11,7 @@ import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/auth/firebase";
 import { useMobile } from "@/hooks/useMobile";
 
 const ACCENT = "#1B2A47";

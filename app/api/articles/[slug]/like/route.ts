@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
-import { verifyToken } from "@/lib/verifyToken";
+import { verifyToken } from "@/lib/auth/verifyToken";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -15,9 +15,10 @@ function getArticleModel() {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const user = await verifyToken(req.headers.get("Authorization"));
     if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
 
@@ -26,18 +27,18 @@ export async function POST(
     await connectDB();
     const Article = getArticleModel();
 
-    const article = await Article.findOne({ slug: String(params.slug) }).lean() as any;
+    const article = await Article.findOne({ slug: String(slug) } as any).lean() as any;
     if (!article) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const likedBy: string[] = article.likedBy ?? [];
     const alreadyLiked = likedBy.includes(uid);
 
     const updated = await Article.findOneAndUpdate(
-      { slug: String(params.slug) },
+      { slug: String(slug) } as any,
       alreadyLiked
         ? { $inc: { likes: -1 }, $pull: { likedBy: uid } }
         : { $inc: { likes: 1 }, $push: { likedBy: uid } },
-      { returnDocument: 'after' }
+      { new: true } as any
     ).lean() as any;
 
     return NextResponse.json({

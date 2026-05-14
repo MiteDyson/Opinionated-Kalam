@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
-import { verifyAdmin } from "@/lib/verifyAdmin";
-import { createArticleSchema, validateBody } from "@/lib/validators";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { verifyAdmin } from "@/lib/auth/verifyAdmin";
+import { createArticleSchema, validateBody } from "@/lib/security/validators";
+import { sanitizeHtml } from "@/lib/security/sanitize";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     if (all) {
       // Fetch all published content in one go
-      const items = await Article.find({ status }).sort({ createdAt: -1 }).lean();
+      const items = await Article.find({ status } as any).sort({ createdAt: -1 }).lean();
       const result = items.map((a: any) => ({
         ...a,
         isLiked: uid ? (a.likedBy ?? []).includes(uid) : false,
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
     if (type) query.type = String(type);
     if (tag) query.tags = String(tag);
 
-    const articles = await Article.find(query).sort({ createdAt: -1 }).lean();
+    const articles = await Article.find(query as any).sort({ createdAt: -1 }).lean();
 
     const result = articles.map((a: any) => ({
       ...a,
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const Article = getArticleModel();
 
-    const existing = await Article.findOne({ slug: String(body.slug) });
+    const existing = await Article.findOne({ slug: String(body.slug) } as any);
     if (existing) body.slug = `${body.slug}-${Date.now()}`;
 
     body.publishedAt = body.status === "published" ? new Date() : null;

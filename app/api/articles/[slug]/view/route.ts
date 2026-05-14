@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
-import { verifyToken } from "@/lib/verifyToken";
+import { verifyToken } from "@/lib/auth/verifyToken";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -20,16 +20,17 @@ function getViewLogModel() {
   return mongoose.model("ViewLog", schema);
 }
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const slug = String(params.slug);
+    const { slug: rawSlug } = await params;
+    const slug = String(rawSlug);
 
     // Try to verify user — if not logged in, return current views without incrementing
     const user = await verifyToken(req.headers.get("Authorization"));
     if (!user) {
       await connectDB();
       const Article = getArticleModel();
-      const article = await Article.findOne({ slug }).lean() as any;
+      const article = await Article.findOne({ slug } as any).lean() as any;
       return NextResponse.json({ views: article?.views ?? 0, isNew: false });
     }
 
@@ -51,13 +52,13 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     let currentViews = 0;
     if (isNew) {
       const updated = await Article.findOneAndUpdate(
-        { slug },
+        { slug } as any,
         { $inc: { views: 1 } },
-        { returnDocument: 'after' }
+        { new: true } as any
       ).lean() as any;
       currentViews = updated?.views ?? 0;
     } else {
-      const article = await Article.findOne({ slug }).lean() as any;
+      const article = await Article.findOne({ slug } as any).lean() as any;
       currentViews = article?.views ?? 0;
     }
 

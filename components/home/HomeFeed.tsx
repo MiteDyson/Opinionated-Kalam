@@ -1,4 +1,4 @@
-import { Post } from "@/types";
+import { Post } from "@/lib/types";
 import ArticleCard from "@/components/article/ArticleCard";
 import Link from "next/link";
 

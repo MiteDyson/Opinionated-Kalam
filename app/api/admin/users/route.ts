@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdmin, getAdminModel } from "@/lib/verifyAdmin";
-import { connectDB } from "@/lib/mongodb";
-import { addTeamMemberSchema, removeTeamMemberSchema, validateBody } from "@/lib/validators";
+import { verifyAdmin, getAdminModel } from "@/lib/auth/verifyAdmin";
+import { connectDB } from "@/lib/db/mongodb";
+import { addTeamMemberSchema, removeTeamMemberSchema, validateBody } from "@/lib/security/validators";
 
 // GET — list all current team members (admins/authors)
 export async function GET(req: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
     const AdminModel = getAdminModel();
-    const admins = await AdminModel.find({}).sort({ addedAt: -1 }).lean();
+    const admins = await AdminModel.find({} as any).sort({ addedAt: -1 }).lean();
 
     const result = admins.map((a: any) => ({
       uid: a._id.toString(),
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const AdminModel = getAdminModel();
 
     // Check if already exists
-    const existing = await AdminModel.findOne({ email });
+    const existing = await AdminModel.findOne({ email } as any);
     if (existing) return NextResponse.json({ error: "Member already exists" }, { status: 400 });
 
     const newMember = await AdminModel.create({
@@ -60,10 +60,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      uid: newMember._id.toString(),
-      email: newMember.email,
-      name: newMember.name,
-      role: newMember.role,
+      uid: (newMember as any)._id.toString(),
+      email: (newMember as any).email,
+      name: (newMember as any).name,
+      role: (newMember as any).role,
     });
   } catch (err: any) {
     console.error("[POST /api/admin/users]", err.message);
@@ -89,12 +89,12 @@ export async function DELETE(req: NextRequest) {
     await connectDB();
     const AdminModel = getAdminModel();
 
-    const target = await AdminModel.findById(String(uid));
+    const target = await (AdminModel as any).findById(String(uid));
     if (!target) return NextResponse.json({ error: "Member not found" }, { status: 404 });
 
     if (target.isMain) return NextResponse.json({ error: "Cannot remove main admin" }, { status: 400 });
 
-    await AdminModel.findByIdAndDelete(String(uid));
+    await (AdminModel as any).findByIdAndDelete(String(uid));
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("[DELETE /api/admin/users]", err.message);

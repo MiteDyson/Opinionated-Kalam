@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { uploadToImageKit } from "@/lib/imagekit";
+import { uploadToImageKit } from "@/lib/services/imagekit";
 import { Loader2, Upload, Play, Trash2, Volume2 } from "lucide-react";
 
 const ACCENT = "#1B2A47";
