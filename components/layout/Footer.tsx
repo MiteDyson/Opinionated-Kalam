@@ -17,15 +17,15 @@ export default function Footer() {
             {
               title: "Connect",
               links: [
-                { label: "Grievance Redressal", href: "/?tab=grievance" },
-                { label: "Contact Us", href: "/?tab=contact" },
+                { label: "Grievance Redressal", href: "/grievance" },
+                { label: "Contact Us", href: "/contact" },
               ],
             },
             {
               title: "Learn",
               links: [
-                { label: "Our Team", href: "/?tab=team" },
-                { label: "About Us", href: "/?tab=about" },
+                { label: "Our Team", href: "/team" },
+                { label: "About Us", href: "/about" },
               ],
             },
           ].map((col) => (

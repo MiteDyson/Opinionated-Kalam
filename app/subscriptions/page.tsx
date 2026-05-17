@@ -9,7 +9,7 @@ import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
 import { useMobile } from "@/hooks/useMobile";
 import { useState } from "react";
-import { MoveLeft, Bell, Mail, TrendingUp, Filter, Check, ChevronDown, ChevronUp, UserPlus, LogIn, Loader2 } from "lucide-react";
+import { MoveLeft, Bell, Mail, TrendingUp, Filter, Check, ChevronDown, ChevronUp, UserPlus, LogIn, Loader2, BookOpen, Mic, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 
@@ -234,6 +234,17 @@ export default function SubscriptionsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [beatsOpen, setBeatsOpen] = useState(false);
   
+  type FormatType = "Articles" | "Podcasts" | "Short Reads";
+  
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  
+  const [formatSubs, setFormatSubs] = useState<Record<FormatType, { enabled: boolean, frequency: Frequency }>>({
+    Articles: { enabled: false, frequency: "Weekly" },
+    Podcasts: { enabled: false, frequency: "Weekly" },
+    "Short Reads": { enabled: false, frequency: "Weekly" },
+  });
+
   const [subs, setSubs] = useState<SubscriptionItem[]>([
     { 
       id: "all", 
@@ -252,7 +263,7 @@ export default function SubscriptionsPage() {
     { 
       id: "trending", 
       title: "Trending Posts", 
-      description: "The most viewed and discussed posts from the last 24 hours.", 
+      description: "", 
       enabled: true, 
       frequency: "Daily" 
     },
@@ -362,46 +373,124 @@ export default function SubscriptionsPage() {
         ) : (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {subs.map((sub) => (
-                <motion.div 
-                  key={sub.id}
-                  variants={itemVariants}
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: "16px",
-                    padding: "24px",
-                    border: "1px solid rgba(0,0,0,0.05)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
-                    <div style={{ flex: 1, paddingRight: "20px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                        {sub.id === "trending" ? <TrendingUp size={18} color={TERRACOTTA} /> : <Mail size={18} color={TERRACOTTA} />}
-                        <h3 style={{ fontSize: "1.25rem", margin: 0 }}>{sub.title}</h3>
-                      </div>
-                      <p style={{ color: MUTED, fontSize: "0.9rem", margin: 0, lineHeight: 1.5 }}>{sub.description}</p>
-                    </div>
-                    <Toggle enabled={sub.enabled} onToggle={() => toggleSub(sub.id)} />
-                  </div>
-                  
-                  <AnimatePresence>
-                    {sub.enabled && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        style={{ overflow: "hidden" }}
-                      >
-                        <div style={{ borderTop: "1px solid #eee", paddingTop: "20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: MUTED }}>Frequency</span>
-                          <FrequencySelector selected={sub.frequency} onChange={(f) => changeFreq(sub.id, f)} />
+              {subs.map((sub) => {
+                if (sub.id === "formats") {
+                  return (
+                    <motion.div 
+                      key={sub.id}
+                      variants={itemVariants}
+                      style={{
+                        backgroundColor: "white",
+                        borderRadius: "16px",
+                        padding: "24px",
+                        border: "1px solid rgba(0,0,0,0.05)",
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+                      }}
+                    >
+                      <div style={{ marginBottom: "20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                          <Mail size={18} color={TERRACOTTA} />
+                          <h3 style={{ fontSize: "1.25rem", margin: 0 }}>{sub.title}</h3>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ))}
+                        <p style={{ color: MUTED, fontSize: "0.9rem", margin: 0, lineHeight: 1.5 }}>{sub.description}</p>
+                      </div>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        {(["Articles", "Podcasts", "Short Reads"] as const).map((format) => (
+                          <div key={format} style={{ 
+                            padding: "16px", 
+                            borderRadius: "12px", 
+                            backgroundColor: "#f9f8f6",
+                            display: "flex",
+                            flexDirection: isMobile ? "column" : "row",
+                            gap: "16px",
+                            justifyContent: "space-between",
+                            alignItems: isMobile ? "flex-start" : "center"
+                          }}>
+                            <span style={{ fontWeight: 600, fontSize: "1rem", color: BLACK }}>{format}</span>
+                            
+                            <div style={{ 
+                              display: "flex", 
+                              alignItems: "center", 
+                              gap: "16px",
+                              width: isMobile ? "100%" : "auto",
+                              justifyContent: isMobile ? "space-between" : "flex-end"
+                            }}>
+                              {formatSubs[format].enabled && (
+                                <FrequencySelector 
+                                  selected={formatSubs[format].frequency} 
+                                  onChange={(f) => {
+                                    setFormatSubs(prev => ({
+                                      ...prev,
+                                      [format]: { ...prev[format], frequency: f }
+                                    }));
+                                  }} 
+                                />
+                              )}
+                              <Toggle 
+                                enabled={formatSubs[format].enabled} 
+                                onToggle={() => {
+                                  setFormatSubs(prev => ({
+                                    ...prev,
+                                    [format]: { ...prev[format], enabled: !prev[format].enabled }
+                                  }));
+                                }} 
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  );
+                }
+
+                return (
+                  <motion.div 
+                    key={sub.id}
+                    variants={itemVariants}
+                    style={{
+                      backgroundColor: "white",
+                      borderRadius: "16px",
+                      padding: "24px",
+                      border: "1px solid rgba(0,0,0,0.05)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+                    }}
+                  >
+                    <div style={{ 
+                      display: "flex", 
+                      flexDirection: isMobile ? "column" : "row",
+                      gap: "16px",
+                      justifyContent: "space-between", 
+                      alignItems: isMobile ? "flex-start" : "center" 
+                    }}>
+                      <div style={{ flex: 1, paddingRight: isMobile ? "0px" : "20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: sub.description ? "8px" : "0px" }}>
+                          {sub.id === "trending" ? <TrendingUp size={18} color={TERRACOTTA} /> : <Mail size={18} color={TERRACOTTA} />}
+                          <h3 style={{ fontSize: "1.25rem", margin: 0 }}>{sub.title}</h3>
+                        </div>
+                        {sub.description && (
+                          <p style={{ color: MUTED, fontSize: "0.9rem", margin: 0, lineHeight: 1.5 }}>
+                            {sub.description}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "16px",
+                        width: isMobile ? "100%" : "auto",
+                        justifyContent: isMobile ? "space-between" : "flex-end"
+                      }}>
+                        {sub.enabled && (
+                          <FrequencySelector selected={sub.frequency} onChange={(f) => changeFreq(sub.id, f)} />
+                        )}
+                        <Toggle enabled={sub.enabled} onToggle={() => toggleSub(sub.id)} />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
 
               {/* Beats Section */}
               <motion.div 
@@ -453,17 +542,23 @@ export default function SubscriptionsPage() {
                             justifyContent: "space-between",
                             alignItems: isMobile ? "flex-start" : "center"
                           }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                              <Toggle enabled={beatSubs[beat].enabled} onToggle={() => toggleBeat(beat)} />
-                              <span style={{ fontWeight: 600, fontSize: "1rem" }}>{beat}</span>
-                            </div>
+                            <span style={{ fontWeight: 600, fontSize: "1rem", color: BLACK }}>{beat}</span>
                             
-                            {beatSubs[beat].enabled && (
-                              <FrequencySelector 
-                                selected={beatSubs[beat].frequency} 
-                                onChange={(f) => changeBeatFreq(beat, f)} 
-                              />
-                            )}
+                            <div style={{ 
+                              display: "flex", 
+                              alignItems: "center", 
+                              gap: "16px",
+                              width: isMobile ? "100%" : "auto",
+                              justifyContent: isMobile ? "space-between" : "flex-end"
+                            }}>
+                              {beatSubs[beat].enabled && (
+                                <FrequencySelector 
+                                  selected={beatSubs[beat].frequency} 
+                                  onChange={(f) => changeBeatFreq(beat, f)} 
+                                />
+                              )}
+                              <Toggle enabled={beatSubs[beat].enabled} onToggle={() => toggleBeat(beat)} />
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -488,13 +583,75 @@ export default function SubscriptionsPage() {
                   width: isMobile ? "100%" : "auto"
                 }}
                 onClick={() => {
-                  // Mock save
-                  alert("Preferences saved successfully!");
+                  const activeFormats = Object.entries(formatSubs)
+                    .filter(([_, data]) => data.enabled)
+                    .map(([name, data]) => `${name} (${data.frequency})`);
+                  
+                  const otherSubs = subs
+                    .filter(s => s.id !== "formats" && s.enabled)
+                    .map(s => `${s.title} (${s.frequency})`);
+                    
+                  const allActive = [...otherSubs, ...activeFormats];
+                  
+                  let message = "";
+                  if (allActive.length === 0) {
+                    message = "All email subscriptions disabled.";
+                  } else {
+                    message = `Preferences saved! Subscribed to: ${allActive.join(", ")}`;
+                  }
+                  
+                  setToastMessage(message);
+                  setShowToast(true);
+                  setTimeout(() => setShowToast(false), 5000);
                 }}
               >
                 Save Preferences
               </button>
             </motion.div>
+
+            {/* Premium success toast */}
+            <AnimatePresence>
+              {showToast && (
+                <motion.div
+                  initial={{ opacity: 0, y: 50, scale: 0.9, x: "-55%" }}
+                  animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                  exit={{ opacity: 0, y: 20, scale: 0.9, x: "-50%" }}
+                  style={{
+                    position: "fixed",
+                    bottom: "24px",
+                    left: "50%",
+                    backgroundColor: BLACK,
+                    color: "white",
+                    padding: "14px 28px",
+                    borderRadius: "14px",
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    zIndex: 10000,
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                    maxWidth: "90%",
+                    width: "max-content",
+                    border: "1px solid rgba(255,255,255,0.1)"
+                  }}
+                >
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "11px",
+                    backgroundColor: TERRACOTTA
+                  }}>
+                    <Check size={12} color="white" strokeWidth={3} />
+                  </div>
+                  <span>{toastMessage}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </motion.div>

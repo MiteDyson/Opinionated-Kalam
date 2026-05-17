@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
@@ -822,7 +822,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
 }
 
 // ── Root page — detects mobile and routes ─────────────────────
-export default function HomePage() {
+function HomePageContent() {
   const [isMobile, mobileReady] = useMobileReady();
   const [activeTab, setActiveTab] = useState("home");
   const [menuOpen, setMenuOpen]   = useState(false);
@@ -830,18 +830,17 @@ export default function HomePage() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Shared cached hook — no duplicate fetches, 3-min TTL cache
   const uid = (user as any)?.uid ?? "";
   const { articles, podcasts, shorts, loading } = useArticles(uid);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab");
+    const tab = searchParams.get("tab");
     if (tab) setActiveTab(tab);
     else setActiveTab("home");
-  }, []);
+  }, [searchParams]);
 
   // Don't render anything until mobile detection is ready (prevents flash)
   if (!mobileReady) {
@@ -891,5 +890,13 @@ export default function HomePage() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", backgroundColor: "var(--bg)" }} />}>
+      <HomePageContent />
+    </Suspense>
   );
 }

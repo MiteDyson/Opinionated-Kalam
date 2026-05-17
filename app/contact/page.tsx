@@ -11,7 +11,31 @@ import MobileFooter from "@/components/mobile/MobileFooter";
 import { useMobileReady } from "@/hooks/useMobile";
 import { MoveLeft } from "lucide-react";
 
-export default function TeamPage() {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: 48 }}>
+      <h2
+        style={{
+          fontFamily: "'DM Serif Display', serif",
+          fontSize: "1.8rem",
+          fontWeight: 400,
+          color: "#111111",
+          marginBottom: "0.6em",
+          lineHeight: 1.2,
+          display: "block"
+        }}
+      >
+        {title}
+        <span style={{ fontSize: "1.4rem", marginLeft: "12px", display: "inline-block", verticalAlign: "middle" }}>→</span>
+      </h2>
+      <div style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", lineHeight: 1.6, color: "#1a1a1a" }}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+export default function ContactPage() {
   const router = useRouter();
   const [isMobile, mobileReady] = useMobileReady();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,47 +84,33 @@ export default function TeamPage() {
         {/* Header Content */}
         <div style={{ textAlign: "center", marginBottom: 50 }}>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.8rem", fontWeight: 400, color: "#111111", margin: "0 0 10px" }}>
-            Our Team
+            Contact Us
           </h1>
           <p style={{ fontFamily: "'Radley', serif", fontSize: "1.15rem", color: "#666666", margin: 0 }}>
-            Opinionated Kalam is run by two lads filled with immense passion for their own respective fields →
+            Get in touch with the team.
           </p>
         </div>
 
-        {/* Core Content */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "48px" }}>
-          
-          <div style={{ borderBottom: "1px solid #e0d8d0", paddingBottom: "30px" }}>
-            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: "1.8rem", fontWeight: 600, color: "#111111", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
-              Vineet Mestry
-            </h2>
-            <span style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", color: "#666666", display: "block", marginBottom: "20px" }}>
-              Founder & Writer
-            </span>
-            <p style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", lineHeight: 1.6, color: "#1a1a1a", marginLeft: "20px", marginBottom: "12px" }}>
-              Vineet is a Journalism student and the voice behind the investigations you read here. He created this space to focus on deep-dive reporting and honest analysis. His goal is simple: to stop the spread of noise and start providing factual stories that spark curiosity and solve problems.
-            </p>
-            <div style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", color: "#111111", marginLeft: "20px" }}>
-              Contact - <a href="mailto:workingvineet@gmail.com" style={{ color: "#111111", textDecoration: "underline" }}>workingvineet@gmail.com</a>
-            </div>
-          </div>
-
-          <div>
-            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: "1.8rem", fontWeight: 600, color: "#111111", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
-              Mitesh Shetye
-            </h2>
-            <span style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", color: "#666666", display: "block", marginBottom: "20px" }}>
-              Founder & Developer
-            </span>
-            <p style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", lineHeight: 1.6, color: "#1a1a1a", marginLeft: "20px", marginBottom: "12px" }}>
-              Mitesh is the developer behind the platform you interact with here. He built this space to focus on scalable full-stack solutions and production-ready engineering. His goal is simple: to stop relying on boilerplate code and start delivering custom systems that solve real problems and create seamless user experiences.
-            </p>
-            <div style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", color: "#111111", marginLeft: "20px" }}>
-              Contact - <a href="mailto:mitesh.shetye154@hgmail.com" style={{ color: "#111111", textDecoration: "underline" }}>mitesh.shetye154@hgmail.com</a>
-            </div>
-          </div>
-
+        {/* Intro */}
+        <div style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", lineHeight: 1.6, color: "#1a1a1a", marginBottom: 40 }}>
+          <p style={{ marginBottom: "1em" }}>Have a question, a news tip, or just want to talk about one of our investigations? We value direct communication and honest feedback.</p>
+          <p>Since we are a small, independent team, reaching out via email is the best way to get a timely response.</p>
         </div>
+
+        <Section title="General Enquiries">
+          <p style={{ marginBottom: "1em" }}>For general questions about our platform, Partnership Ideas, or just want to say “Hello!”.</p>
+          <p><strong>Email:</strong> <a href="mailto:hello@opinionatedkalam.com" style={{ color: "#111111", textDecoration: "underline" }}>hello@opinionatedkalam.com</a></p>
+        </Section>
+
+        <Section title="Report an Error">
+          <p style={{ marginBottom: "1em" }}>Accuracy is our top priority. If you spot a factual error in any of our articles or podcasts, please let us know immediately so we can fix it.</p>
+          <p>For formal complaints, please visit our <button onClick={() => router.push("/grievance")} style={{ background: "none", border: "none", padding: 0, textDecoration: "underline", fontFamily: "'Radley', serif", fontSize: "1.1rem", cursor: "pointer", color: "#111111" }}>Grievance Redressal</button> page.</p>
+        </Section>
+
+        <Section title="Want to Collaborate/Advertise">
+          <p style={{ marginBottom: "1em" }}>We welcome incredible ideas with utmost honesty and respect. If you want to advertise your brand, product, etc., you may contact us through this email.</p>
+          <p><strong>Email:</strong> <a href="mailto:business@opinionatedkalam.com" style={{ color: "#111111", textDecoration: "underline" }}>business@opinionatedkalam.com</a></p>
+        </Section>
 
         {/* Bottom Navigation Links */}
         <div style={{ marginTop: 80, marginBottom: 40, textAlign: "center", display: "flex", flexDirection: "column", gap: "15px" }}>

@@ -152,7 +152,7 @@ export default function TermsOfServicePage() {
             We are committed to factual accuracy. As an opinion-based journalism platform, our perspectives are built on a foundation of verified facts.
           </p>
           <p style={{ marginBottom: "1.5em" }}>
-            If you believe a piece of content contains a factual error, please visit our <button onClick={() => router.push("/?tab=grievance")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit", fontWeight: "bold" }}>Grievance Redressal Page</button> and contact our Grievance Officer.
+            If you believe a piece of content contains a factual error, please visit our <button onClick={() => router.push("/grievance")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit", fontWeight: "bold" }}>Grievance Redressal Page</button> and contact our Grievance Officer.
           </p>
           <p>
             In accordance with the Indian Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, we will acknowledge your grievance within 24 hours and aim for a resolution within 15 days.
@@ -223,10 +223,7 @@ export default function TermsOfServicePage() {
             Go through <button onClick={() => router.push("/privacy")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit" }}>Privacy Policy</button> →
           </p>
           <p style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", margin: 0 }}>
-            Go through <button onClick={() => router.push("/?tab=team")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit" }}>Our Team</button> →
-          </p>
-          <p style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", margin: 0, display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}>
-            Go to <button onClick={() => router.push("/")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: "#111111" }}><MoveLeft size={16} />Back</button> →
+            Go through <button onClick={() => router.push("/team")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit" }}>Our Team</button> →
           </p>
         </div>
 

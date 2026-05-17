@@ -231,10 +231,7 @@ export default function PrivacyPolicyPage() {
             Go through <button onClick={() => router.push("/terms")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit" }}>Terms of Service</button> →
           </p>
           <p style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", margin: 0 }}>
-            Go through <button onClick={() => router.push("/?tab=team")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit" }}>Our Team</button> →
-          </p>
-          <p style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", margin: 0, display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}>
-            Go to <button onClick={() => router.push("/")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: "#111111" }}><MoveLeft size={16} />Back</button> →
+            Go through <button onClick={() => router.push("/team")} style={{ background: "none", border: "none", cursor: "pointer", color: "#111111", padding: 0, textDecoration: "underline", font: "inherit" }}>Our Team</button> →
           </p>
         </div>
 
