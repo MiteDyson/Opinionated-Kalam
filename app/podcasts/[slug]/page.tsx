@@ -60,10 +60,12 @@ function DesktopAudioPlayer({ src }: { src: string }) {
   };
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
     const a = audioRef.current;
-    const bar = progressRef.current;
-    if (!a || !bar || !isFinite(a.duration) || a.duration === 0) return;
+    if (!a) return;
     
-    const rect = bar.getBoundingClientRect();
+    // Ensure metadata is loaded
+    if (!isFinite(a.duration) || a.duration === 0) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
     if (rect.width === 0) return;
     
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -71,6 +73,7 @@ function DesktopAudioPlayer({ src }: { src: string }) {
     
     if (isFinite(targetTime)) {
       a.currentTime = targetTime;
+      setCurrent(targetTime);
     }
   };
   const skip = (s: number) => { if (audioRef.current) audioRef.current.currentTime += s; };
@@ -129,8 +132,6 @@ function DesktopAudioPlayer({ src }: { src: string }) {
   );
 }
 
-import BeatsFilter from "@/components/mobile/BeatsFilter";
-import SortFilter, { type SortOption } from "@/components/mobile/SortFilter";
 
 // ── Mobile podcast layout (New Maximized View) ───────────────────
 function MobilePodcastView({ podcast, liked, saved, likes, views, copied, actionLoading, onLike, onSave, onShare, morePodcasts }: {
@@ -141,8 +142,6 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
-  const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
-  const [sortOpt, setSortOpt] = useState<SortOption>("newest");
   const router = useRouter();
 
   const dateStr = podcast.publishedAt
@@ -194,9 +193,12 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
   const skip = (sec: number) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime + sec); };
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const a = audioRef.current;
-    if (!a || !seekRef.current || !isFinite(a.duration) || a.duration === 0) return;
+    if (!a) return;
     
-    const rect = seekRef.current.getBoundingClientRect();
+    // Ensure metadata is loaded
+    if (!isFinite(a.duration) || a.duration === 0) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
     if (rect.width === 0) return;
     
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -205,6 +207,9 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
     if (isFinite(targetTime)) {
       a.currentTime = targetTime;
       setProgress(ratio * 100);
+      const m = Math.floor(targetTime / 60);
+      const s = Math.floor(targetTime % 60).toString().padStart(2, "0");
+      setCurrent(`${m}:${s}`);
     }
   };
   const setVol = (v: number) => { setVolume(v); if (audioRef.current) audioRef.current.volume = v; };
@@ -217,7 +222,7 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
 
       <div style={{ padding: "12px 16px 20px" }}>
         {/* Row 1: Back | Filter / Sort */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
           <button onClick={() => router.back()} style={{
             background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
             padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
@@ -227,51 +232,52 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
             <MoveLeft size={14} strokeWidth={2.5} />
             Back
           </button>
-          <div style={{ display: "flex", gap: 6 }}>
-            <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
-            <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
-          </div>
         </div>
 
-        {/* Cover image */}
-        <div style={{ position: "relative", marginBottom: 0, borderRadius: 12, overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.12)" }}>
-          {podcast.coverImage
-            ? <img src={podcast.coverImage} alt={podcast.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
-            : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "3rem" }}>🎙</div>
-          }
-        </div>
-
-        {/* Description Dropdown (Outside Image) */}
-        <div style={{
-          backgroundColor: "#e0d8d0",
-          padding: "10px 16px",
-          borderRadius: "0 0 12px 12px",
-          transition: "all 0.3s ease",
-          maxHeight: descriptionOpen ? "500px" : "40px",
-          overflow: "hidden",
-          marginBottom: 24,
+        {/* Unified Cover + Description Unit */}
+        <div style={{ 
+          marginBottom: 24, 
+          borderRadius: 16, 
+          overflow: "hidden", 
+          boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
           border: `1px solid ${BORDER}`,
-          borderTop: "none"
+          backgroundColor: "#e0d8d0"
         }}>
-          <button
-            onClick={() => setDescriptionOpen(!descriptionOpen)}
-            style={{
-              width: "100%", background: "none", border: "none",
-              display: "flex", alignItems: "center", gap: 6,
-              padding: 0, cursor: "pointer",
-              fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: MUTED,
-              height: 20,
-              marginBottom: descriptionOpen ? 10 : 0
-            }}
-          >
-            Description
-            <ChevronDown size={10} strokeWidth={2.5} style={{ transform: descriptionOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
-          </button>
-          {descriptionOpen && (
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", lineHeight: 1.5, color: BLACK, margin: 0, paddingBottom: 10 }}>
-              {podcast.excerpt || "No description available for this episode."}
-            </p>
-          )}
+          {/* Cover image */}
+          <div style={{ position: "relative" }}>
+            {podcast.coverImage
+              ? <img src={podcast.coverImage} alt={podcast.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />
+              : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "3rem" }}>🎙</div>
+            }
+          </div>
+
+          {/* Description Dropdown (Merged) */}
+          <div style={{
+            padding: "12px 16px",
+            transition: "all 0.3s ease",
+            maxHeight: descriptionOpen ? "500px" : "44px",
+            overflow: "hidden",
+          }}>
+            <button
+              onClick={() => setDescriptionOpen(!descriptionOpen)}
+              style={{
+                width: "100%", background: "none", border: "none",
+                display: "flex", alignItems: "center", gap: 6,
+                padding: 0, cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 600, color: MUTED,
+                height: 20,
+                marginBottom: descriptionOpen ? 12 : 0
+              }}
+            >
+              Description
+              <ChevronDown size={12} strokeWidth={2.5} style={{ transform: descriptionOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+            </button>
+            {descriptionOpen && (
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", lineHeight: 1.6, color: BLACK, margin: 0, paddingBottom: 6 }}>
+                {podcast.excerpt || "No description available for this episode."}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Tags */}
@@ -357,16 +363,23 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
                     zIndex: 100, display: "flex", flexDirection: "column", alignItems: "center", gap: 12
                   }}
                 >
-                  <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", width: 30 }}>
-                    <input 
-                      type="range" min={0} max={1} step={0.05} 
-                      value={volume} 
-                      onChange={(e) => setVol(parseFloat(e.target.value))} 
-                      style={{ 
-                        transform: "rotate(-90deg)", width: 100, accentColor: RED, cursor: "pointer"
-                      }} 
-                    />
-                  </div>
+                    <div 
+                      style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", width: 30, touchAction: "none" }}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                    >
+                      <input 
+                        type="range" min={0} max={1} step={0.05} 
+                        value={volume} 
+                        onChange={(e) => setVol(parseFloat(e.target.value))} 
+                        style={{ 
+                          transform: "rotate(-90deg)", width: 100, accentColor: RED, cursor: "pointer",
+                          touchAction: "none"
+                        }} 
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                      />
+                    </div>
                 </div>
               )}
               <button 
@@ -521,15 +534,21 @@ export default function PodcastPage() {
 
 
   useEffect(() => {
-    if (!podcast || viewTracked.current || !user) return;
+    if (!podcast || !user || viewTracked.current) return;
     viewTracked.current = true;
     (async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
-        if (!token) return;
-        const res = await fetch(`/api/articles/${slug}/view`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        if (!token) {
+          viewTracked.current = false;
+          return;
+        }
+        const res = await fetch(`/api/articles/${slug}/view`, { 
+          method: "POST", 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
         if (res.ok) { const d = await res.json(); setViews(d.views); }
-      } catch { /* silent */ }
+      } catch { viewTracked.current = false; }
     })();
   }, [podcast, user, slug]);
 

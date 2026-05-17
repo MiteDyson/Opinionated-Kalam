@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, memo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Heart, Bookmark, Share, ExternalLink, MoveLeft, MoveRight, Play, Pause, Loader2, Maximize2, BookOpen } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
@@ -294,76 +295,90 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
           )}
         </div>
         {!isExpanded && (
-          <button
+          <motion.button
+            key="play-btn"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="w-[40px] h-[40px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center flex-shrink-0 self-center"
           >
             <Play size={18} color="white" fill="white" className="ml-[2px]" />
-          </button>
+          </motion.button>
         )}
       </div>
 
-      {isExpanded && (
-        <div className="mt-5">
-          {/* Playback Row */}
-          <div className="flex items-center justify-center gap-8 mb-4">
-            <button onClick={(e) => skip(e, -10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
-              <MoveLeft size={20} /> 10
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} className="w-[52px] h-[52px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center">
-              {playing ? <Pause size={24} color="white" fill="white" /> : <Play size={24} color="white" fill="white" className="ml-[3px]" />}
-            </button>
-            <button onClick={(e) => skip(e, 10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
-              10 <MoveRight size={20} />
-            </button>
-          </div>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            key="expanded-layer"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="mt-5">
+              {/* Playback Row */}
+              <div className="flex items-center justify-center gap-8 mb-4">
+                <button onClick={(e) => skip(e, -10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
+                  <MoveLeft size={20} /> 10
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} className="w-[52px] h-[52px] rounded-full bg-[#111111] border-none cursor-pointer flex items-center justify-center">
+                  {playing ? <Pause size={24} color="white" fill="white" /> : <Play size={24} color="white" fill="white" className="ml-[3px]" />}
+                </button>
+                <button onClick={(e) => skip(e, 10)} className="bg-none border-none cursor-pointer text-[#111111] flex items-center gap-[6px] p-0 font-sans text-[0.85rem] font-medium">
+                  10 <MoveRight size={20} />
+                </button>
+              </div>
 
-          {/* Progress Bar */}
-          <div className="w-[70%] mx-auto mb-3">
-            <div ref={seekRef} onClick={handleSeek} className="w-full h-[3px] bg-[#d9d5ce] rounded-[1.5px] cursor-pointer relative">
-              <div style={{ width: `${progress}%` }} className="h-full bg-[#c0392b] rounded-[1.5px] transition-[width] duration-200 linear" />
-            </div>
-          </div>
+              {/* Progress Bar */}
+              <div className="w-[70%] mx-auto mb-3">
+                <div ref={seekRef} onClick={handleSeek} className="w-full h-[3px] bg-[#d9d5ce] rounded-[1.5px] cursor-pointer relative">
+                  <div style={{ width: `${progress}%` }} className="h-full bg-[#c0392b] rounded-[1.5px] transition-[width] duration-200 linear" />
+                </div>
+              </div>
 
-          {/* Bottom Interactions Bar */}
-          <div className="flex items-center justify-between px-[4px]">
-            <div className="flex gap-4">
-              <button
-                onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
-                className={`bg-none border-none cursor-pointer p-0 flex ${liked ? "text-[#c0392b]" : "text-[#111111]"}`}
-              >
-                <Heart size={22} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} />
-              </button>
-              <button
-                onClick={handleShare}
-                className="bg-none border-none cursor-pointer p-0 text-[#111111] flex"
-              >
-                <Share size={20} strokeWidth={1.5} />
-              </button>
-            </div>
+              {/* Bottom Interactions Bar */}
+              <div className="flex items-center justify-between px-[4px]">
+                <div className="flex gap-4">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setLiked(l => !l); }}
+                    className={`bg-none border-none cursor-pointer p-0 flex ${liked ? "text-[#c0392b]" : "text-[#111111]"}`}
+                  >
+                    <Heart size={22} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="bg-none border-none cursor-pointer p-0 text-[#111111] flex"
+                  >
+                    <Share size={20} strokeWidth={1.5} />
+                  </button>
+                </div>
 
-            <div className="font-sans text-[0.9rem] font-medium text-[#111111] tabular-nums">
-              {current} / {totalDur}
-            </div>
+                <div className="font-sans text-[0.9rem] font-medium text-[#111111] tabular-nums">
+                  {current} / {totalDur}
+                </div>
 
-            <div className="flex gap-4">
-              <button
-                onClick={handleSave}
-                className={`bg-none border-none cursor-pointer p-0 flex ${saved ? "text-[#c0392b]" : "text-[#111111]"} ${saving ? "opacity-50" : "opacity-100"}`}
-              >
-                <Bookmark size={22} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} />
-              </button>
-              <Link
-                href={`/podcasts/${p.slug}`}
-                onClick={(e) => e.stopPropagation()}
-                className="text-[#111111] flex no-underline"
-              >
-                <Maximize2 size={20} strokeWidth={1.5} />
-              </Link>
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleSave}
+                    className={`bg-none border-none cursor-pointer p-0 flex ${saved ? "text-[#c0392b]" : "text-[#111111]"} ${saving ? "opacity-50" : "opacity-100"}`}
+                  >
+                    <Bookmark size={22} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} />
+                  </button>
+                  <Link
+                    href={`/podcasts/${p.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[#111111] flex no-underline"
+                  >
+                    <Maximize2 size={20} strokeWidth={1.5} />
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });
@@ -549,21 +564,33 @@ function MobilePodcastsView({ podcasts, loading, onTabChange, activeSlug, setAct
   activeSlug: string | null; setActiveSlug: (s: string | null) => void;
 }) {
   const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
+  const [sortOpt, setSortOpt] = useState<SortOption>("newest");
+
   const filtered = selectedBeat ? podcasts.filter(p => p.tags?.includes(selectedBeat)) : podcasts;
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortOpt === "mostViews") return ((b as any).views ?? 0) - ((a as any).views ?? 0);
+    if (sortOpt === "leastViews") return ((a as any).views ?? 0) - ((b as any).views ?? 0);
+    const da = new Date(a.publishedAt ?? 0).getTime();
+    const db = new Date(b.publishedAt ?? 0).getTime();
+    return sortOpt === "newest" ? db - da : da - db;
+  });
 
   return (
     <div>
-      <div className="flex items-center justify-between py-[10px]">
+      <div className="flex items-center justify-between py-[10px] gap-2">
         <button onClick={() => onTabChange("home")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "4px", color: BLACK, whiteSpace: "nowrap" }}><MoveLeft size={14} /> Back</button>
-        <div className="ml-auto"><BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} /></div>
+        <div className="flex gap-[6px] ml-auto">
+          <BeatsFilter selectedBeat={selectedBeat} onBeatChange={setSelectedBeat} />
+          <SortFilter sortOpt={sortOpt} setSortOpt={setSortOpt} />
+        </div>
       </div>
       {loading
         ? [1, 2, 3].map(i => <div key={i} className="h-[96px] rounded-[6px] bg-white border-[1.5px] border-[#111111] mb-[10px] animate-[oksk_1.4s_ease-in-out_infinite]" />)
-        : filtered.length === 0
+        : sorted.length === 0
           ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
             {selectedBeat ? `No podcasts in "${selectedBeat}" beat.` : "No podcasts yet."}
           </p>
-          : filtered.map(p => <MobilePodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)
+          : sorted.map(p => <MobilePodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)
       }
     </div>
   );

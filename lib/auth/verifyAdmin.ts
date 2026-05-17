@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { adminAuth } from "./firebase-admin";
 import { getCachedToken, setCachedToken } from "./tokenCache";
 
-const MAIN_ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const MAIN_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "").trim();
 
 function getAdminModel() {
   if (mongoose.models.Admin) return mongoose.models.Admin;
@@ -23,7 +23,7 @@ export { getAdminModel };
 
 export async function verifyAdmin(
   req: NextRequest
-): Promise<{ uid: string; email: string; isMain: boolean; role: string } | null> {
+): Promise<{ uid: string; email: string; name: string; isMain: boolean; role: string } | null> {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return null;
@@ -51,14 +51,23 @@ export async function verifyAdmin(
 
     if (!email) return null;
 
+    await connectDB();
+    const Admin = getAdminModel();
+
     // Main admin always has full access
-    if (email === MAIN_ADMIN_EMAIL) {
-      return { uid, email, isMain: true, role: "admin" };
+    if (email.trim() === MAIN_ADMIN_EMAIL) {
+      // Try to get name from DB even for main admin, fallback to "Vineet Mestry"
+      const adminRecord = await Admin.findOne({ email: String(email).toLowerCase() } as any).lean() as any;
+      return { 
+        uid, 
+        email, 
+        name: adminRecord?.name ?? "Vineet Mestry", 
+        isMain: true, 
+        role: "admin" 
+      };
     }
 
     // Check team admin collection
-    await connectDB();
-    const Admin = getAdminModel();
     // SECURE: Use a simple string for the query to prevent injection
     const adminRecord = await Admin.findOne({ email: String(email).toLowerCase() } as any).lean() as any;
     
@@ -67,6 +76,7 @@ export async function verifyAdmin(
     return {
       uid,
       email,
+      name: adminRecord.name ?? "Author",
       isMain: false,
       role: adminRecord.role ?? "author",
     };
@@ -77,5 +87,5 @@ export async function verifyAdmin(
 }
 
 export async function isMainAdmin(email: string): Promise<boolean> {
-  return email === MAIN_ADMIN_EMAIL;
+  return email.trim() === MAIN_ADMIN_EMAIL;
 }

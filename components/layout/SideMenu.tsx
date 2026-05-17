@@ -1,7 +1,8 @@
 "use client";
 
+import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
 interface SideMenuProps {
@@ -209,18 +210,18 @@ function MenuPanel({ onClose, onTabChange }: { onClose: () => void; onTabChange:
 
       {/* Nav links */}
       <div style={{ flex: 1 }}>
-        <a href="/saved" onClick={onClose} style={linkStyle}
+        <Link href="/saved" onClick={onClose} style={linkStyle}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = RED}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--text-main)"}
         >
           Saved Content
-        </a>
-        <a href="/subscriptions" onClick={onClose} style={linkStyle}
+        </Link>
+        <Link href="/subscriptions" onClick={onClose} style={linkStyle}
           onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = RED}
           onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--text-main)"}
         >
           My Subscriptions
-        </a>
+        </Link>
       </div>
 
       {/* ── Bottom pinned section ── */}
@@ -248,7 +249,7 @@ function MenuPanel({ onClose, onTabChange }: { onClose: () => void; onTabChange:
 
             {/* Admin Panel button — outlined navy */}
             {isAdmin && (
-              <a
+              <Link
                 href="/admin"
                 onClick={onClose}
                 style={{
@@ -266,12 +267,12 @@ function MenuPanel({ onClose, onTabChange }: { onClose: () => void; onTabChange:
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
                 Admin Panel
-              </a>
+              </Link>
             )}
 
             {/* Manage Team button — for main admin only */}
             {isMainAdmin && (
-              <a
+              <Link
                 href="/admin/team"
                 onClick={onClose}
                 style={{
@@ -292,7 +293,7 @@ function MenuPanel({ onClose, onTabChange }: { onClose: () => void; onTabChange:
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
                 Manage Team
-              </a>
+              </Link>
             )}
 
             {/* Sign out — outlined red */}

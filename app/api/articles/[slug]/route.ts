@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
 import { verifyAdmin } from "@/lib/auth/verifyAdmin";
@@ -80,9 +81,11 @@ export async function PATCH(
 
     const body = parsed.data as any;
 
-    // Sanitize HTML content before saving to DB
+    // Sanitize HTML content and calculate read time before saving
     if (body.content) {
       body.content = sanitizeHtml(body.content);
+      const words = body.content.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
+      body.readTime = `${Math.max(1, Math.ceil(words / 200))} minute read`;
     }
 
     await connectDB();
@@ -92,6 +95,7 @@ export async function PATCH(
       { ...body, updatedAt: new Date() },
       { new: true } as any
     );
+    revalidatePath("/");
     return NextResponse.json(article);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -113,6 +117,7 @@ export async function DELETE(
     await connectDB();
     const Article = getArticleModel();
     await Article.findOneAndDelete({ slug: String(slug) } as any);
+    revalidatePath("/");
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

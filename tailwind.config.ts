@@ -11,6 +11,7 @@ const config: Config = {
       fontFamily: {
         serif: ["DM Serif Display", "serif"],
         sans:  ["Inter", "sans-serif"],
+        lexend: ["Lexend", "sans-serif"],
       },
       colors: {
         bg:         "#D5D2CB",

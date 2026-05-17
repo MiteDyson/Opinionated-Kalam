@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
 import { verifyAdmin } from "@/lib/auth/verifyAdmin";
@@ -38,7 +39,7 @@ function getArticleModel() {
 
 function calcReadTime(content: string) {
   const words = content.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
-  return `${Math.max(1, Math.ceil(words / 200))} min read`;
+  return `${Math.max(1, Math.ceil(words / 200))} minute read`;
 }
 
 // GET — list articles
@@ -148,6 +149,7 @@ export async function POST(req: NextRequest) {
     body.updatedAt = new Date();
 
     const article = await Article.create(body);
+    revalidatePath("/");
     return NextResponse.json(article, { status: 201 });
   } catch (err: any) {
     console.error("[POST /api/articles]", err.message);

@@ -60,7 +60,7 @@ export default function ArticleCard({ post, variant = "default" }: ArticleCardPr
             className="flex items-center gap-2 text-xs font-sans mt-1"
             style={{ color: "var(--text-muted)" }}
           >
-            {post.author?.name && <span>{post.author.name}</span>}
+            {typeof post.author === "string" ? <span>{post.author}</span> : post.author?.name && <span>{post.author.name}</span>}
             {post.author?.name && post.published_at && (
               <span style={{ color: "var(--border)" }}>·</span>
             )}
@@ -103,10 +103,10 @@ export default function ArticleCard({ post, variant = "default" }: ArticleCardPr
             style={{ color: "var(--text-muted)" }}
           >
             {post.published_at && <span>{formatDate(post.published_at)}</span>}
-            {post.author?.name && (
+            {post.author && (
               <>
                 <span>·</span>
-                <span>{post.author.name}</span>
+                <span>{typeof post.author === "string" ? post.author : post.author.name}</span>
               </>
             )}
           </div>
@@ -138,10 +138,10 @@ export default function ArticleCard({ post, variant = "default" }: ArticleCardPr
           style={{ color: "var(--text-muted)" }}
         >
           {post.published_at && <span>{formatDate(post.published_at)}</span>}
-          {post.author?.name && (
+          {post.author && (
             <>
               <span>·</span>
-              <span>{post.author.name}</span>
+              <span>{typeof post.author === "string" ? post.author : post.author.name}</span>
             </>
           )}
         </div>
@@ -198,10 +198,10 @@ export default function ArticleCard({ post, variant = "default" }: ArticleCardPr
             style={{ color: "var(--text-muted)" }}
           >
             {post.published_at && <span>{formatDate(post.published_at)}</span>}
-            {post.author?.name && (
+            {post.author && (
               <>
                 <span>·</span>
-                <span>{post.author.name}</span>
+                <span>{typeof post.author === "string" ? post.author : post.author.name}</span>
               </>
             )}
           </div>

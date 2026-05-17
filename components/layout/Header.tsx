@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Menu, Search, ChevronRight, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ACCENT = "#1B2A47";
 const RED    = "#D92323";
@@ -52,7 +54,7 @@ export default function Header({ onMenuOpen, onSearchOpen, activeTab, onTabChang
     <header>
 
       <div className="text-center pt-6">
-        <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] flex items-center justify-center gap-4 mx-auto">
+        <button onClick={() => onTabChange("home")} className="bg-none border-none cursor-pointer p-0 font-serif text-[clamp(2rem,4.5vw,3.2rem)] font-normal leading-none tracking-[-0.5px] text-[var(--text-main)] flex items-center justify-center gap-4 mx-auto whitespace-nowrap">
           <img src="/logo.png" alt="OK Logo" style={{ height: "clamp(1.8rem, 4vw, 2.8rem)", width: "auto" }} />
           Opinionated Kalam
         </button>
@@ -117,30 +119,38 @@ export default function Header({ onMenuOpen, onSearchOpen, activeTab, onTabChang
                 {!hasUsername && <span className="ml-1 text-[0.62rem] text-[#b85c58]">!</span>}
               </button>
 
-              {dropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] right-0 bg-white rounded-[10px] min-w-[180px] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-[50] py-1">
-                  <div className="px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]">
-                    <div className="text-[0.78rem] font-bold text-[var(--text-main)] font-sans">
-                      {hasUsername ? displayName : <span className="text-[#b85c58]">No username set</span>}
-                    </div>
-                    <div className="text-[0.7rem] text-[var(--text-muted)] font-sans mt-[2px]">{user.email}</div>
-                  </div>
-                  {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
-                    <a key={item.label} href={item.href} className="flex items-center px-[14px] py-[10px] no-underline text-[var(--text-main)] text-[0.85rem] font-sans border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
-                      {item.label} <ChevronRight size={12} className="ml-auto text-[var(--text-muted)]" />
-                    </a>
-                  ))}
-                  <button
-                    onClick={() => { logout(); setDropdownOpen(false); }}
-                    className="flex items-center w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="absolute top-[calc(100%+8px)] right-0 bg-white rounded-[10px] min-w-[180px] border border-[var(--border)] shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-[50] py-1"
                   >
-                    Sign out
-                  </button>
-                </div>
-              )}
+                    <div className="px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]">
+                      <div className="text-[0.78rem] font-bold text-[var(--text-main)] font-sans">
+                        {hasUsername ? displayName : <span className="text-[#b85c58]">No username set</span>}
+                      </div>
+                      <div className="text-[0.7rem] text-[var(--text-muted)] font-sans mt-[2px]">{user.email}</div>
+                    </div>
+                    {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
+                      <Link key={item.label} href={item.href} className="flex items-center px-[14px] py-[10px] no-underline text-[var(--text-main)] text-[0.85rem] font-sans border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
+                        {item.label} <ChevronRight size={12} className="ml-auto text-[var(--text-muted)]" />
+                      </Link>
+                    ))}
+                    <button
+                      onClick={() => { logout(); setDropdownOpen(false); }}
+                      className="flex items-center w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
+                    >
+                      Sign out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
-            <a href="/login" className="bg-[var(--text-main)] text-white px-[14px] py-[5px] rounded-[6px] text-[0.78rem] font-semibold font-sans no-underline transition-opacity hover:opacity-90">Login</a>
+            <Link href="/login" className="bg-[var(--text-main)] text-white px-[14px] py-[5px] rounded-[6px] text-[0.78rem] font-semibold font-sans no-underline transition-opacity hover:opacity-90">Login</Link>
           )}
           <button onClick={() => onTabChange("about")} className="bg-none border-none cursor-pointer text-[0.88rem] text-[var(--text-main)] font-sans font-medium whitespace-nowrap hover:text-[#1B2A47] transition-colors">About Us</button>
         </div>
@@ -183,7 +193,7 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
   return (
     <>
       {results.map((r, i) => (
-        <a key={r._id ?? i} href={typeHref(r)} onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", textDecoration: "none", color: "inherit", borderBottom: i < results.length - 1 ? "1px solid var(--border)" : "none", backgroundColor: "white" }}
+        <Link key={r._id ?? i} href={typeHref(r)} onClick={onClose} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", textDecoration: "none", color: "inherit", borderBottom: i < results.length - 1 ? "1px solid var(--border)" : "none", backgroundColor: "white" }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
         >
@@ -193,7 +203,7 @@ function SearchResults({ query, onClose }: { query: string; onClose: () => void 
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.68rem", color: "var(--text-muted)", marginTop: 1 }}>{(r.tags ?? [])[0] ?? r.type} · {r.type}</div>
           </div>
           <ChevronRight size={11} color="#aaa" />
-        </a>
+        </Link>
       ))}
     </>
   );

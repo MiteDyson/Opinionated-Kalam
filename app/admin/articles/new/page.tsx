@@ -17,6 +17,7 @@ import { uploadToImageKit } from "@/lib/services/imagekit";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AudioUpload from "@/components/admin/AudioUpload";
 import TagSelector from "@/components/admin/TagSelector";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 
 const ACCENT = "#1B2A47";
 const BG = "#D5D2CB";
@@ -27,6 +28,7 @@ const WPM = 200;
 
 const FONT_SIZES = ["12", "14", "16", "18", "20", "24", "28", "32", "36", "48"];
 const FONT_FAMILIES = [
+  { label: "Lexend", value: "'Lexend', sans-serif" },
   { label: "Radley", value: "'Radley', serif" },
   { label: "DM Serif", value: "'DM Serif Display', serif" },
   { label: "Georgia", value: "Georgia, serif" },
@@ -107,7 +109,7 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userName } = useAuth();
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [coverImage, setCover] = useState("");
@@ -120,8 +122,9 @@ export default function NewArticlePage() {
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
   const [fontSize, setFontSize] = useState("18");
-  const [fontFamily, setFontFamily] = useState("'Radley', serif");
+  const [fontFamily, setFontFamily] = useState("'Lexend', sans-serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
+  const [showConfirmPublish, setShowConfirmPublish] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -151,6 +154,7 @@ export default function NewArticlePage() {
       setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
     },
     editorProps: { attributes: { class: "tiptap-editor" } },
+    immediatelyRender: false,
   });
 
   const readTime = Math.max(1, Math.ceil(wordCount / WPM));
@@ -214,6 +218,12 @@ export default function NewArticlePage() {
     if (!title.trim()) { setError("Title is required."); return; }
     const content = editor?.getHTML() ?? "";
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
+    
+    if (publishNow && !showConfirmPublish) {
+      setShowConfirmPublish(true);
+      return;
+    }
+
     setSaving(true); setError("");
     try {
       if (!user) { setError("Not signed in."); setSaving(false); return; }
@@ -226,13 +236,16 @@ export default function NewArticlePage() {
           audioUrl: audioUrl.trim() || undefined,
           duration: audioDuration || undefined,
           status: publishNow ? "published" : "draft",
-          author: user.displayName || "Unknown Author",
+          author: userName || user.displayName || "Unknown Author",
           readTime,
         }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");
-    } finally { setSaving(false); }
+    } finally { 
+      setSaving(false); 
+      setShowConfirmPublish(false);
+    }
   };
 
   const currentTextColor = editor?.getAttributes("textStyle")?.color;
@@ -241,10 +254,10 @@ export default function NewArticlePage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
-        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Radley', serif; font-size: 18px; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor { min-height: 480px; padding: 24px 28px; font-family: 'Lexend', sans-serif; font-size: 18px; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
-        .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; color: ${TEXT}; margin: 1.4em 0 0.5em; }
-        .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; color: ${TEXT}; margin: 1.2em 0 0.4em; }
+        .tiptap-editor h2 { font-family: inherit; font-size: 1.8em; font-weight: 400; color: ${TEXT}; margin: 1.4em 0 0.5em; }
+        .tiptap-editor h3 { font-family: inherit; font-size: 1.4em; font-weight: 400; color: ${TEXT}; margin: 1.2em 0 0.4em; }
         .tiptap-editor ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor li { margin: 0.3em 0; }
@@ -260,7 +273,7 @@ export default function NewArticlePage() {
       `}</style>
 
       {/* Top bar — 64px */}
-      <div style={{ backgroundColor: TEXT, padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10, gap: 8 }}>
+      <div style={{ backgroundColor: TEXT, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10, gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <button onClick={() => router.push("/admin/create")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
@@ -373,6 +386,17 @@ export default function NewArticlePage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirmPublish}
+        onClose={() => setShowConfirmPublish(false)}
+        onConfirm={() => handleSave(true)}
+        title="Publish Content"
+        message="Ready to share this article with the world? It will be visible on the public site immediately."
+        confirmText="Publish"
+        type="publish"
+        isLoading={saving}
+      />
     </div>
   );
 }

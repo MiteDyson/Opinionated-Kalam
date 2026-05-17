@@ -3,11 +3,7 @@ import { connectDB } from "@/lib/db/mongodb";
 import mongoose from "mongoose";
 import { verifyToken } from "@/lib/auth/verifyToken";
 
-function getArticleModel() {
-  if (mongoose.models.Article) return mongoose.models.Article;
-  const schema = new mongoose.Schema({ slug: { type: String, unique: true }, views: { type: Number, default: 0 } }, { strict: false });
-  return mongoose.model("Article", schema);
-}
+import { Article } from "@/lib/db/Article";
 
 function getViewLogModel() {
   if (mongoose.models.ViewLog) return mongoose.models.ViewLog;
@@ -25,22 +21,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     const { slug: rawSlug } = await params;
     const slug = String(rawSlug);
 
-    // Try to verify user — if not logged in, return current views without incrementing
+    // Re-enforce logged-in only rule
     const user = await verifyToken(req.headers.get("Authorization"));
     if (!user) {
       await connectDB();
-      const Article = getArticleModel();
-      const article = await Article.findOne({ slug } as any).lean() as any;
+      const article = await Article.findOne({ slug }).lean() as any;
       return NextResponse.json({ views: article?.views ?? 0, isNew: false });
     }
 
     const uid = user.uid;
 
     await connectDB();
-    const Article  = getArticleModel();
     const ViewLog  = getViewLogModel();
 
-    // Try inserting view log — fails silently if already exists (duplicate key)
+    // Try inserting view log — fails if already exists
     let isNew = false;
     try {
       await ViewLog.create({ uid, slug });
@@ -52,13 +46,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     let currentViews = 0;
     if (isNew) {
       const updated = await Article.findOneAndUpdate(
-        { slug } as any,
+        { slug },
         { $inc: { views: 1 } },
-        { new: true } as any
+        { new: true }
       ).lean() as any;
       currentViews = updated?.views ?? 0;
     } else {
-      const article = await Article.findOne({ slug } as any).lean() as any;
+      const article = await Article.findOne({ slug }).lean() as any;
       currentViews = article?.views ?? 0;
     }
 

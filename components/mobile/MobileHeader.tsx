@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Search, Menu, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const RED = "#c0392b";
 const BLACK = "#111111";
@@ -69,8 +70,20 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[300]">
-      <div onClick={onClose} className="absolute inset-0 bg-black/30" />
-      <div className="absolute top-0 right-0 bottom-0 w-[72%] bg-white flex flex-col p-[20px_16px_16px] animate-in slide-in-from-right duration-200">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose} 
+        className="absolute inset-0 bg-black/30" 
+      />
+      <motion.div 
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="absolute top-0 right-0 bottom-0 w-[85%] bg-white flex flex-col p-[20px_16px_16px]"
+      >
         {/* Close / Back button */}
         <div className="flex items-center justify-between mb-[10px]">
           <span className="font-sans text-[0.82rem] font-bold text-[#111111]">Search</span>
@@ -114,7 +127,7 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
             <p className="font-sans text-[0.82rem] text-[#666666] py-3">No results found</p>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -145,8 +158,10 @@ export default function MobileHeader({ activeTab, onTabChange, onMenuOpen }: Mob
   };
 
   return (
-    <>
-      {searchOpen && <SearchOverlay onClose={() => setSearch(false)} />}
+    <>{/* Fragments are fine here */}
+      <AnimatePresence>
+        {searchOpen && <SearchOverlay onClose={() => setSearch(false)} />}
+      </AnimatePresence>
 
       <header className="bg-[#f5f0eb] relative">
         {/* ── Brand ─────────────────────────────────────── */}

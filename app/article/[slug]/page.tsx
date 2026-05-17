@@ -13,13 +13,23 @@ import Footer from "@/components/layout/Footer";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
+import AuthPromptPopup from "@/components/ui/AuthPromptPopup";
 
-const ACCENT  = "#1B2A47";
-const RED     = "#c0392b";
-const BLACK   = "#111111";
-const BG      = "#f5f0eb";
-const BORDER  = "#e0d8d0";
-const MUTED   = "#666666";
+const ACCENT = "#1B2A47";
+const RED = "#c0392b";
+const BLACK = "#111111";
+const BG = "#f5f0eb";
+const BORDER = "#e0d8d0";
+const MUTED = "#666666";
+const BORDER_LIGHT = "rgba(0,0,0,0.06)";
+
+function getAccurateReadTime(content: string) {
+  if (!content) return "1 minute read";
+  const text = content.replace(/<[^>]+>/g, " ");
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.ceil(words / 225));
+  return `${mins} minute read`;
+}
 
 interface Article {
   _id: string; slug: string; title: string; excerpt: string; content: string;
@@ -31,10 +41,10 @@ interface Article {
 // ── Desktop tag ───────────────────────────────────────────────
 function DesktopTag({ label }: { label: string }) {
   return (
-    <span style={{ 
-      display: "inline-block", padding: "1.5px 7px", borderRadius: 3, 
-      fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", 
-      letterSpacing: "0.03em", fontFamily: "'Inter', sans-serif", 
+    <span style={{
+      display: "inline-block", padding: "1.5px 7px", borderRadius: 3,
+      fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase",
+      letterSpacing: "0.03em", fontFamily: "'Inter', sans-serif",
       backgroundColor: "rgba(217,35,35,0.06)", color: "#D92323"
     }}>
       {label}
@@ -58,12 +68,12 @@ function MobileTag({ label }: { label: string }) {
 
 // ── Listen player (shared) ─────────────────────────────────────
 function ListenPlayer({ src, readTime, compact = false }: { src: string; readTime?: string; compact?: boolean }) {
-  const audioRef   = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
-  const [playing,   setPlaying]   = useState(false);
-  const [current,   setCurrent]   = useState(0);
-  const [total,     setTotal]     = useState(0);
-  const [speed,     setSpeed]     = useState(1);
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [speed, setSpeed] = useState(1);
   const [speedOpen, setSpeedOpen] = useState(false);
   const [buffering, setBuffering] = useState(true);
   const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -72,28 +82,28 @@ function ListenPlayer({ src, readTime, compact = false }: { src: string; readTim
     const audio = new Audio(src);
     audioRef.current = audio;
     audio.onloadedmetadata = () => { setTotal(audio.duration); setBuffering(false); };
-    audio.ontimeupdate     = () => setCurrent(audio.currentTime);
-    audio.onended          = () => setPlaying(false);
-    audio.onwaiting        = () => setBuffering(true);
-    audio.oncanplay        = () => setBuffering(false);
+    audio.ontimeupdate = () => setCurrent(audio.currentTime);
+    audio.onended = () => setPlaying(false);
+    audio.onwaiting = () => setBuffering(true);
+    audio.oncanplay = () => setBuffering(false);
     return () => { audio.pause(); audio.src = ""; };
   }, [src]);
 
   const togglePlay = () => {
     const a = audioRef.current; if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); } else { a.play().catch(() => {}); setPlaying(true); }
+    if (playing) { a.pause(); setPlaying(false); } else { a.play().catch(() => { }); setPlaying(true); }
   };
   const seek = (e: React.MouseEvent<HTMLDivElement>) => {
     const a = audioRef.current;
     const bar = seekBarRef.current;
     if (!a || !bar || !isFinite(a.duration) || a.duration === 0) return;
-    
+
     const rect = bar.getBoundingClientRect();
     if (rect.width === 0) return;
-    
+
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const targetTime = pct * a.duration;
-    
+
     if (isFinite(targetTime)) {
       a.currentTime = targetTime;
     }
@@ -221,7 +231,7 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
               <span style={{ opacity: 0.4 }}>·</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <BookOpen size={12} />
-                {article.readTime} minute read
+                {getAccurateReadTime(article.content)}
               </span>
             </>
           )}
@@ -263,22 +273,26 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
 }
 
 export default function ArticlePage() {
-  const router   = useRouter();
-  const params   = useParams();
-  const slug     = params?.slug as string;
+  const router = useRouter();
+  const params = useParams();
+  const slug = params?.slug as string;
   const { user } = useAuth();
   const isMobile = useMobile();
 
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
-  const [article,  setArticle]  = useState<Article | null>(null);
-  const [loading,  setLoading]  = useState(true);
+  const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [liked,    setLiked]    = useState(false);
-  const [saved,    setSaved]    = useState(false);
-  const [likes,    setLikes]    = useState(0);
-  const [views,    setViews]    = useState(0);
-  const [copied,   setCopied]   = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [views, setViews] = useState(0);
+  const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [authPopup, setAuthPopup] = useState<{ open: boolean; type: "like" | "save" | "general" }>({ 
+    open: false, 
+    type: "general" 
+  });
   const viewTracked = useRef(false);
 
   useEffect(() => {
@@ -296,26 +310,35 @@ export default function ArticlePage() {
   }, [slug]);
 
   useEffect(() => {
-    if (!article || viewTracked.current || !user) return;
+    if (!article || !user || viewTracked.current) return;
     viewTracked.current = true;
     (async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
-        if (!token) return;
-        const res = await fetch(`/api/articles/${slug}/view`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        if (!token) {
+          viewTracked.current = false;
+          return;
+        }
+        const res = await fetch(`/api/articles/${slug}/view`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (res.ok) { const d = await res.json(); setViews(d.views); }
-      } catch { /* silent */ }
+      } catch { viewTracked.current = false; }
     })();
   }, [article, user, slug]);
 
   const handleLike = async () => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) { 
+      setAuthPopup({ open: true, type: "like" });
+      return; 
+    }
     if (actionLoading) return;
     setActionLoading(true);
     const was = liked; setLiked(!was); setLikes(n => was ? n - 1 : n + 1);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res   = await fetch(`/api/articles/${slug}/like`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`/api/articles/${slug}/like`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
       const d = await res.json(); setLiked(d.liked); setLikes(d.likes);
     } catch { setLiked(was); setLikes(n => was ? n + 1 : n - 1); }
@@ -323,13 +346,16 @@ export default function ArticlePage() {
   };
 
   const handleSave = async () => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) { 
+      setAuthPopup({ open: true, type: "save" });
+      return; 
+    }
     if (actionLoading) return;
     setActionLoading(true);
     const was = saved; setSaved(!was);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res   = await fetch(`/api/articles/${slug}/save`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`/api/articles/${slug}/save`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error();
       const d = await res.json(); setSaved(d.saved);
     } catch { setSaved(was); } finally { setActionLoading(false); }
@@ -413,44 +439,62 @@ export default function ArticlePage() {
 
           {/* Title */}
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.4rem", lineHeight: 1.15, marginBottom: 12, color: "var(--text-main)", fontWeight: 400 }}>{article.title}</h1>
-          
+
           {/* Metadata */}
-          <div style={{ display: "flex", gap: 14, color: "var(--text-muted)", fontSize: "0.75rem", fontFamily: "'Inter', sans-serif", marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 12, color: "var(--text-muted)", fontSize: "0.75rem", fontFamily: "'Inter', sans-serif", marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
             {dateStr && <span>{dateStr}</span>}
             <span style={{ opacity: 0.3 }}>·</span>
             <span>{article.author}</span>
+            {views > 0 && (
+              <>
+                <span style={{ opacity: 0.3 }}>·</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <Eye size={14} />
+                  {views.toLocaleString()} {views === 1 ? 'View' : 'Views'}
+                </span>
+              </>
+            )}
+            {article.readTime && (
+              <>
+                <span style={{ opacity: 0.3 }}>·</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <BookOpen size={14} />
+                  {getAccurateReadTime(article.content)}
+                </span>
+              </>
+            )}
           </div>
 
           {/* Tags */}
-          {article.tags.length > 0 && (
+          {article.tags?.length > 0 && (
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 20 }}>
               {article.tags.map(t => <DesktopTag key={t} label={t} />)}
             </div>
           )}
 
           {article.audioUrl && <ListenPlayer src={article.audioUrl} readTime={article.readTime} />}
-          
+
           <div className="article-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
 
           {/* Interaction Bar — barefoot style */}
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
-            <button 
-              onClick={handleLike} 
+            <button
+              onClick={handleLike}
               disabled={actionLoading}
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}
             >
               <Heart size={20} fill={liked ? "currentColor" : "none"} />
               Like
             </button>
-            <button 
-              onClick={handleSave} 
+            <button
+              onClick={handleSave}
               disabled={actionLoading}
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? "#1B2A47" : "var(--text-main)", padding: 0 }}
             >
               <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
               Save
             </button>
-            <button 
+            <button
               onClick={handleShare}
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", padding: 0 }}
             >
@@ -461,6 +505,11 @@ export default function ArticlePage() {
         </div>
       </div>
       <Footer />
+      <AuthPromptPopup 
+        isOpen={authPopup.open} 
+        onClose={() => setAuthPopup({ ...authPopup, open: false })} 
+        type={authPopup.type}
+      />
     </>
   );
 }

@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
   await connectDB();
   const Admin = getAdminModel();
 
-  const existing = await Admin.findOne({ email } as any);
+  const existing = await Admin.findOne({ email: email.toLowerCase() } as any);
   if (existing) {
     return NextResponse.json({ error: "This email already has admin access" }, { status: 409 });
   }
 
   const record = await Admin.create({
-    email,
+    email: email.toLowerCase(),
     name,
     role: role ?? "author",
     addedBy: admin.email,

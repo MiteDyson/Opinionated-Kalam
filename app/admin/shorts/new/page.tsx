@@ -11,6 +11,7 @@ import { auth } from "@/lib/auth/firebase";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TagSelector from "@/components/admin/TagSelector";
 import { useAuth } from "@/context/AuthContext";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -34,7 +35,7 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 
 export default function NewShortPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userName } = useAuth();
   const [title, setTitle]         = useState("");
   const [excerpt, setExcerpt]     = useState("");
   const [coverImage, setCover]    = useState("");
@@ -43,6 +44,7 @@ export default function NewShortPage() {
   const [error, setError]         = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
+  const [showConfirmPublish, setShowConfirmPublish] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -56,6 +58,7 @@ export default function NewShortPage() {
       setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
     },
     editorProps: { attributes: { class: "tiptap-editor" } },
+    immediatelyRender: false,
   });
   const addImage = useCallback(() => {
     const input = document.createElement("input");
@@ -87,6 +90,12 @@ export default function NewShortPage() {
     if (!title.trim()) { setError("Title is required."); return; }
     const content = editor?.getHTML() ?? "";
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
+
+    if (publishNow && !showConfirmPublish) {
+      setShowConfirmPublish(true);
+      return;
+    }
+
     setSaving(true); setError("");
     try {
       if (!auth.currentUser) { setError("Not signed in."); setSaving(false); return; }
@@ -94,11 +103,14 @@ export default function NewShortPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, excerpt, content, coverImage, type: "short", tags, status: publishNow ? "published" : "draft", author: user?.displayName || "Unknown Author", readTime }),
+        body: JSON.stringify({ title, excerpt, content, coverImage, type: "short", tags, status: publishNow ? "published" : "draft", author: userName || user?.displayName || "Unknown Author", readTime }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");
-    } finally { setSaving(false); }
+    } finally { 
+      setSaving(false); 
+      setShowConfirmPublish(false);
+    }
   };
 
   return (
@@ -118,7 +130,7 @@ export default function NewShortPage() {
       `}</style>
 
       {/* Top bar */}
-      <div style={{ backgroundColor: TEXT, padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10, gap: 8 }}>
+      <div style={{ backgroundColor: TEXT, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10, gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, overflow: "hidden" }}>
           <button onClick={() => router.push("/admin/create")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: "0.83rem", fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -195,6 +207,17 @@ export default function NewShortPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirmPublish}
+        onClose={() => setShowConfirmPublish(false)}
+        onConfirm={() => handleSave(true)}
+        title="Publish Short Read"
+        message="Ready to publish this short read? It will be live instantly."
+        confirmText="Publish"
+        type="publish"
+        isLoading={saving}
+      />
     </div>
   );
 }

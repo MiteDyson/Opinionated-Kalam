@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/auth/firebase";
+import ConfirmModal from "@/components/admin/ConfirmModal";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -87,11 +89,11 @@ const typeBadge = (type: string) => {
 };
 
 // Mobile card row for an article
-function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, router, isMainAdmin, userDisplayName, adminRole }: {
+function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, actionLoading, router, isMainAdmin, userDisplayName, adminRole }: {
   a: Article; i: number; filtered: Article[];
   onToggleStatus: (a: Article) => void;
   onDelete: (slug: string, title: string) => void;
-  deleting: string | null;
+  actionLoading: boolean;
   router: ReturnType<typeof useRouter>;
   isMainAdmin: boolean;
   userDisplayName?: string | null;
@@ -143,9 +145,9 @@ function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, deleting, 
           {canDelete && (
             <button
               onClick={() => onDelete(a.slug, a.title)}
-              disabled={deleting === a.slug}
+              disabled={actionLoading}
               title="Delete"
-              style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: deleting === a.slug ? 0.4 : 1 }}
+              style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: actionLoading ? 0.4 : 1 }}
             ><IconTrash /></button>
           )}
         </div>
@@ -184,13 +186,15 @@ export default function AdminDashboard() {
   const [authorFilter, setAuthorFilter] = useState("all");
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError]       = useState("");
   const [sortKey, setSortKey]   = useState<SortKey>("createdAt");
   const [sortDir, setSortDir]   = useState<SortDir>("desc");
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ slug: string; title: string } | null>(null);
+  const [confirmPublish, setConfirmPublish] = useState<Article | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
@@ -235,23 +239,36 @@ export default function AdminDashboard() {
   useEffect(() => { fetchArticles(); }, []);
 
   const handleDelete = async (slug: string, title: string) => {
-    if (!confirm(`Delete "${title}"?`)) return;
-    setDeleting(slug);
+    setConfirmDelete({ slug, title });
+  };
+
+  const executeDelete = async () => {
+    if (!confirmDelete) return;
+    setActionLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      await fetch(`/api/articles/${slug}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      setArticles(prev => prev.filter(a => a.slug !== slug));
-      toast.success(`"${title}" deleted`);
+      await fetch(`/api/articles/${confirmDelete.slug}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      setArticles(prev => prev.filter(a => a.slug !== confirmDelete.slug));
+      toast.success(`"${confirmDelete.title}" deleted`);
+      setConfirmDelete(null);
     } catch (e: any) {
       toast.error(`Delete failed: ${e.message}`);
     } finally {
-      setDeleting(null);
+      setActionLoading(false);
     }
   };
 
   const handleToggleStatus = async (article: Article) => {
+    if (article.status === "draft") {
+      setConfirmPublish(article);
+    } else {
+      executeToggleStatus(article);
+    }
+  };
+
+  const executeToggleStatus = async (article: Article) => {
     const newStatus = article.status === "published" ? "draft" : "published";
-    setArticles(prev => prev.map(a => a.slug === article.slug ? { ...a, status: newStatus } : a));
+    setActionLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
       await fetch(`/api/articles/${article.slug}`, {
@@ -259,10 +276,13 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus, publishedAt: newStatus === "published" ? new Date() : null }),
       });
+      setArticles(prev => prev.map(a => a.slug === article.slug ? { ...a, status: newStatus } : a));
       toast.success(`Post ${newStatus === "published" ? "published" : "moved to drafts"}`);
+      setConfirmPublish(null);
     } catch {
-      setArticles(prev => prev.map(a => a.slug === article.slug ? { ...a, status: article.status } : a));
       toast.error("Failed to update status.");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -316,7 +336,7 @@ export default function AdminDashboard() {
 
       {/* ── Top bar ── */}
       <div style={{
-        backgroundColor: TEXT, padding: isMobile ? "0 14px" : "0 24px",
+        backgroundColor: TEXT, padding: isMobile ? "0 12px" : "0 22px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         height: 56, position: "sticky", top: 0, zIndex: 10,
         boxShadow: "0 1px 0 rgba(255,255,255,0.06)",
@@ -344,14 +364,20 @@ export default function AdminDashboard() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 8 : 12, marginBottom: isMobile ? 16 : 24 }}>
           {loading
-            ? [0,1,2,3].map(i => <SkeletonStat key={i} />)
-            : STATS.map(s => (
-              <div key={s.label} style={{ backgroundColor: "white", borderRadius: 10, padding: isMobile ? "12px 14px" : "16px 18px", border: "1px solid #CFCBC3" }}>
+            ? [0, 1, 2, 3].map(i => <SkeletonStat key={i} />)
+            : STATS.map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                style={{ backgroundColor: "white", borderRadius: 10, padding: isMobile ? "12px 14px" : "16px 18px", border: "1px solid #CFCBC3" }}
+              >
                 <div style={{ fontSize: isMobile ? "1rem" : "1.2rem", marginBottom: 4 }}>{s.icon}</div>
                 <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? "1.4rem" : "1.7rem", color: TEXT, lineHeight: 1 }}>{s.value}</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.74rem", color: MUTED, marginTop: 3 }}>{s.label}</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: "#3a7a3e", marginTop: 4 }}>{s.sub}</div>
-              </div>
+              </motion.div>
             ))
           }
         </div>
@@ -470,58 +496,97 @@ export default function AdminDashboard() {
               <button onClick={() => { setTab("all"); setAuthorFilter("all"); }} style={{ color: ACCENT, background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "0.85rem" }}>Clear filters</button>
             </div>
           ) : isMobile ? (
-            filtered.map((a, i) => (
-              <MobileArticleRow key={a._id} a={a} i={i} filtered={filtered} onToggleStatus={handleToggleStatus} onDelete={handleDelete} deleting={deleting} router={router} isMainAdmin={isMainAdmin} userDisplayName={user?.displayName} adminRole={adminRole} />
-            ))
+            <AnimatePresence mode="popLayout">
+              {filtered.map((a, i) => (
+                <motion.div
+                  key={a._id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                >
+                  <MobileArticleRow a={a} i={i} filtered={filtered} onToggleStatus={handleToggleStatus} onDelete={handleDelete} actionLoading={actionLoading} router={router} isMainAdmin={isMainAdmin} userDisplayName={user?.displayName} adminRole={adminRole} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           ) : (
-            filtered.map((a, i) => (
-              <div key={a._id}
-                style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "12px 20px", alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f3" : "none", transition: "background 0.1s" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
-              >
-                <div>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>{a.title}</div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
-                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED }}>
-                      {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                    {a.author && (
-                      <>
-                        <span style={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "#CFCBC3" }} />
-                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: ACCENT, fontWeight: 600 }}>{a.author}</span>
-                      </>
+            <AnimatePresence mode="popLayout">
+              {filtered.map((a, i) => (
+                <motion.div
+                  key={a._id}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ delay: Math.min(i * 0.02, 0.2) }}
+                  style={{ display: "grid", gridTemplateColumns: "2fr 80px 100px 64px 64px 96px", padding: "12px 20px", alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f3" : "none", transition: "background 0.1s" }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#faf9f7")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "transparent")}
+                >
+                  <div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.84rem", color: TEXT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>{a.title}</div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: MUTED }}>
+                        {new Date(a.publishedAt ?? a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                      {a.author && (
+                        <>
+                          <span style={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "#CFCBC3" }} />
+                          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.69rem", color: ACCENT, fontWeight: 600 }}>{a.author}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div>{typeBadge(a.type)}</div>
+                  <div>
+                    <button onClick={() => handleToggleStatus(a)} style={{ padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.67rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", textTransform: "capitalize", backgroundColor: a.status === "published" ? "rgba(76,140,80,0.12)" : "rgba(217,178,0,0.12)", color: a.status === "published" ? "#3a7a3e" : "#8a6a00" }}>
+                      {a.status}
+                    </button>
+                  </div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{(a.views ?? 0).toLocaleString()}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    {(isFullAdmin || (user?.displayName && a.author === user.displayName)) && (
+                      <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
+                        style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
+                      ><IconEdit /></Link>
+                    )}
+                    <Link href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`} title="View"
+                      style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
+                    ><IconEye /></Link>
+                    {isFullAdmin && (
+                      <button onClick={() => handleDelete(a.slug, a.title)} disabled={actionLoading} title="Delete"
+                        style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.13s", opacity: actionLoading ? 0.4 : 1 }}
+                      ><IconTrash /></button>
                     )}
                   </div>
-                </div>
-                <div>{typeBadge(a.type)}</div>
-                <div>
-                  <button onClick={() => handleToggleStatus(a)} style={{ padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.67rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", border: "none", textTransform: "capitalize", backgroundColor: a.status === "published" ? "rgba(76,140,80,0.12)" : "rgba(217,178,0,0.12)", color: a.status === "published" ? "#3a7a3e" : "#8a6a00" }}>
-                    {a.status}
-                  </button>
-                </div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{(a.views ?? 0).toLocaleString()}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
-                <div style={{ display: "flex", gap: 5 }}>
-                  {(isFullAdmin || (user?.displayName && a.author === user.displayName)) && (
-                    <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
-                      style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
-                    ><IconEdit /></Link>
-                  )}
-                  <Link href={a.type === "short" ? `/shorts/${a.slug}` : a.type === "podcast" ? `/podcasts/${a.slug}` : `/article/${a.slug}`} title="View"
-                    style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #CFCBC3", backgroundColor: "transparent", color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
-                  ><IconEye /></Link>
-                  {isFullAdmin && (
-                    <button onClick={() => handleDelete(a.slug, a.title)} disabled={deleting === a.slug} title="Delete"
-                      style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(192,57,43,0.25)", backgroundColor: "transparent", color: "#c0392b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.13s", opacity: deleting === a.slug ? 0.4 : 1 }}
-                    ><IconTrash /></button>
-                  )}
-                </div>
-              </div>
-            ))
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={executeDelete}
+        title="Delete Content"
+        message={`Are you sure you want to permanently delete "${confirmDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        type="delete"
+        isLoading={actionLoading}
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmPublish}
+        onClose={() => setConfirmPublish(null)}
+        onConfirm={() => confirmPublish && executeToggleStatus(confirmPublish)}
+        title="Publish Content"
+        message={`Ready to share "${confirmPublish?.title}" with the world? It will be visible on the public site immediately.`}
+        confirmText="Publish"
+        type="publish"
+        isLoading={actionLoading}
+      />
     </div>
   );
 }

@@ -56,10 +56,10 @@ function PasswordStrength({ password }: { password: string }) {
       </div>
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
         {([
-          ["8+ characters",               password.length >= 8],
-          ["Contains a letter",           /[A-Za-z]/.test(password)],
-          ["Contains a number",           /[0-9]/.test(password)],
-          ["Contains a special character",/[^A-Za-z0-9]/.test(password)],
+          ["8+ characters", password.length >= 8],
+          ["Contains a letter", /[A-Za-z]/.test(password)],
+          ["Contains a number", /[0-9]/.test(password)],
+          ["Contains a special character", /[^A-Za-z0-9]/.test(password)],
         ] as [string, boolean][]).map(([label, ok]) => (
           <li key={label} style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: ok ? "#3a9e40" : "#aaa", display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ fontSize: "0.65rem" }}>{ok ? "✓" : "○"}</span>
@@ -72,17 +72,26 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function LoginPage() {
-  const router   = useRouter();
+  const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAuth();
 
-  const [mode,         setMode]         = useState<Mode>("login");
-  const [username,     setUsername]     = useState("");
-  const [email,        setEmail]        = useState("");
-  const [password,     setPassword]     = useState("");
+  const [mode, setMode] = useState<Mode>("login");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error,        setError]        = useState("");
-  const [success,      setSuccess]      = useState("");
-  const [loading,      setLoading]      = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // ── Sync mode with query params ─────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const m = params.get("mode") as Mode;
+    if (m === "register" || m === "login" || m === "forgot") {
+      setMode(m);
+    }
+  }, []);
 
   // When true, we just completed our own register flow and already called
   // router.replace() ourselves — the useEffect should not intercept.
@@ -90,7 +99,7 @@ export default function LoginPage() {
 
   // ── Redirect already-logged-in visitors ──────────────────────
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (!user) return;
     if (justRegistered.current) return;
 
     if (!user.displayName || user.displayName.trim() === "") {
@@ -98,7 +107,9 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace(isAdmin ? "/admin" : "/");
+    if (!authLoading) {
+      router.replace(isAdmin ? "/admin" : "/");
+    }
   }, [user, isAdmin, authLoading, router]);
 
   const reset = () => { setError(""); setSuccess(""); };
@@ -128,9 +139,10 @@ export default function LoginPage() {
         router.replace(isAdmin ? "/admin" : "/");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
-        // useEffect handles redirect after login
+        window.location.href = "/";
       }
     } catch (err: any) {
+      setLoading(false);
       const c = err.code;
       if (c === "auth/user-not-found" || c === "auth/wrong-password" || c === "auth/invalid-credential") {
         setError("Invalid email or password.");
@@ -143,8 +155,6 @@ export default function LoginPage() {
       } else {
         setError("Something went wrong. Please try again.");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -156,7 +166,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      // useEffect handles redirect
+      window.location.href = "/";
     } catch {
       setError("Google sign-in failed. Please try again.");
       setLoading(false);
@@ -212,7 +222,7 @@ export default function LoginPage() {
     transition: "border-color 0.2s",
   };
   const onFocus = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = "#1B2A47");
-  const onBlur  = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = "var(--border)");
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = "var(--border)");
 
   const usernameChars = username.trim().length;
 
@@ -226,10 +236,10 @@ export default function LoginPage() {
             Opinionated Kalam
           </div>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: 8, marginBottom: 0 }}>
-            {mode === "login"          ? "Sign in to your account"
-             : mode === "register"     ? "Create a free account"
-             : mode === "set-username" ? "Choose your username"
-             : "Reset your password"}
+            {mode === "login" ? "Sign in to your account"
+              : mode === "register" ? "Create a free account"
+                : mode === "set-username" ? "Choose your username"
+                  : "Reset your password"}
           </p>
         </div>
 
@@ -280,7 +290,7 @@ export default function LoginPage() {
             </p>
             <input type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleForgotPassword()} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
 
-            {error   && <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>}
+            {error && <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>}
             {success && (
               <div style={{ padding: "10px 14px", borderRadius: 8, backgroundColor: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
                 <p style={{ fontSize: "0.82rem", color: "#3a9e40", fontFamily: "'Inter', sans-serif", margin: 0 }}>{success}</p>
@@ -305,10 +315,10 @@ export default function LoginPage() {
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
             >
               <svg width="18" height="18" viewBox="0 0 48 48">
-                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
-                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
-                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
               </svg>
               Continue with Google
             </button>
@@ -376,8 +386,8 @@ export default function LoginPage() {
                     style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, display: "flex" }}
                   >
                     {showPassword
-                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                     }
                   </button>
                 </div>
@@ -412,9 +422,9 @@ export default function LoginPage() {
             </p>
 
             <div style={{ textAlign: "center", marginTop: 24 }}>
-               <button onClick={() => router.push("/")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                 <MoveLeft size={14} /> Back to home
-               </button>
+              <button onClick={() => router.push("/")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <MoveLeft size={14} /> Back to home
+              </button>
             </div>
           </>
         )}

@@ -12,10 +12,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 import { auth } from "@/lib/auth/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { uploadToImageKit } from "@/lib/services/imagekit";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AudioUpload from "@/components/admin/AudioUpload";
 import TagSelector from "@/components/admin/TagSelector";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 import { useBreakpoint, r } from "@/hooks/useBreakpoint";
 
 const ACCENT = "#1B2A47";
@@ -27,6 +29,7 @@ const WPM    = 200;
 
 const FONT_SIZES    = ["12","14","16","18","20","24","28","32","36","48"];
 const FONT_FAMILIES = [
+  { label: "Lexend",          value: "'Lexend', sans-serif" },
   { label: "Default (Radley)", value: "'Radley', serif" },
   { label: "DM Serif",         value: "'DM Serif Display', serif" },
   { label: "Georgia",          value: "Georgia, serif" },
@@ -202,6 +205,7 @@ export default function EditArticlePage() {
   const params  = useParams();
   const slug    = params?.slug as string;
   const bp      = useBreakpoint();
+  const { userName } = useAuth();
 
   const [title, setTitle]         = useState("");
   const [excerpt, setExcerpt]     = useState("");
@@ -215,10 +219,12 @@ export default function EditArticlePage() {
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
   const [articleStatus, setArticleStatus] = useState("draft");
+  const [type, setType]           = useState<"article" | "short" | "podcast">("article");
   const [fontSize, setFontSize]   = useState("18");
-  const [fontFamily, setFontFamily] = useState("'Radley', serif");
+  const [fontFamily, setFontFamily] = useState("'Lexend', sans-serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showConfirmPublish, setShowConfirmPublish] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -248,6 +254,7 @@ export default function EditArticlePage() {
       setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
     },
     editorProps: { attributes: { class: "tiptap-editor" } },
+    immediatelyRender: false,
   });
 
   // Load article data
@@ -266,6 +273,7 @@ export default function EditArticlePage() {
         setAudioDuration(data.duration ?? "");
         setTags(data.tags ?? []);
         setArticleStatus(data.status ?? "draft");
+        setType(data.type ?? "article");
         if (data.content) editor.commands.setContent(data.content);
       } catch (e: any) {
         setError("Failed to load: " + e.message);
@@ -337,18 +345,27 @@ export default function EditArticlePage() {
     if (!title.trim()) { setError("Title is required."); return; }
     const content = editor?.getHTML() ?? "";
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
+
+    const newStatus = publish !== undefined ? (publish ? "published" : "draft") : articleStatus;
+
+    if (newStatus === "published" && articleStatus !== "published" && !showConfirmPublish) {
+      setShowConfirmPublish(true);
+      return;
+    }
+
     setSaving(true); setError("");
     try {
       const token = await auth.currentUser?.getIdToken(true);
-      const newStatus = publish !== undefined ? (publish ? "published" : "draft") : articleStatus;
       const res = await fetch(`/api/articles/${slug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           title, excerpt, content, coverImage, tags: selectedTags,
+          type,
           audioUrl: audioUrl.trim() || undefined,
           duration: audioDuration || undefined,
           status: newStatus,
+          author: userName || undefined,
           publishedAt: newStatus === "published" ? new Date() : null,
           readTime,
         }),
@@ -356,7 +373,10 @@ export default function EditArticlePage() {
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       setArticleStatus(newStatus);
       router.push("/admin");
-    } finally { setSaving(false); }
+    } finally { 
+      setSaving(false); 
+      setShowConfirmPublish(false);
+    }
   };
 
   const currentTextColor = editor?.getAttributes("textStyle")?.color;
@@ -369,7 +389,7 @@ export default function EditArticlePage() {
   const containerPad = r(bp, { mobile: "12px", tablet: "20px", desktop: "40px 24px" });
   const titleFontSize = r(bp, { mobile: "1.4rem", tablet: "1.6rem", desktop: "1.9rem" });
   const maxWidth = r(bp, { mobile: "100%", tablet: "100%", desktop: "900px" });
-  const topBarPad = r(bp, { mobile: "0 12px", tablet: "0 20px", desktop: "0 28px" });
+  const topBarPad = r(bp, { mobile: "0 10px", tablet: "0 18px", desktop: "0 26px" });
 
   const labelStyle: React.CSSProperties = {
     display: "block", fontFamily: "'Inter', sans-serif",
@@ -388,10 +408,10 @@ export default function EditArticlePage() {
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
       <style>{`
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .tiptap-editor { min-height: ${isMobile ? "320px" : "480px"}; padding: ${isMobile ? "16px" : "24px 28px"}; font-family: 'Radley', serif; font-size: 18px; line-height: 1.85; color: ${TEXT}; outline: none; }
+        .tiptap-editor { min-height: ${isMobile ? "320px" : "480px"}; padding: ${isMobile ? "16px" : "24px 28px"}; font-family: 'Lexend', sans-serif; font-size: 18px; line-height: 1.85; color: ${TEXT}; outline: none; }
         .tiptap-editor p { margin: 0 0 1em; }
-        .tiptap-editor h2 { font-family: 'DM Serif Display', serif; font-size: 1.6rem; font-weight: 400; margin: 1.4em 0 0.5em; }
-        .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.2rem; font-weight: 400; margin: 1.2em 0 0.4em; }
+        .tiptap-editor h2 { font-family: inherit; font-size: 1.8em; font-weight: 400; margin: 1.4em 0 0.5em; }
+        .tiptap-editor h3 { font-family: inherit; font-size: 1.4em; font-weight: 400; margin: 1.2em 0 0.4em; }
         .tiptap-editor ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; }
@@ -521,6 +541,15 @@ export default function EditArticlePage() {
           </>
         ) : (
           <>
+            {/* Type toggle */}
+            <div style={{ display: "flex", backgroundColor: "white", borderRadius: 8, padding: 3, border: "1px solid #CFCBC3", width: "fit-content" }}>
+              {(["article", "short", "podcast"] as const).map(t => (
+                <button key={t} onClick={() => setType(t)} style={{ padding: "6px 18px", borderRadius: 6, border: "none", cursor: "pointer", backgroundColor: type === t ? ACCENT : "transparent", color: type === t ? "white" : MUTED, fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", transition: "all 0.14s" }}>
+                  {t === "article" ? "📄 Article" : t === "short" ? "⚡ Short Read" : "🎙 Podcast"}
+                </button>
+              ))}
+            </div>
+
             {/* Title */}
             <input
               value={title}
@@ -713,6 +742,17 @@ export default function EditArticlePage() {
           </>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirmPublish}
+        onClose={() => setShowConfirmPublish(false)}
+        onConfirm={() => handleSave(true)}
+        title="Publish Content"
+        message="Ready to share this article with the world? It will be visible on the public site immediately."
+        confirmText="Publish"
+        type="publish"
+        isLoading={saving}
+      />
     </div>
   );
 }

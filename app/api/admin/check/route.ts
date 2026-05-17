@@ -11,5 +11,6 @@ export async function GET(req: NextRequest) {
     isMain: admin.isMain,
     role: admin.role,
     email: admin.email,
+    name: admin.name,
   });
 }

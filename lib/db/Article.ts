@@ -32,7 +32,7 @@ ArticleSchema.index({ tags: 1 });                         // tag filtering
 ArticleSchema.pre("save", function() {
   if (this.content) {
     const words = this.content.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
-    this.readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
+    this.readTime = `${Math.max(1, Math.ceil(words / 200))} minute read`;
   }
   this.updatedAt = new Date();
 });

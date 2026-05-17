@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TagSelector from "@/components/admin/TagSelector";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -18,37 +19,47 @@ const labelStyle: React.CSSProperties = { display: "block", fontFamily: "'Inter'
 
 export default function NewPodcastPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userName } = useAuth();
   const [title, setTitle]       = useState("");
   const [coverImage, setCover]  = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [duration, setDuration] = useState("");
   const [excerpt, setExcerpt]   = useState("");
   const [tags, setTags]         = useState<string[]>([]);
-  const [saving, setSaving]     = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError]       = useState("");
+  const [showConfirmPublish, setShowConfirmPublish] = useState(false);
 
   const handleSave = async (publishNow = false) => {
     if (!title.trim()) { setError("Title is required."); return; }
     if (!audioUrl.trim()) { setError("Audio URL is required."); return; }
+
+    if (publishNow && !showConfirmPublish) {
+      setShowConfirmPublish(true);
+      return;
+    }
+
     setSaving(true); setError("");
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, excerpt, coverImage, audioUrl, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: user?.displayName || "Unknown Author" }),
+        body: JSON.stringify({ title, excerpt, coverImage, audioUrl, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: userName || user?.displayName || "Unknown Author" }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       router.push("/admin");
-    } finally { setSaving(false); }
+    } finally { 
+      setSaving(false); 
+      setShowConfirmPublish(false);
+    }
   };
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG, color: TEXT }}>
 
       {/* Top bar */}
-      <div style={{ backgroundColor: TEXT, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ backgroundColor: TEXT, padding: "0 26px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 52, position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => router.push("/admin/create")} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: "0.83rem", fontFamily: "'Inter', sans-serif" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -144,6 +155,17 @@ export default function NewPodcastPage() {
         )}
 
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirmPublish}
+        onClose={() => setShowConfirmPublish(false)}
+        onConfirm={() => handleSave(true)}
+        title="Publish Podcast"
+        message="Ready to release this episode? It will be available for streaming immediately."
+        confirmText="Publish"
+        type="publish"
+        isLoading={saving}
+      />
     </div>
   );
 }

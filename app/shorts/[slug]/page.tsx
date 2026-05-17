@@ -21,6 +21,14 @@ const BG     = "#f5f0eb";
 const BORDER = "#e0d8d0";
 const MUTED  = "#666666";
 
+function getAccurateReadTime(content: string) {
+  if (!content) return "1 minute read";
+  const text = content.replace(/<[^>]+>/g, " ");
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.ceil(words / 225));
+  return `${mins} minute read`;
+}
+
 interface Short {
   _id: string; slug: string; title: string; content: string; excerpt?: string;
   coverImage?: string; author: string; tags: string[]; readTime?: string;
@@ -108,12 +116,12 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
             <Eye size={12} />
             {(views || 0).toLocaleString()} {views === 1 ? 'View' : 'Views'}
           </span>
-          {short.readTime && (
+          {short.content && (
             <>
               <span style={{ opacity: 0.4 }}>·</span>
               <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
                 <BookOpen size={12} />
-                {short.readTime} minute read
+                {getAccurateReadTime(short.content)}
               </span>
             </>
           )}
@@ -185,15 +193,21 @@ export default function ShortPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (!short || viewTracked.current || !user) return;
+    if (!short || !user || viewTracked.current) return;
     viewTracked.current = true;
     (async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
-        if (!token) return;
-        const res = await fetch(`/api/articles/${slug}/view`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        if (!token) {
+          viewTracked.current = false;
+          return;
+        }
+        const res = await fetch(`/api/articles/${slug}/view`, { 
+          method: "POST", 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
         if (res.ok) { const d = await res.json(); setViews(d.views); }
-      } catch { /* silent */ }
+      } catch { viewTracked.current = false; }
     })();
   }, [short, user, slug]);
 
@@ -309,7 +323,7 @@ export default function ShortPage() {
                 <span style={{ opacity: 0.3 }}>·</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <BookOpen size={15} />
-                  {short.readTime} minute read
+                  {getAccurateReadTime(short.content)}
                 </span>
               </>
             )}

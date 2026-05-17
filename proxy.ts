@@ -3,16 +3,9 @@ import { NextResponse, NextRequest } from 'next/server'
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── Admin page guard ──
-  // Redirect unauthenticated users away from /admin pages instantly.
-  // Firebase token verification still happens in API routes;
-  // this just prevents the page from loading without a session.
-  if (pathname.startsWith('/admin')) {
-    const session = request.cookies.get('session')?.value
-    if (!session) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-  }
+  // The /admin pages are protected securely on the client side via AdminGuard
+  // and on the server side via API verification headers. Cookie-based redirect
+  // causes false-negative redirects because Firebase uses IndexedDB tokens.
 
   const response = NextResponse.next()
 

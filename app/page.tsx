@@ -11,13 +11,15 @@ import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
 import { MobileAboutView, MobileGrievanceView, MobileTeamView, MobileContactView } from "@/components/mobile/MobileInfoPages";
-import { BookOpen, MoveLeft } from "lucide-react";
+import { BookOpen, MoveLeft, Heart, Bookmark, Share, Maximize2, Play, Pause, MoveRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Lazy-load the mobile page to avoid SSR issues
 const MobilePage = dynamic(() => import("@/components/mobile/MobilePage"), { ssr: false });
 
 const ACCENT   = "#1B2A47";
 const RED      = "#D92323";
+const MUTED    = "#666666";
 const ALL_TAGS = ["Automotive", "Business", "Environment", "Geo Politics", "Governance", "Law & Order", "Media", "Society", "Technology"];
 
 const POD_BG       = "#e1dfe8";
@@ -232,9 +234,15 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
   const [progress, setProgress] = useState(0);
   const [current, setCurrent]   = useState("0:00");
   const [totalDur, setTotalDur] = useState(p.duration ?? "0:00");
+  const [liked, setLiked]       = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const audioRef   = useRef<HTMLAudioElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
-  const isPlaying  = activeSlug === p.slug;
+  const isExpanded = activeSlug === p.slug;
+
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!p.audioUrl) return;
@@ -255,21 +263,67 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
         setTotalDur(`${m}:${s}`);
       }
     };
-    audio.onended = () => setActiveSlug(null);
-    return () => { audio.pause(); audio.src = ""; };
-  }, [p.audioUrl, setActiveSlug]);
+    audio.onended = () => {
+      setIsPlaying(false);
+      setActiveSlug(null);
+    };
+    return () => { audio.pause(); audio.src = ""; audioRef.current = null; };
+  }, [p.audioUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (isPlaying) audio.play().catch(() => {});
+    if (!isExpanded && isPlaying) {
+      setIsPlaying(false);
+      audio.pause();
+    }
+  }, [isExpanded, isPlaying]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) audio.play().catch(() => { setIsPlaying(false); });
     else audio.pause();
   }, [isPlaying]);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     if (!p.audioUrl) return;
-    setActiveSlug(isPlaying ? null : p.slug);
+    if (!isExpanded) {
+      setActiveSlug(p.slug);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    if (saving) return;
+    setSaving(true);
+    try {
+      const token = await (user as any)?.getIdToken();
+      if (!token) { setSaved(s => !s); return; }
+      await fetch(`/api/articles/${p.slug}/save`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSaved(s => !s);
+    } catch {
+      setSaved(s => !s);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const url = `${window.location.origin}/podcasts/${p.slug}`;
+    if (navigator.share) navigator.share({ title: p.title, url }).catch(() => { });
+    else {
+      navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!");
+    }
   };
 
   const skip = (e: React.MouseEvent, sec: number) => {
@@ -280,54 +334,144 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
   const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault(); e.stopPropagation();
     const audio = audioRef.current;
-    if (!audio || !seekBarRef.current || !isFinite(audio.duration) || audio.duration === 0) return;
+    if (!audio) return;
     
-    const rect = seekBarRef.current.getBoundingClientRect();
+    // Ensure metadata is loaded
+    if (!isFinite(audio.duration) || audio.duration === 0) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
     if (rect.width === 0) return;
     
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const x = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, x / rect.width));
     const targetTime = ratio * audio.duration;
     
     if (isFinite(targetTime)) {
       audio.currentTime = targetTime;
+      // Force immediate progress update for better feedback
       setProgress(ratio * 100);
+      const m = Math.floor(targetTime / 60);
+      const s = Math.floor(targetTime % 60).toString().padStart(2, "0");
+      setCurrent(`${m}:${s}`);
     }
   };
 
   return (
-    <Link href={`/podcasts/${p.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ backgroundColor: "transparent", border: "1px solid #000", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", transition: "box-shadow 0.18s", cursor: "pointer" }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.09)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
-        <div style={{ padding: "10px 10px 0" }}>
-          {p.coverImage ? <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 8, display: "block" }} />
-            : <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "rgba(27,42,71,0.1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: "2rem" }}>🎙</span></div>}
+    <div onClick={togglePlay} style={{ textDecoration: "none", color: "inherit" }}>
+      <article style={{
+        backgroundColor: "white",
+        border: "1px solid #111",
+        borderRadius: 14,
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.2s ease-in-out",
+        cursor: "pointer",
+        position: "relative",
+        boxShadow: isExpanded ? "0 12px 40px rgba(0,0,0,0.12)" : "none",
+        transform: isExpanded ? "translateY(-4px)" : "none"
+      }}>
+        <div style={{ padding: "12px 12px 0" }}>
+          {p.coverImage ? (
+            <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 10, display: "block" }} />
+          ) : (
+            <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "rgba(27,42,71,0.06)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "2.4rem" }}>🎙</span>
+            </div>
+          )}
         </div>
-        <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-          {/* Tags row — pill chips */}
-          {p.tags?.length > 0 && (
+
+        <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Tags row */}
+          {showTag && p.tags?.length > 0 && (
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {p.tags.slice(0, 3).map(t => (
-                <span key={t} style={{ fontSize: "0.55rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", backgroundColor: "rgba(217,35,35,0.08)", borderRadius: 20, padding: "2px 8px" }}>{t}</span>
+              {p.tags.slice(0, 2).map(t => (
+                <span key={t} style={{ fontSize: "0.58rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em", backgroundColor: "rgba(217,35,35,0.08)", borderRadius: 20, padding: "2px 8px" }}>{t}</span>
               ))}
             </div>
           )}
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: 0 }}>{p.title}</h3>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 4 }}>
-            <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>← 10</button>
-            <button onClick={togglePlay} style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--text-main)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {isPlaying ? <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                : <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>}
-            </button>
-            <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", padding: 0 }}>10 →</button>
-          </div>
-          <div ref={seekBarRef} onClick={handleSeekClick} style={{ height: 5, backgroundColor: "rgba(27,42,71,0.15)", borderRadius: 3, cursor: "pointer", position: "relative", overflow: "hidden" }}>
-            <div style={{ width: `${progress}%`, height: "100%", backgroundColor: RED, borderRadius: 3, transition: "width 0.3s linear" }} />
-          </div>
-          <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>{current} / {totalDur}</div>
+
+          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.05rem", lineHeight: 1.25, color: "#111", margin: 0 }}>
+            {p.title}
+          </h3>
+
+          {!isExpanded && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: MUTED }}>{totalDur}</span>
+              <button
+                onClick={togglePlay}
+                style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <Play size={16} color="white" fill="white" style={{ marginLeft: 2 }} />
+              </button>
+            </div>
+          )}
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                style={{ overflow: "hidden" }}
+              >
+                <div style={{ paddingTop: 16 }}>
+                  {/* Playback Row */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 16 }}>
+                    <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111", display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", fontWeight: 600 }}>
+                      <MoveLeft size={16} /> 10
+                    </button>
+                    <button onClick={togglePlay} style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {isPlaying ? (
+                        <Pause size={20} color="white" fill="white" />
+                      ) : (
+                        <Play size={20} color="white" fill="white" style={{ marginLeft: 3 }} />
+                      )}
+                    </button>
+                    <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111", display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", fontWeight: 600 }}>
+                      10 <MoveRight size={16} />
+                    </button>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div style={{ width: "85%", margin: "0 auto 12px" }}>
+                    <div ref={seekBarRef} onClick={handleSeekClick} style={{ height: 4, backgroundColor: "rgba(0,0,0,0.1)", borderRadius: 2, cursor: "pointer", position: "relative" }}>
+                      <div style={{ width: `${progress}%`, height: "100%", backgroundColor: RED, borderRadius: 2, transition: "width 0.2s linear" }} />
+                    </div>
+                  </div>
+
+                  {/* Interactions Row */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: liked ? RED : "#111" }}>
+                        <Heart size={20} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} />
+                      </button>
+                      <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#111" }}>
+                        <Share size={18} strokeWidth={1.5} />
+                      </button>
+                    </div>
+
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 500, color: "#111" }}>
+                      {current} / {totalDur}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <button onClick={handleSave} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: saved ? RED : "#111", opacity: saving ? 0.5 : 1 }}>
+                        <Bookmark size={20} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} />
+                      </button>
+                      <Link href={`/podcasts/${p.slug}`} onClick={(e) => e.stopPropagation()} style={{ color: "#111", display: "flex" }}>
+                        <Maximize2 size={18} strokeWidth={1.5} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </article>
-    </Link>
+    </div>
   );
 }
 
@@ -594,7 +738,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
                     <span>{hero.publishedAt ? new Date(hero.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : ""}</span>
                     {hero.author && <><span style={{ opacity: 0.4 }}>·</span><span>{hero.author}</span></>}
                   </div>
-                  <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.75, fontFamily: "'Inter', sans-serif", margin: 0 }}>{hero.excerpt}</p>
+                  <p style={{ fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: 1.75, fontFamily: "var(--font-radley), 'Radley', serif", margin: 0 }}>{hero.excerpt}</p>
                 </article>
               </Link>
             ) : <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", fontSize: "0.9rem" }}>No articles yet.</p>}

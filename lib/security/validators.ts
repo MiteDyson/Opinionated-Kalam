@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const createArticleSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200, "Title must be under 200 characters").trim(),
-  type: z.enum(["article", "podcast", "short"]).default("article"),
+  type: z.enum(["article", "podcast", "short"]),
   excerpt: z.string().max(1000, "Excerpt must be under 1000 characters").trim().default(""),
   content: z.string().max(100000, "Content must be under 100,000 characters").default(""),
   coverImage: z.string().url("Invalid cover image URL").or(z.literal("")).default(""),

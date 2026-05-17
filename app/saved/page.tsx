@@ -8,10 +8,12 @@ import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
+import MobileFooter from "@/components/mobile/MobileFooter";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/auth/firebase";
 import { useMobile } from "@/hooks/useMobile";
-import { MoveLeft } from "lucide-react";
+import { MoveLeft, Bookmark, UserPlus, LogIn } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ACCENT = "#1B2A47";
 const RED = "#D92323";
@@ -157,6 +159,118 @@ function SavedList({
     </div>
   );
 }
+const LoginCTA = ({ isMobile }: { isMobile: boolean }) => {
+  const router = useRouter();
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        backgroundColor: "white",
+        borderRadius: "20px",
+        padding: isMobile ? "32px 20px" : "32px 24px",
+        border: "1px solid rgba(0,0,0,0.05)",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.03)",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "16px",
+        marginTop: "16px",
+        maxWidth: "540px",
+        margin: "16px auto 0"
+      }}
+    >
+      <div style={{
+        width: "48px",
+        height: "48px",
+        borderRadius: "24px",
+        backgroundColor: "rgba(0, 0, 0, 0.04)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: BLACK,
+        marginBottom: "0px"
+      }}>
+        <Bookmark size={24} />
+      </div>
+      
+      <div>
+        <h2 style={{ 
+          fontFamily: "'DM Serif Display', serif", 
+          fontSize: isMobile ? "1.3rem" : "1.6rem",
+          color: BLACK,
+          marginBottom: "2px"
+        }}>
+          Save for Later
+        </h2>
+        <p style={{ 
+          color: MUTED, 
+          fontSize: "0.9rem", 
+          maxWidth: "360px",
+          lineHeight: 1.4,
+          margin: "0 auto"
+        }}>
+          Create an account to bookmark your favorite articles and podcasts so you can revisit them anytime.
+        </p>
+      </div>
+
+      <div style={{ 
+        display: "flex", 
+        flexDirection: isMobile ? "column" : "row", 
+        gap: "10px",
+        width: isMobile ? "100%" : "auto",
+        marginTop: "4px"
+      }}>
+        <button 
+          onClick={() => router.push("/login?mode=register")}
+          style={{
+            backgroundColor: BLACK,
+            color: "white",
+            padding: "10px 24px",
+            borderRadius: "10px",
+            border: "none",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            transition: "all 0.2s ease"
+          }}
+        >
+          <UserPlus size={16} /> Create Account
+        </button>
+        <button 
+          onClick={() => router.push("/login?mode=login")}
+          style={{
+            backgroundColor: "white",
+            color: BLACK,
+            padding: "10px 24px",
+            borderRadius: "10px",
+            border: `1px solid ${BLACK}`,
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            transition: "all 0.2s ease"
+          }}
+        >
+          <LogIn size={16} /> Sign In
+        </button>
+      </div>
+      
+      <p style={{ fontSize: "0.75rem", color: MUTED, marginTop: "0px" }}>
+        Already have an account? Log in to see your saved items.
+      </p>
+    </motion.div>
+  );
+};
 
 export default function SavedPage() {
   const router = useRouter();
@@ -172,9 +286,7 @@ export default function SavedPage() {
   const [bulkRemoving, setBulkRemoving] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-  }, [user, authLoading, router]);
+  // useEffect removed to allow guest view
 
   useEffect(() => {
     if (!user) return;
@@ -231,14 +343,15 @@ export default function SavedPage() {
         <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
         <MobileSideMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} onTabChange={(t) => router.push(`/?tab=${t}`)} onBeatSelect={() => router.push("/")} />
         <MobileHeader activeTab="" onTabChange={(t) => router.push(`/?tab=${t}`)} onMenuOpen={() => setMobileMenuOpen(true)} />
-        <div style={{ padding: "12px 16px 60px" }}>
-          <button onClick={() => router.back()} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: MUTED, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12 }}>
-            <MoveLeft size={14} strokeWidth={2.5} /> Back
+        <div style={{ padding: "0px 16px 0px" }}>
+          <button onClick={() => router.push("/")} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: MUTED, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 12, marginTop: 12 }}>
+            <MoveLeft size={14} strokeWidth={2.5} /> Back to Home
           </button>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.7rem", fontWeight: 400, color: BLACK, margin: 0 }}>Saved</h1>
+          
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2rem", fontWeight: 400, color: BLACK, margin: 0 }}>Saved</h1>
 
-            {!loading && items.length > 0 && (
+            {user && !loading && items.length > 0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 {editMode && (
                   <>
@@ -273,8 +386,15 @@ export default function SavedPage() {
             )}
           </div>
 
-          {loading ? [1, 2, 3].map(i => <Skeleton key={i} />) : <SavedList items={items} onUnsave={handleUnsave} removing={removing} selected={selectedSlugs} onToggle={handleToggle} editMode={editMode} isMobile={isMobile} />}
+          {!user ? (
+            <LoginCTA isMobile={isMobile} />
+          ) : (
+            <>
+              {loading ? [1, 2, 3].map(i => <Skeleton key={i} />) : <SavedList items={items} onUnsave={handleUnsave} removing={removing} selected={selectedSlugs} onToggle={handleToggle} editMode={editMode} isMobile={isMobile} />}
+            </>
+          )}
         </div>
+        <MobileFooter />
       </div>
     );
   }
@@ -284,15 +404,16 @@ export default function SavedPage() {
     <>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <SideMenu isOpen={desktopMenuOpen} onClose={() => setDesktopMenuOpen(false)} onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <Header onMenuOpen={() => setDesktopMenuOpen(true)} activeTab="" onTabChange={(tab) => router.push(`/?tab=${tab}`)} />
-        <div style={{ maxWidth: 720, margin: "0 auto 80px" }}>
-          <button onClick={() => router.back()} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: MUTED, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 32 }}>
-            <MoveLeft size={14} strokeWidth={2.5} /> Back
+        <div style={{ maxWidth: 900, margin: "0 auto 80px", width: "100%", flex: 1 }}>
+          <button onClick={() => router.push("/")} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600, color: MUTED, background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 12px", cursor: "pointer", marginBottom: 16 }}>
+            <MoveLeft size={14} strokeWidth={2.5} /> Back to Home
           </button>
-          <div style={{ marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.2rem", fontWeight: 400, color: "var(--text-main)", margin: 0 }}>Saved</h1>
-            {!loading && items.length > 0 && (
+          
+          <div style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "2.5rem", fontWeight: 400, color: "var(--text-main)", margin: 0 }}>Saved</h1>
+            {user && !loading && items.length > 0 && (
               <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
                 {editMode && (
                   <>
@@ -327,7 +448,14 @@ export default function SavedPage() {
               </div>
             )}
           </div>
-          {loading ? [1, 2, 3, 4].map(i => <Skeleton key={i} />) : <SavedList items={items} onUnsave={handleUnsave} removing={removing} selected={selectedSlugs} onToggle={handleToggle} editMode={editMode} isMobile={isMobile} />}
+
+          {!user ? (
+            <LoginCTA isMobile={isMobile} />
+          ) : (
+            <>
+              {loading ? [1, 2, 3, 4].map(i => <Skeleton key={i} />) : <SavedList items={items} onUnsave={handleUnsave} removing={removing} selected={selectedSlugs} onToggle={handleToggle} editMode={editMode} isMobile={isMobile} />}
+            </>
+          )}
         </div>
       </div>
       <Footer />
