@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { clientCache } from "@/lib/services/cache";
 import ImageUpload from "@/components/admin/ImageUpload";
+import AudioUpload from "@/components/admin/AudioUpload";
 import TagSelector from "@/components/admin/TagSelector";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { Mic } from "lucide-react";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -30,11 +33,11 @@ export default function NewPodcastPage() {
   const [error, setError]       = useState("");
   const [showConfirmPublish, setShowConfirmPublish] = useState(false);
 
-  const handleSave = async (publishNow = false) => {
+  const handleSave = async () => {
     if (!title.trim()) { setError("Title is required."); return; }
     if (!audioUrl.trim()) { setError("Audio URL is required."); return; }
 
-    if (publishNow && !showConfirmPublish) {
+    if (!showConfirmPublish) {
       setShowConfirmPublish(true);
       return;
     }
@@ -45,10 +48,11 @@ export default function NewPodcastPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, excerpt, coverImage, audioUrl, duration, type: "podcast", tags, status: publishNow ? "published" : "draft", author: userName || user?.displayName || "Unknown Author" }),
+        body: JSON.stringify({ title, excerpt, coverImage, audioUrl, duration, type: "podcast", tags, status: "published", author: userName || user?.displayName || "Unknown Author" }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
-      router.push("/admin");
+      clientCache.invalidate("fetch:/api/articles");
+      window.location.href = "/admin";
     } finally { 
       setSaving(false); 
       setShowConfirmPublish(false);
@@ -66,12 +70,14 @@ export default function NewPodcastPage() {
             Back
           </button>
           <span style={{ color: "rgba(255,255,255,0.12)" }}>|</span>
-          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", color: "white" }}>🎙 New Podcast</span>
+          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", color: "white", display: "flex", alignItems: "center", gap: 6 }}>
+            <Mic size={14} style={{ color: "white" }} /> New Podcast
+          </span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {error && <span style={{ color: "#ff6b6b", fontSize: "0.78rem", fontFamily: "'Inter', sans-serif" }}>{error}</span>}
-          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "0 16px", height: 32, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>Save Draft</button>
-          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "0 18px", height: 32, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}>
+          <button onClick={() => router.push("/admin")} disabled={saving} style={{ padding: "0 16px", height: 32, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>Cancel</button>
+          <button onClick={() => handleSave()} disabled={saving} style={{ padding: "0 18px", height: 32, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}>
             {saving ? "Publishing…" : "Publish"}
           </button>
         </div>
@@ -89,32 +95,12 @@ export default function NewPodcastPage() {
         <ImageUpload value={coverImage} onChange={setCover} label="Cover Image" folder="podcasts" />
 
         {/* 3. Audio File URL */}
-        <div>
-          <label style={labelStyle}>Audio File URL</label>
-          <input value={audioUrl} onChange={(e) => setAudioUrl(e.target.value)} placeholder="https://storage.example.com/episode.mp3" style={field} />
-          {audioUrl && (
-            <div style={{ marginTop: 10 }}>
-              <audio controls src={audioUrl} style={{ width: "100%", borderRadius: 8 }}
-                onLoadedMetadata={(e) => {
-                  const secs = Math.floor((e.target as HTMLAudioElement).duration);
-                  if (!isNaN(secs) && secs > 0) {
-                    const m = Math.floor(secs / 60);
-                    const s = (secs % 60).toString().padStart(2, "0");
-                    setDuration(`${m}:${s}`);
-                  }
-                }}
-              />
-              {duration && (
-                <p style={{ fontSize: "0.75rem", color: "#3a7a3e", fontFamily: "'Inter', sans-serif", marginTop: 5 }}>
-                  ✓ Duration detected: {duration}
-                </p>
-              )}
-            </div>
-          )}
-          <p style={{ fontSize: "0.72rem", color: "#aaa", fontFamily: "'Inter', sans-serif", marginTop: 5 }}>
-            Upload to Firebase Storage, Cloudinary, or S3, then paste the URL here.
-          </p>
-        </div>
+        <AudioUpload
+          value={audioUrl}
+          onChange={setAudioUrl}
+          onDurationDetected={setDuration}
+          label="Audio File"
+        />
 
         <div>
           <label style={labelStyle}>Description / Episode Notes</label>
@@ -159,7 +145,7 @@ export default function NewPodcastPage() {
       <ConfirmModal
         isOpen={showConfirmPublish}
         onClose={() => setShowConfirmPublish(false)}
-        onConfirm={() => handleSave(true)}
+        onConfirm={() => handleSave()}
         title="Publish Podcast"
         message="Ready to release this episode? It will be available for streaming immediately."
         confirmText="Publish"

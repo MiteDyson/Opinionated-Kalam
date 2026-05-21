@@ -32,6 +32,26 @@ export interface MobileHeaderProps {
   onMenuOpen: () => void;
 }
 
+const searchStaggerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+      delayChildren: 0.03
+    }
+  }
+};
+
+const searchItemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { type: "spring" as const, stiffness: 350, damping: 25 } 
+  }
+};
+
 /* ── Search overlay (unchanged logic) ─────────────────────── */
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
@@ -82,14 +102,19 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="absolute top-0 right-0 bottom-0 w-[85%] bg-white flex flex-col p-[20px_16px_16px]"
+        className="absolute top-0 right-0 bottom-0 w-[72%] bg-white flex flex-col p-[20px_16px_16px]"
       >
         {/* Close / Back button */}
         <div className="flex items-center justify-between mb-[10px]">
           <span className="font-sans text-[0.82rem] font-bold text-[#111111]">Search</span>
-          <button onClick={onClose} className="bg-none border-none cursor-pointer p-1 flex items-center justify-center">
+          <motion.button 
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose} 
+            className="bg-none border-none cursor-pointer p-1 flex items-center justify-center"
+          >
             <X size={18} color="#111111" strokeWidth={2.5} />
-          </button>
+          </motion.button>
         </div>
         <div className="flex items-center gap-2 border-b-2 border-[#111111] pb-[10px] mb-[14px]">
           <Search size={16} className="text-[#aaaaaa]" />
@@ -100,33 +125,57 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
             placeholder="Search Here..."
             className="flex-1 border-none outline-none text-[0.9rem] font-sans bg-transparent text-[#111111]"
           />
-          {query && <button onClick={() => setQuery("")} className="bg-none border-none cursor-pointer text-[#aaaaaa] text-[1.2rem] p-0">×</button>}
+          {query && (
+            <motion.button 
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setQuery("")} 
+              className="bg-none border-none cursor-pointer text-[#aaaaaa] text-[1.2rem] p-0"
+            >
+              ×
+            </motion.button>
+          )}
         </div>
         <div className="flex gap-0 mb-4">
           {filters.map((f, i) => (
             <span key={f} className="flex items-center">
-              <button
+              <motion.button
                 onClick={() => setFilter(activeFilter === f ? null : f)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 className={`px-[10px] py-[4px] rounded-[3px] border-none cursor-pointer font-sans text-[0.72rem] transition-colors ${activeFilter === f ? "bg-[#111111] text-white font-semibold" : "bg-transparent text-[#111111] font-normal"}`}
               >
-                {f}
-              </button>
+                {f
+              }</motion.button>
               {i < filters.length - 1 && <span className="text-[#cccccc] text-[0.72rem] px-1">|</span>}
             </span>
           ))}
         </div>
-        <div className="flex-1 overflow-y-auto">
+        
+        <motion.div 
+          variants={searchStaggerVariants} 
+          initial="hidden" 
+          animate="show"
+          className="flex-1 overflow-y-auto"
+        >
           {loading && <p className="font-sans text-[0.82rem] text-[#666666] py-3">Searching...</p>}
           {!loading && shown.map((r, i) => (
-            <a key={r._id ?? i} href={href(r)} onClick={onClose} className="block no-underline py-[10px] border-b border-[#e0d8d0]">
-              <div className="font-serif text-[0.9rem] text-[#111111] leading-[1.3] mb-[3px]">{r.title}</div>
-              <div className="font-sans text-[0.68rem] text-[#666666]">{typeLabel(r.type)}</div>
-            </a>
+            <motion.div
+              key={r._id ?? i}
+              variants={searchItemVariants}
+              whileTap={{ scale: 0.98 }}
+              className="border-b border-[#e0d8d0]"
+            >
+              <a href={href(r)} onClick={onClose} className="block no-underline py-[10px]">
+                <div className="font-serif text-[0.9rem] text-[#111111] leading-[1.3] mb-[3px]">{r.title}</div>
+                <div className="font-sans text-[0.68rem] text-[#666666]">{typeLabel(r.type)}</div>
+              </a>
+            </motion.div>
           ))}
           {!loading && query.length >= 2 && shown.length === 0 && (
             <p className="font-sans text-[0.82rem] text-[#666666] py-3">No results found</p>
           )}
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );

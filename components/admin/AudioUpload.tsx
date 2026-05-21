@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { uploadToImageKit } from "@/lib/services/imagekit";
-import { Loader2, Upload, Play, Trash2, Volume2 } from "lucide-react";
+import { Play, Trash2, Volume2, Upload, Loader2 } from "lucide-react";
+import { auth } from "@/lib/auth/firebase";
 
 const ACCENT = "#1B2A47";
 const TEXT   = "#1A1A1A";
@@ -21,67 +21,10 @@ export default function AudioUpload({
   onChange,
   onDurationDetected,
   label = "Audio File",
-  folder = "audio",
 }: AudioUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress]   = useState(0);
   const [error, setError]         = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("audio/")) {
-      setError("Please select an audio file (MP3, WAV, M4A, etc.)");
-      return;
-    }
-
-    // Validate size — 200 MB limit
-    if (file.size > 200 * 1024 * 1024) {
-      setError("File too large. Max 200 MB.");
-      return;
-    }
-
-    setUploading(true);
-    setError("");
-    setProgress(0);
-
-    try {
-      // Simulate progress while uploading (ImageKit doesn't expose real progress)
-      const progressInterval = setInterval(() => {
-        setProgress(p => Math.min(p + 8, 85));
-      }, 300);
-
-      const url = await uploadToImageKit(file, folder);
-
-      clearInterval(progressInterval);
-      setProgress(100);
-      onChange(url);
-
-      // Auto-detect duration from uploaded file
-      if (onDurationDetected) {
-        const audio = new Audio(url);
-        audio.onloadedmetadata = () => {
-          const secs = Math.floor(audio.duration);
-          if (!isNaN(secs) && secs > 0) {
-            const m = Math.floor(secs / 60);
-            const s = (secs % 60).toString().padStart(2, "0");
-            onDurationDetected(`${m}:${s}`);
-          }
-        };
-      }
-
-      setTimeout(() => setProgress(0), 1000);
-    } catch (err: any) {
-      setError("Upload failed: " + (err.message ?? "Unknown error"));
-      setProgress(0);
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
 
   const labelStyle: React.CSSProperties = {
     display: "block",
@@ -94,9 +37,57 @@ export default function AudioUpload({
     marginBottom: 7,
   };
 
-  const fileSizeLabel = (bytes: number) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("audio/")) {
+      setError("Please select an audio file (MP3, WAV, M4A, etc.)");
+      return;
+    }
+
+    // Validate size — 150 MB limit
+    if (file.size > 150 * 1024 * 1024) {
+      setError("File too large. Max 150 MB.");
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+
+    try {
+      if (!auth.currentUser) {
+        setError("Not signed in.");
+        setUploading(false);
+        return;
+      }
+      
+      const token = await auth.currentUser.getIdToken(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload-archive", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to upload file to archive.org");
+      }
+
+      const data = await res.json();
+      onChange(data.url);
+    } catch (err: any) {
+      setError(err.message ?? "Unknown upload error.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   return (
@@ -104,17 +95,17 @@ export default function AudioUpload({
       <label style={labelStyle}>
         {label}
         <span style={{ marginLeft: 8, fontSize: "0.65rem", fontWeight: 400, color: "#aaa", textTransform: "none", letterSpacing: 0 }}>
-          optional — enables "Listen to Article" player
+          optional — enables "Listen to Content" player
         </span>
       </label>
 
-      {/* URL input + upload button row */}
+      {/* URL input */}
       <div style={{ position: "relative" }}>
         <input
           type="url"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Paste audio URL — or click ↑ to upload from device"
+          placeholder="Paste direct audio URL — or click ↑ to upload from device"
           disabled={uploading}
           style={{
             width: "100%",
@@ -138,7 +129,7 @@ export default function AudioUpload({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          title="Upload audio file from device"
+          title="Upload audio file directly to archive.org"
           style={{
             position: "absolute",
             right: 6,
@@ -172,7 +163,6 @@ export default function AudioUpload({
           {uploading ? (
             <Loader2 size={13} style={{ animation: "spin-audio 0.8s linear infinite" }} />
           ) : (
-            // Waveform / audio upload icon
             <Upload size={13} />
           )}
         </button>
@@ -187,44 +177,36 @@ export default function AudioUpload({
         />
       </div>
 
-      {/* Upload progress bar */}
       {uploading && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{
-            height: 4, borderRadius: 2, backgroundColor: "#e8e5e0", overflow: "hidden",
-          }}>
-            <div style={{
-              height: "100%",
-              width: `${progress}%`,
-              backgroundColor: ACCENT,
-              borderRadius: 2,
-              transition: "width 0.3s ease",
-            }} />
-          </div>
-          <p style={{
-            fontFamily: "'Inter', sans-serif", fontSize: "0.72rem",
-            color: MUTED, marginTop: 5,
-          }}>
-            Uploading… {progress < 100 ? `${progress}%` : "Processing…"}
-          </p>
-        </div>
+        <p style={{
+          fontFamily: "'Inter', sans-serif", fontSize: "0.72rem",
+          color: MUTED, marginTop: 5,
+        }}>
+          Uploading directly to archive.org… please wait, this may take a moment.
+        </p>
       )}
 
       {error && (
         <p style={{
           fontSize: "0.72rem", color: "#c0392b",
           fontFamily: "'Inter', sans-serif", marginTop: 4,
+          lineHeight: 1.4,
         }}>
-          {error}
+          ⚠️ {error}
         </p>
       )}
 
-      <p style={{
-        fontSize: "0.72rem", color: "#aaa",
-        fontFamily: "'Inter', sans-serif", marginTop: 6,
-      }}>
-        Accepts MP3, WAV, M4A, AAC, OGG · Max 200 MB
-      </p>
+      {!uploading && !error && (
+        <p style={{
+          fontSize: "0.72rem", color: "#aaa",
+          fontFamily: "'Inter', sans-serif", marginTop: 6,
+        }}>
+          Upload audio directly from your device, or paste a link from{" "}
+          <a href="https://archive.org" target="_blank" rel="noopener noreferrer" style={{ color: "#D38B88", textDecoration: "underline" }}>
+            archive.org
+          </a>.
+        </p>
+      )}
 
       {/* Audio preview + player mockup */}
       {value && !uploading && (
@@ -270,7 +252,7 @@ export default function AudioUpload({
                 fontWeight: 700, textTransform: "uppercase" as const,
                 letterSpacing: "0.08em", color: "#888", marginBottom: 3,
               }}>
-                Listen to Article
+                Listen to Content
               </div>
               <div style={{
                 fontFamily: "'DM Serif Display', serif",

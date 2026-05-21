@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Eye, MoveLeft, BookOpen } from "lucide-react";
+import { Heart, Bookmark, Share, Eye, MoveLeft, BookOpen, Check } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/auth/firebase";
@@ -13,6 +13,7 @@ import Footer from "@/components/layout/Footer";
 import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
+import ShareButton from "@/components/ui/ShareButton";
 
 const ACCENT = "#1B2A47";
 const RED    = "#c0392b";
@@ -48,12 +49,14 @@ function MobileTag({ label }: { label: string }) {
   );
 }
 
-function MobileShortView({ short, liked, saved, likes, views, copied, actionLoading, onLike, onSave, onShare }: {
+function MobileShortView({ short, liked, saved, likes, views, actionLoading, onLike, onSave }: {
   short: Short; liked: boolean; saved: boolean; likes: number; views: number;
-  copied: boolean; actionLoading: boolean;
-  onLike: () => void; onSave: () => void; onShare: () => void;
+  actionLoading: boolean;
+  onLike: () => void; onSave: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
   const router = useRouter();
 
   const dateStr = short.publishedAt
@@ -75,7 +78,7 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
         .short-body-m p { margin: 0 0 1.1em; }
         .short-body-m h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; color: #1A1A1A; margin: 1.5em 0 0.5em; }
         .short-body-m h3 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; font-weight: 400; color: #1A1A1A; margin: 1.3em 0 0.4em; }
-        .short-body-m blockquote { border-left: 3px solid #D38B88; padding: 8px 16px; margin: 1.4em 0; background: rgba(211,139,136,0.06); color: #555; font-style: italic; }
+        .short-body-m blockquote { border-left: 3px solid #D92323; padding: 8px 16px; margin: 1.4em 0; background: rgba(217,35,35,0.06); color: #555; font-style: italic; }
         .short-body-m ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
         .short-body-m ol { list-style: decimal; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
         .short-body-m li { margin: 0.35em 0; }
@@ -139,18 +142,15 @@ function MobileShortView({ short, liked, saved, likes, views, copied, actionLoad
 
         {/* Interactions */}
         <div style={{ display: "flex", gap: 10, marginTop: 28, flexWrap: "wrap" }}>
-          <button style={actionBtn(liked)} onClick={onLike} disabled={actionLoading}>
-            <Heart size={14} fill={liked ? "currentColor" : "none"} />
+          <button style={actionBtn(liked)} onClick={() => { onLike(); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }} disabled={actionLoading}>
+            <Heart size={14} fill={liked ? "currentColor" : "none"} className={localAnimateLike ? "animate-pop" : ""} />
             {likes.toLocaleString()} {likes === 1 ? 'Like' : 'Likes'}
           </button>
-          <button style={actionBtn(saved)} onClick={onSave} disabled={actionLoading}>
-            <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+          <button style={actionBtn(saved)} onClick={() => { onSave(); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }} disabled={actionLoading}>
+            <Bookmark size={14} fill={saved ? "currentColor" : "none"} className={localAnimateSave ? "animate-pop" : ""} />
             {saved ? "Saved" : "Save"}
           </button>
-          <button style={actionBtn(copied)} onClick={onShare}>
-            <Share size={14} />
-            {copied ? "Copied!" : "Share"}
-          </button>
+          <ShareButton title={short.title} variant="pill" size="mobile" />
         </div>
       </div>
 
@@ -174,8 +174,9 @@ export default function ShortPage() {
   const [saved,    setSaved]    = useState(false);
   const [likes,    setLikes]    = useState(0);
   const [views,    setViews]    = useState(0);
-  const [copied,   setCopied]   = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
   const viewTracked = useRef(false);
 
   useEffect(() => {
@@ -238,15 +239,7 @@ export default function ShortPage() {
     } catch { setSaved(was); } finally { setActionLoading(false); }
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) { try { await navigator.share({ title: short?.title, url }); return; } catch { /* fall */ } }
-    try { await navigator.clipboard.writeText(url); } catch {
-      const el = document.createElement("textarea"); el.value = url;
-      document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
-    }
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  };
+  // Share is now handled internally by ShareButton
 
   if (loading) return <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ fontFamily: "'Inter', sans-serif", color: "var(--text-muted)" }}>Loading…</div></div>;
   if (notFound || !short) return (
@@ -265,7 +258,7 @@ export default function ShortPage() {
   );
 
   if (isMobile) {
-    return <MobileShortView short={short} liked={liked} saved={saved} likes={likes} views={views} copied={copied} actionLoading={actionLoading} onLike={handleLike} onSave={handleSave} onShare={handleShare} />;
+    return <MobileShortView short={short} liked={liked} saved={saved} likes={likes} views={views} actionLoading={actionLoading} onLike={handleLike} onSave={handleSave}  />;
   }
 
   // Desktop (original)
@@ -285,7 +278,7 @@ export default function ShortPage() {
         .short-body p { margin: 0 0 1.2em; }
         .short-body h2 { font-family: 'DM Serif Display', serif; font-size: 1.7rem; font-weight: 400; color: #1A1A1A; margin: 1.6em 0 0.5em; }
         .short-body h3 { font-family: 'DM Serif Display', serif; font-size: 1.25rem; font-weight: 400; color: #1A1A1A; margin: 1.4em 0 0.4em; }
-        .short-body blockquote { border-left: 3px solid #D38B88; padding: 8px 20px; margin: 1.5em 0; background: rgba(211,139,136,0.06); color: #555; font-style: italic; }
+        .short-body blockquote { border-left: 3px solid #D92323; padding: 8px 20px; margin: 1.5em 0; background: rgba(217,35,35,0.06); color: #555; font-style: italic; }
         .short-body ul, .short-body ol { padding-left: 1.5em; margin: 0.5em 0 1.2em; }
         .short-body li { margin: 0.4em 0; }
         .short-body strong { font-weight: 700; }
@@ -345,18 +338,15 @@ export default function ShortPage() {
 
           <div className="short-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(short.content) }} />
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 40, paddingTop: 28, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
-            <button onClick={handleLike} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
-              <Heart size={20} fill={liked ? "currentColor" : "none"} />
+            <button onClick={() => { handleLike(); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
+              <Heart size={20} fill={liked ? "currentColor" : "none"} className={localAnimateLike ? "animate-pop" : ""} />
               Like
             </button>
-            <button onClick={handleSave} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? ACCENT : "var(--text-main)", padding: 0 }}>
-              <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
+            <button onClick={() => { handleSave(); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? ACCENT : "var(--text-main)", padding: 0 }}>
+              <Bookmark size={20} fill={saved ? "currentColor" : "none"} className={localAnimateSave ? "animate-pop" : ""} />
               Save
             </button>
-            <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", padding: 0 }}>
-              <Share size={20} />
-              Share
-            </button>
+            <ShareButton title={short.title} variant="barefoot" />
           </div>
         </div>
       </div>

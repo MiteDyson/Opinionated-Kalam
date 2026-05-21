@@ -13,6 +13,7 @@ import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { clientCache } from "@/lib/services/cache";
 import { uploadToImageKit } from "@/lib/services/imagekit";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AudioUpload from "@/components/admin/AudioUpload";
@@ -38,7 +39,7 @@ const FONT_FAMILIES = [
   { label: "Arial",            value: "Arial, sans-serif" },
   { label: "Inter",            value: "Inter, sans-serif" },
 ];
-const TEXT_COLORS      = ["#1A1A1A","#D92323","#1B2A47","#D38B88","#555555","#3a7a3e","#8a6a00","#ffffff"];
+const TEXT_COLORS      = ["#1A1A1A","#D92323","#1B2A47","#8e44ad","#555555","#3a7a3e","#8a6a00","#ffffff"];
 const HIGHLIGHT_COLORS = ["#FFF3CD","#D1ECF1","#D4EDDA","#F8D7DA","#E2E3E5","#FFE0F0","#D5D2CB"];
 
 // ── Toolbar Atom Components ──────────────────────────────────────
@@ -219,7 +220,7 @@ export default function EditArticlePage() {
   const [wordCount, setWordCount] = useState(0);
   const [imgUploading, setImgUploading] = useState(false);
   const [articleStatus, setArticleStatus] = useState("draft");
-  const [type, setType]           = useState<"article" | "short" | "podcast">("article");
+  const type = "article";
   const [fontSize, setFontSize]   = useState("18");
   const [fontFamily, setFontFamily] = useState("'Lexend', sans-serif");
   const [copiedFormat, setCopiedFormat] = useState<Record<string, any> | null>(null);
@@ -266,6 +267,10 @@ export default function EditArticlePage() {
         const res = await fetch(`/api/articles/${slug}`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Article not found");
         const data = await res.json();
+        if (data.type && data.type !== "article") {
+          router.replace(`/admin/${data.type === "podcast" ? "podcasts" : "shorts"}/${slug}/edit`);
+          return;
+        }
         setTitle(data.title ?? "");
         setExcerpt(data.excerpt ?? "");
         setCover(data.coverImage ?? "");
@@ -273,7 +278,6 @@ export default function EditArticlePage() {
         setAudioDuration(data.duration ?? "");
         setTags(data.tags ?? []);
         setArticleStatus(data.status ?? "draft");
-        setType(data.type ?? "article");
         if (data.content) editor.commands.setContent(data.content);
       } catch (e: any) {
         setError("Failed to load: " + e.message);
@@ -282,7 +286,7 @@ export default function EditArticlePage() {
       }
     };
     load();
-  }, [slug, editor]);
+  }, [slug, editor, router]);
 
   const readTime = Math.max(1, Math.ceil(wordCount / WPM));
 
@@ -372,7 +376,8 @@ export default function EditArticlePage() {
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
       setArticleStatus(newStatus);
-      router.push("/admin");
+      clientCache.invalidate("fetch:/api/articles");
+      window.location.href = "/admin";
     } finally { 
       setSaving(false); 
       setShowConfirmPublish(false);
@@ -414,7 +419,7 @@ export default function EditArticlePage() {
         .tiptap-editor h3 { font-family: inherit; font-size: 1.4em; font-weight: 400; margin: 1.2em 0 0.4em; }
         .tiptap-editor ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0 1em; }
-        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; }
+        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(217,35,35,0.06); color: ${MUTED}; font-style: italic; }
         .tiptap-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem auto; display: block; cursor: pointer; transition: outline 0.15s; }
         .tiptap-editor img.ProseMirror-selectednode { outline: 3px solid ${ACCENT}; outline-offset: 2px; }
         .tiptap-editor a { color: ${ACCENT}; text-decoration: underline; }
@@ -466,26 +471,15 @@ export default function EditArticlePage() {
 
         <div style={{ display: "flex", gap: isMobile ? 6 : 10, alignItems: "center" }}>
           {error && !isMobile && <span style={{ color: "#ff6b6b", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif", maxWidth: 200 }}>{error}</span>}
-          {!isMobile && (
-            <button
-              onClick={() => handleSave(false)}
-              disabled={saving || loadingArticle}
-              style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}
-            >
-              Save Draft
-            </button>
-          )}
-          {!isMobile && (
-            <button
-              onClick={() => handleSave()}
-              disabled={saving || loadingArticle}
-              style={{ padding: "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}
-            >
-              Save
-            </button>
-          )}
           <button
-            onClick={() => handleSave(true)}
+            onClick={() => router.push("/admin")}
+            disabled={saving || loadingArticle}
+            style={{ padding: isMobile ? "7px 14px" : "8px 18px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.2)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => handleSave()}
             disabled={saving || loadingArticle}
             style={{
               padding: isMobile ? "7px 14px" : "8px 20px",
@@ -495,7 +489,7 @@ export default function EditArticlePage() {
               fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1,
             }}
           >
-            {saving ? "Saving..." : articleStatus === "published" ? "Update" : "Publish"}
+            {saving ? "Saving..." : "Update"}
           </button>
         </div>
       </div>
@@ -507,25 +501,7 @@ export default function EditArticlePage() {
         </div>
       )}
 
-      {/* Mobile save-draft button bar */}
-      {isMobile && (
-        <div style={{ display: "flex", gap: 8, padding: "12px 12px 0" }}>
-          <button
-            onClick={() => handleSave(false)}
-            disabled={saving || loadingArticle}
-            style={{ flex: 1, padding: "10px", borderRadius: 7, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}
-          >
-            Save Draft
-          </button>
-          <button
-            onClick={() => handleSave()}
-            disabled={saving || loadingArticle}
-            style={{ flex: 1, padding: "10px", borderRadius: 7, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}
-          >
-            Save
-          </button>
-        </div>
-      )}
+      {/* Mobile save-draft button bar removed */}
 
       {/* ── Main Content ── */}
       <div style={{ maxWidth, margin: "0 auto", padding: containerPad, display: "flex", flexDirection: "column", gap: 24 }}>
@@ -541,14 +517,7 @@ export default function EditArticlePage() {
           </>
         ) : (
           <>
-            {/* Type toggle */}
-            <div style={{ display: "flex", backgroundColor: "white", borderRadius: 8, padding: 3, border: "1px solid #CFCBC3", width: "fit-content" }}>
-              {(["article", "short", "podcast"] as const).map(t => (
-                <button key={t} onClick={() => setType(t)} style={{ padding: "6px 18px", borderRadius: 6, border: "none", cursor: "pointer", backgroundColor: type === t ? ACCENT : "transparent", color: type === t ? "white" : MUTED, fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", transition: "all 0.14s" }}>
-                  {t === "article" ? "📄 Article" : t === "short" ? "⚡ Short Read" : "🎙 Podcast"}
-                </button>
-              ))}
-            </div>
+            {/* Type toggle removed */}
 
             {/* Title */}
             <input
@@ -724,18 +693,18 @@ export default function EditArticlePage() {
             {isMobile && (
               <div style={{ display: "flex", gap: 8, paddingBottom: 24 }}>
                 <button
-                  onClick={() => handleSave(false)}
+                  onClick={() => router.push("/admin")}
                   disabled={saving || loadingArticle}
                   style={{ flex: 1, padding: "12px", borderRadius: 9, border: "1px solid #CFCBC3", backgroundColor: "white", color: TEXT, cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, fontFamily: "'Inter', sans-serif" }}
                 >
-                  Save Draft
+                  Cancel
                 </button>
                 <button
-                  onClick={() => handleSave(true)}
+                  onClick={() => handleSave()}
                   disabled={saving || loadingArticle}
                   style={{ flex: 2, padding: "12px", borderRadius: 9, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.85rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1 }}
                 >
-                  {saving ? "Saving..." : articleStatus === "published" ? "Update" : "Publish"}
+                  {saving ? "Saving..." : "Update"}
                 </button>
               </div>
             )}

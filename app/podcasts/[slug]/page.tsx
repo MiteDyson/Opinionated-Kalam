@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Ear, Eye, ChevronLeft, ChevronDown, MoveLeft, MoveRight, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, Loader2, Clock } from "lucide-react";
+import { Heart, Bookmark, Share, Ear, Eye, ChevronLeft, ChevronDown, MoveLeft, MoveRight, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, Loader2, Clock, Check } from "lucide-react";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
@@ -11,12 +11,14 @@ import MobileHeader from "@/components/mobile/MobileHeader";
 import MobileSideMenu from "@/components/mobile/MobileSideMenu";
 import MobileFooter from "@/components/mobile/MobileFooter";
 import { useAuth } from "@/context/AuthContext";
+import ShareButton from "@/components/ui/ShareButton";
 import { auth } from "@/lib/auth/firebase";
 import { useMobile } from "@/hooks/useMobile";
+import { motion } from "framer-motion";
 
 const ACCENT = "#1B2A47";
 const RED = "#D92323";
-const TERRA = "#D38B88";
+const TERRA = "#D92323";
 const BLACK = "#111111";
 const BG = "#f5f0eb";
 const BORDER = "#e0d8d0";
@@ -108,7 +110,7 @@ function DesktopAudioPlayer({ src }: { src: string }) {
             <MoveLeft size={22} />
             <span style={{ fontSize: "0.58rem", fontFamily: "'Inter', sans-serif", fontWeight: 700 }}>15</span>
           </button>
-          <button onClick={togglePlay} disabled={buffering} style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: buffering ? "rgba(255,255,255,0.12)" : TERRA, border: "none", cursor: buffering ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.12s", boxShadow: buffering ? "none" : `0 4px 18px rgba(211,139,136,0.45)` }}>
+          <button onClick={togglePlay} disabled={buffering} style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: buffering ? "rgba(255,255,255,0.12)" : TERRA, border: "none", cursor: buffering ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.12s", boxShadow: buffering ? "none" : `0 4px 18px rgba(217,35,35,0.45)` }}>
             {buffering
               ? <Loader2 size={20} color="white" style={{ animation: "spin 0.8s linear infinite" }} />
               : playing
@@ -134,14 +136,16 @@ function DesktopAudioPlayer({ src }: { src: string }) {
 
 
 // ── Mobile podcast layout (New Maximized View) ───────────────────
-function MobilePodcastView({ podcast, liked, saved, likes, views, copied, actionLoading, onLike, onSave, onShare, morePodcasts }: {
+function MobilePodcastView({ podcast, liked, saved, likes, views, actionLoading, onLike, onSave, morePodcasts }: {
   podcast: Podcast; liked: boolean; saved: boolean; likes: number; views: number;
-  copied: boolean; actionLoading: boolean;
-  onLike: () => void; onSave: () => void; onShare: () => void;
+  actionLoading: boolean;
+  onLike: () => void; onSave: () => void;
   morePodcasts: Podcast[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
   const router = useRouter();
 
   const dateStr = podcast.publishedAt
@@ -405,60 +409,33 @@ function MobilePodcastView({ podcast, liked, saved, likes, views, copied, action
           </div>
         </div>
 
-        {/* Interaction Bar (Now below Audio Controls) */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 40, borderTop: `1px solid ${BORDER}`, paddingTop: 24 }}>
-          <div style={{ display: "flex", gap: 8, flex: "1 1 auto", justifyContent: "flex-start" }}>
-            <button
-              onClick={onLike}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
-                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: liked ? RED : BLACK,
-                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
-              }}
-            >
-              <Heart size={14} fill={liked ? RED : "none"} />
-              Like
-            </button>
-            <button
-              onClick={onShare}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
-                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: BLACK,
-                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
-              }}
-            >
-              <Share size={14} />
-              Share
-            </button>
-          </div>
-          <div style={{ display: "flex", gap: 8, flex: "1 1 auto", justifyContent: "flex-end" }}>
-            <button
-              onClick={onSave}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px",
-                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: saved ? RED : BLACK,
-                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
-              }}
-            >
-              <Bookmark size={14} fill={saved ? RED : "none"} />
-              Save
-            </button>
-            <button
-              onClick={() => router.push("/")}
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 10px",
-                borderRadius: 8, border: `1px solid ${BORDER}`, background: "white",
-                fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600, color: BLACK,
-                cursor: "pointer", flex: 1, minWidth: 0, justifyContent: "center"
-              }}
-            >
-              <Minimize2 size={15} />
-              Min
-            </button>
-          </div>
+        {/* Interaction Bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 40, borderTop: `1px solid ${BORDER}`, paddingTop: 24, flexWrap: "wrap" }}>
+          <motion.button
+            whileHover={{ opacity: 0.7 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            onClick={() => { onLike(); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", fontWeight: 600, color: liked ? RED : BLACK, padding: 0 }}
+          >
+            <Heart size={18} fill={liked ? "currentColor" : "none"} className={localAnimateLike ? "animate-pop" : ""} />
+            {likes.toLocaleString()} {likes === 1 ? "Like" : "Likes"}
+          </motion.button>
+
+          <ShareButton title={podcast.title} variant="barefoot" />
+
+          <motion.button
+            whileHover={{ opacity: 0.7 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            onClick={() => { onSave(); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", fontWeight: 600, color: saved ? ACCENT : BLACK, padding: 0 }}
+          >
+            <Bookmark size={18} fill={saved ? "currentColor" : "none"} className={localAnimateSave ? "animate-pop" : ""} />
+            {saved ? "Saved" : "Save"}
+          </motion.button>
+
+
         </div>
 
         {/* Listen to more Podcasts */}
@@ -505,8 +482,9 @@ export default function PodcastPage() {
   const [saved, setSaved] = useState(false);
   const [likes, setLikes] = useState(0);
   const [views, setViews] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
   const viewTracked = useRef(false);
 
   useEffect(() => {
@@ -577,15 +555,7 @@ export default function PodcastPage() {
     } catch { setSaved(was); } finally { setActionLoading(false); }
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) { try { await navigator.share({ title: podcast?.title, url }); return; } catch { /* fall */ } }
-    try { await navigator.clipboard.writeText(url); } catch {
-      const el = document.createElement("textarea"); el.value = url;
-      document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
-    }
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  };
+  // Share is now handled internally by ShareButton
 
   if (notFound) return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
@@ -623,11 +593,9 @@ export default function PodcastPage() {
       saved={saved}
       likes={likes}
       views={views}
-      copied={copied}
       actionLoading={actionLoading}
       onLike={handleLike}
       onSave={handleSave}
-      onShare={handleShare}
       morePodcasts={morePodcasts}
     />;
   }
@@ -692,18 +660,15 @@ export default function PodcastPage() {
         {podcast.audioUrl ? <DesktopAudioPlayer src={podcast.audioUrl} /> : <div style={{ padding: "32px 24px", borderRadius: 16, backgroundColor: "#e8e5e0", textAlign: "center", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", color: "var(--text-muted)" }}>Audio not available yet.</div>}
         {/* Interaction Bar — barefoot style */}
         <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
-          <button onClick={handleLike} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
-            <Heart size={20} fill={liked ? "currentColor" : "none"} />
+          <button onClick={() => { handleLike(); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}>
+            <Heart size={20} fill={liked ? "currentColor" : "none"} className={localAnimateLike ? "animate-pop" : ""} />
             Like
           </button>
-          <button onClick={handleSave} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? ACCENT : "var(--text-main)", padding: 0 }}>
-            <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
+          <button onClick={() => { handleSave(); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }} disabled={actionLoading} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? ACCENT : "var(--text-main)", padding: 0 }}>
+            <Bookmark size={20} fill={saved ? "currentColor" : "none"} className={localAnimateSave ? "animate-pop" : ""} />
             Save
           </button>
-          <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", padding: 0 }}>
-            <Share size={20} />
-            Share
-          </button>
+          <ShareButton title={podcast.title} variant="barefoot" />
         </div>
         {podcast.excerpt && <div style={{ marginTop: 36 }}><h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.3rem", color: "var(--text-main)", marginBottom: 14, fontWeight: 400 }}>Episode Notes</h2><p style={{ fontFamily: "'Radley', serif", fontSize: "1rem", lineHeight: 1.75, color: "var(--text-muted)" }}>{podcast.excerpt}</p></div>}
       </div>

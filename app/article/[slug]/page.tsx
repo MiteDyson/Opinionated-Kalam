@@ -2,12 +2,14 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, Bookmark, Share, Eye, MoveLeft, Play, Pause, Loader2, BookOpen } from "lucide-react";
+import { Heart, Bookmark, Share, Eye, MoveLeft, Play, Pause, Loader2, BookOpen, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import DOMPurify from "isomorphic-dompurify";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/auth/firebase";
 import { useMobile } from "@/hooks/useMobile";
 import Header from "@/components/layout/Header";
+import ShareButton from "@/components/ui/ShareButton";
 import SideMenu from "@/components/layout/SideMenu";
 import Footer from "@/components/layout/Footer";
 import MobileHeader from "@/components/mobile/MobileHeader";
@@ -16,7 +18,7 @@ import MobileFooter from "@/components/mobile/MobileFooter";
 import AuthPromptPopup from "@/components/ui/AuthPromptPopup";
 
 const ACCENT = "#1B2A47";
-const RED = "#c0392b";
+const RED = "#D92323";
 const BLACK = "#111111";
 const BG = "#f5f0eb";
 const BORDER = "#e0d8d0";
@@ -58,8 +60,8 @@ function MobileTag({ label }: { label: string }) {
     <span style={{
       display: "inline-block", padding: "2px 8px", borderRadius: 999,
       fontFamily: "'Inter', sans-serif", fontSize: "0.55rem", fontWeight: 700,
-      color: "#c0392b", textTransform: "uppercase", letterSpacing: "0.05em",
-      backgroundColor: "rgba(192,57,43,0.1)", whiteSpace: "nowrap",
+      color: "#D92323", textTransform: "uppercase", letterSpacing: "0.05em",
+      backgroundColor: "rgba(217,35,35,0.1)", whiteSpace: "nowrap",
     }}>
       {label}
     </span>
@@ -148,25 +150,19 @@ function ListenPlayer({ src, readTime, compact = false }: { src: string; readTim
 }
 
 // ── Mobile article body ────────────────────────────────────────
-function MobileArticleView({ article, liked, saved, likes, views, copied, actionLoading, onLike, onSave, onShare }: {
+function MobileArticleView({ article, liked, saved, likes, views, actionLoading, onLike, onSave }: {
   article: Article; liked: boolean; saved: boolean; likes: number; views: number;
-  copied: boolean; actionLoading: boolean;
-  onLike: () => void; onSave: () => void; onShare: () => void;
+  actionLoading: boolean;
+  onLike: () => void; onSave: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
   const router = useRouter();
 
   const dateStr = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
     : "";
-
-  const actionBtn = (active: boolean): React.CSSProperties => ({
-    display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
-    cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", fontWeight: 600,
-    border: `1.5px solid ${active ? BLACK : BORDER}`,
-    backgroundColor: active ? BLACK : "transparent",
-    color: active ? "white" : BLACK, transition: "all 0.15s",
-  });
 
   return (
     <div style={{ backgroundColor: BG, minHeight: "100vh" }}>
@@ -175,7 +171,7 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
         .art-body-m p { margin: 0 0 1.1em; }
         .art-body-m h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; color: #1A1A1A; margin: 1.5em 0 0.5em; }
         .art-body-m h3 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; font-weight: 400; color: #1A1A1A; margin: 1.3em 0 0.4em; }
-        .art-body-m blockquote { border-left: 3px solid #D38B88; padding: 8px 16px; margin: 1.4em 0; background: rgba(211,139,136,0.06); color: #555; font-style: italic; }
+        .art-body-m blockquote { border-left: 3px solid #D92323; padding: 8px 16px; margin: 1.4em 0; background: rgba(217,35,35,0.06); color: #555; font-style: italic; }
         .art-body-m img { max-width: 100%; border-radius: 6px; margin: 16px 0; display: block; }
         .art-body-m a { color: ${ACCENT}; }
         .art-body-m ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0 1.1em; }
@@ -251,19 +247,32 @@ function MobileArticleView({ article, liked, saved, likes, views, copied, action
         <div className="art-body-m" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
 
         {/* Interactions */}
-        <div style={{ display: "flex", gap: 10, marginTop: 28, flexWrap: "wrap" }}>
-          <button style={actionBtn(liked)} onClick={onLike} disabled={actionLoading}>
-            <Heart size={14} fill={liked ? "currentColor" : "none"} />
-            {likes.toLocaleString()} {likes === 1 ? 'Like' : 'Likes'}
-          </button>
-          <button style={actionBtn(saved)} onClick={onSave} disabled={actionLoading}>
-            <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 28, paddingTop: 24, borderTop: `1px solid ${BORDER}`, flexWrap: "wrap" }}>
+          <motion.button
+            whileHover={{ opacity: 0.7 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            onClick={() => { onLike(); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }}
+            disabled={actionLoading}
+            style={{ background: "none", border: "none", cursor: actionLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", fontWeight: 600, color: liked ? RED : BLACK, padding: 0, opacity: actionLoading ? 0.5 : 1 }}
+          >
+            <Heart size={18} fill={liked ? "currentColor" : "none"} className={localAnimateLike ? "animate-pop" : ""} />
+            {likes.toLocaleString()} {likes === 1 ? "Like" : "Likes"}
+          </motion.button>
+
+          <motion.button
+            whileHover={{ opacity: 0.7 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            onClick={() => { onSave(); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }}
+            disabled={actionLoading}
+            style={{ background: "none", border: "none", cursor: actionLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.88rem", fontWeight: 600, color: saved ? ACCENT : BLACK, padding: 0, opacity: actionLoading ? 0.5 : 1 }}
+          >
+            <Bookmark size={18} fill={saved ? "currentColor" : "none"} className={localAnimateSave ? "animate-pop" : ""} />
             {saved ? "Saved" : "Save"}
-          </button>
-          <button style={actionBtn(copied)} onClick={onShare}>
-            <Share size={14} />
-            {copied ? "Copied!" : "Share"}
-          </button>
+          </motion.button>
+
+          <ShareButton title={article.title} variant="barefoot" />
         </div>
       </div>
 
@@ -287,8 +296,9 @@ export default function ArticlePage() {
   const [saved, setSaved] = useState(false);
   const [likes, setLikes] = useState(0);
   const [views, setViews] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
   const [authPopup, setAuthPopup] = useState<{ open: boolean; type: "like" | "save" | "general" }>({ 
     open: false, 
     type: "general" 
@@ -361,15 +371,7 @@ export default function ArticlePage() {
     } catch { setSaved(was); } finally { setActionLoading(false); }
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) { try { await navigator.share({ title: article?.title, url }); return; } catch { /* fall */ } }
-    try { await navigator.clipboard.writeText(url); } catch {
-      const el = document.createElement("textarea"); el.value = url;
-      document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
-    }
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  };
+  // Share is now handled internally by ShareButton
 
   if (loading) return <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ fontFamily: "'Inter', sans-serif", color: "var(--text-muted)", fontSize: "0.9rem" }}>Loading…</div></div>;
 
@@ -390,7 +392,7 @@ export default function ArticlePage() {
 
   // ── Mobile ─────────────────────────────────────────────────
   if (isMobile) {
-    return <MobileArticleView article={article} liked={liked} saved={saved} likes={likes} views={views} copied={copied} actionLoading={actionLoading} onLike={handleLike} onSave={handleSave} onShare={handleShare} />;
+    return <MobileArticleView article={article} liked={liked} saved={saved} likes={likes} views={views} actionLoading={actionLoading} onLike={handleLike} onSave={handleSave} />;
   }
 
   // ── Desktop (original layout) ──────────────────────────────
@@ -410,7 +412,7 @@ export default function ArticlePage() {
         .article-body p { margin: 0 0 1.2em; }
         .article-body h2 { font-family: 'DM Serif Display', serif; font-size: 1.7rem; font-weight: 400; color: #1A1A1A; margin: 1.6em 0 0.5em; }
         .article-body h3 { font-family: 'DM Serif Display', serif; font-size: 1.25rem; font-weight: 400; color: #1A1A1A; margin: 1.4em 0 0.4em; }
-        .article-body blockquote { border-left: 3px solid #D38B88; padding: 8px 20px; margin: 1.5em 0; background: rgba(211,139,136,0.06); color: #555; font-style: italic; border-radius: 0 6px 6px 0; }
+        .article-body blockquote { border-left: 3px solid #D92323; padding: 8px 20px; margin: 1.5em 0; background: rgba(217,35,35,0.06); color: #555; font-style: italic; border-radius: 0 6px 6px 0; }
         .article-body img { max-width: 100%; border-radius: 8px; margin: 20px 0; display: block; }
         .article-body a { color: ${ACCENT}; }
         .article-body ul, .article-body ol { padding-left: 1.5em; margin: 0.5em 0 1.2em; }
@@ -479,28 +481,22 @@ export default function ArticlePage() {
           {/* Interaction Bar — barefoot style */}
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 48, paddingTop: 32, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
             <button
-              onClick={handleLike}
+              onClick={() => { handleLike(); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }}
               disabled={actionLoading}
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: liked ? RED : "var(--text-main)", padding: 0 }}
             >
-              <Heart size={20} fill={liked ? "currentColor" : "none"} />
+              <Heart size={20} fill={liked ? "currentColor" : "none"} className={localAnimateLike ? "animate-pop" : ""} />
               Like
             </button>
             <button
-              onClick={handleSave}
+              onClick={() => { handleSave(); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }}
               disabled={actionLoading}
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: saved ? "#1B2A47" : "var(--text-main)", padding: 0 }}
             >
-              <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
+              <Bookmark size={20} fill={saved ? "currentColor" : "none"} className={localAnimateSave ? "animate-pop" : ""} />
               Save
             </button>
-            <button
-              onClick={handleShare}
-              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", padding: 0 }}
-            >
-              <Share size={20} />
-              Share
-            </button>
+            <ShareButton title={article.title} variant="barefoot" />
           </div>
         </div>
       </div>

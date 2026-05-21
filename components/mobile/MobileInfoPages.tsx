@@ -50,7 +50,7 @@ export function MobileAboutView({ onTabChange }: { onTabChange: (t: string) => v
         </p>
 
         <h2 className="font-sans text-[1.35rem] font-normal text-[#111111] mt-[2em] mb-[0.8em] tracking-[-0.02em] leading-[1.3]">
-          When & by Whom was<br /><span className="font-serif font-normal">Opinionated Kalam</span><br />established?
+          When & by Whom was<br className="md:hidden" /> <span className="font-serif font-normal">Opinionated Kalam</span> <br className="md:hidden" />established?
         </h2>
         <p className="font-['Radley',_serif] text-[1.1rem] leading-[1.6] text-[#1a1a1a]">
           Opinionated Kalam got established in 2026 by Vineet Mestry, a Journalism student with a drive and plenty of passion to make it better for the audience.

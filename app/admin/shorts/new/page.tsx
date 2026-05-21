@@ -11,7 +11,9 @@ import { auth } from "@/lib/auth/firebase";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TagSelector from "@/components/admin/TagSelector";
 import { useAuth } from "@/context/AuthContext";
+import { clientCache } from "@/lib/services/cache";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { Zap } from "lucide-react";
 
 const ACCENT = "#1B2A47";
 const BG     = "#D5D2CB";
@@ -86,12 +88,12 @@ export default function NewShortPage() {
 
   const readTime = Math.max(1, Math.ceil(wordCount / WPM));
 
-  const handleSave = async (publishNow = false) => {
+  const handleSave = async () => {
     if (!title.trim()) { setError("Title is required."); return; }
     const content = editor?.getHTML() ?? "";
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
 
-    if (publishNow && !showConfirmPublish) {
+    if (!showConfirmPublish) {
       setShowConfirmPublish(true);
       return;
     }
@@ -103,10 +105,11 @@ export default function NewShortPage() {
       const res = await fetch("/api/articles", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, excerpt, content, coverImage, type: "short", tags, status: publishNow ? "published" : "draft", author: userName || user?.displayName || "Unknown Author", readTime }),
+        body: JSON.stringify({ title, excerpt, content, coverImage, type: "short", tags, status: "published", author: userName || user?.displayName || "Unknown Author", readTime }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
-      router.push("/admin");
+      clientCache.invalidate("fetch:/api/articles");
+      window.location.href = "/admin";
     } finally { 
       setSaving(false); 
       setShowConfirmPublish(false);
@@ -122,7 +125,7 @@ export default function NewShortPage() {
         .tiptap-editor h3 { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; margin: 1em 0 0.4em; }
         .tiptap-editor ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0 1em; }
-        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.2em 0; padding: 8px 16px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; }
+        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.2em 0; padding: 8px 16px; background: rgba(217,35,35,0.06); color: ${MUTED}; font-style: italic; }
         .tiptap-editor strong { font-weight: 700; }
         .tiptap-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.2rem auto; display: block; cursor: pointer; transition: outline 0.15s; }
         .tiptap-editor img.ProseMirror-selectednode { outline: 3px solid ${ACCENT}; outline-offset: 2px; }
@@ -137,12 +140,14 @@ export default function NewShortPage() {
             Back
           </button>
           <span style={{ color: "rgba(255,255,255,0.12)", flexShrink: 0 }}>|</span>
-          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>⚡ New Short Read</span>
+          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1rem", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "flex", alignItems: "center", gap: 6 }}>
+            <Zap size={14} style={{ color: "white" }} /> New Short Read
+          </span>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
           {error && <span style={{ color: "#ff6b6b", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{error}</span>}
-          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "0 10px", height: 30, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>Draft</button>
-          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "0 12px", height: 30, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0 }}>
+          <button onClick={() => router.push("/admin")} disabled={saving} style={{ padding: "0 10px", height: 30, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>Cancel</button>
+          <button onClick={() => handleSave()} disabled={saving} style={{ padding: "0 12px", height: 30, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0 }}>
             {saving ? "…" : "Publish"}
           </button>
         </div>
@@ -151,7 +156,7 @@ export default function NewShortPage() {
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: 22 }}>
 
         {/* Tip banner */}
-        <div style={{ padding: "10px 14px", backgroundColor: "rgba(184,92,88,0.08)", borderRadius: 8, border: "1px solid rgba(184,92,88,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: "#b85c58" }}>
+        <div style={{ padding: "10px 14px", backgroundColor: "rgba(217,35,35,0.08)", borderRadius: 8, border: "1px solid rgba(217,35,35,0.2)", fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", color: "#D92323" }}>
           ⚡ Short reads are under 500 words — quick facts, timelines, or micro-explainers
         </div>
 
@@ -211,7 +216,7 @@ export default function NewShortPage() {
       <ConfirmModal
         isOpen={showConfirmPublish}
         onClose={() => setShowConfirmPublish(false)}
-        onConfirm={() => handleSave(true)}
+        onConfirm={() => handleSave()}
         title="Publish Short Read"
         message="Ready to publish this short read? It will be live instantly."
         confirmText="Publish"

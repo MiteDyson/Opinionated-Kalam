@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { verifyAdmin } from "@/lib/auth/verifyAdmin";
 import { updateArticleSchema, validateBody } from "@/lib/security/validators";
 import { sanitizeHtml } from "@/lib/security/sanitize";
+import { sendArticleNotification } from "@/lib/services/email";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -90,11 +91,22 @@ export async function PATCH(
 
     await connectDB();
     const Article = getArticleModel();
+
+    // Fetch original article to detect draft -> published transition
+    const originalArticle = await Article.findOne({ slug: String(slug) } as any).lean() as any;
+
     const article = await Article.findOneAndUpdate(
       { slug: String(slug) } as any,
       { ...body, updatedAt: new Date() },
       { new: true } as any
-    );
+    ).lean() as any;
+
+    if (article && originalArticle && originalArticle.status === "draft" && article.status === "published") {
+      sendArticleNotification(article).catch(err => 
+        console.error("[PATCH /api/articles/[slug]] Notification failed:", err.message)
+      );
+    }
+
     revalidatePath("/");
     return NextResponse.json(article);
   } catch (err: any) {

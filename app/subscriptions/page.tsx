@@ -8,7 +8,7 @@ import MobileFooter from "@/components/mobile/MobileFooter";
 import Header from "@/components/layout/Header";
 import SideMenu from "@/components/layout/SideMenu";
 import { useMobile } from "@/hooks/useMobile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MoveLeft, Bell, Mail, TrendingUp, Filter, Check, ChevronDown, ChevronUp, UserPlus, LogIn, Loader2, BookOpen, Mic, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 const BLACK = "#111111";
 const BG = "#f5f0eb";
 const MUTED = "#666666";
-const TERRACOTTA = "#d38b88";
+const TERRACOTTA = "#D92323";
 
 const BEATS = [
   "Automotive", "Business", "Environment", "Geo Politics", 
@@ -272,6 +272,66 @@ export default function SubscriptionsPage() {
   const [beatSubs, setBeatSubs] = useState<Record<string, { enabled: boolean, frequency: Frequency }>>(
     BEATS.reduce((acc, beat) => ({ ...acc, [beat]: { enabled: false, frequency: "Weekly" } }), {})
   );
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/subscriptions", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.formats) {
+            setFormatSubs({
+              Articles: data.formats.Articles || { enabled: false, frequency: "Weekly" },
+              Podcasts: data.formats.Podcasts || { enabled: false, frequency: "Weekly" },
+              "Short Reads": data.formats["Short Reads"] || { enabled: false, frequency: "Weekly" },
+            });
+          }
+          
+          setSubs([
+            { 
+              id: "all", 
+              title: "Any Post", 
+              description: "Get notified every time a new piece is published across all formats.", 
+              enabled: data.all?.enabled ?? true, 
+              frequency: data.all?.frequency ?? "Daily" 
+            },
+            { 
+              id: "formats", 
+              title: "Article / Podcast / Short Reads", 
+              description: "Specific updates for our main editorial content formats.", 
+              enabled: data.formats ? (data.formats.Articles?.enabled || data.formats.Podcasts?.enabled || data.formats["Short Reads"]?.enabled) : false, 
+              frequency: "Weekly" 
+            },
+            { 
+              id: "trending", 
+              title: "Trending Posts", 
+              description: "", 
+              enabled: data.trending?.enabled ?? true, 
+              frequency: data.trending?.frequency ?? "Daily" 
+            },
+          ]);
+
+          if (data.beats) {
+            const newBeats: Record<string, { enabled: boolean, frequency: Frequency }> = {};
+            BEATS.forEach(beat => {
+              newBeats[beat] = data.beats[beat] || { enabled: false, frequency: "Weekly" };
+            });
+            setBeatSubs(newBeats);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch notification preferences:", err);
+      }
+    };
+    
+    fetchPreferences();
+  }, [user]);
 
   const toggleSub = (id: string) => {
     setSubs(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
@@ -571,6 +631,7 @@ export default function SubscriptionsPage() {
             <motion.div variants={itemVariants} style={{ marginTop: "48px", textAlign: "center" }}>
               <button 
                 className="btn-smooth"
+                disabled={isSaving}
                 style={{
                   backgroundColor: BLACK,
                   color: "white",
@@ -579,33 +640,89 @@ export default function SubscriptionsPage() {
                   border: "none",
                   fontSize: "1rem",
                   fontWeight: 600,
-                  cursor: "pointer",
-                  width: isMobile ? "100%" : "auto"
+                  cursor: isSaving ? "not-allowed" : "pointer",
+                  width: isMobile ? "100%" : "auto",
+                  opacity: isSaving ? 0.7 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  margin: "0 auto"
                 }}
-                onClick={() => {
-                  const activeFormats = Object.entries(formatSubs)
-                    .filter(([_, data]) => data.enabled)
-                    .map(([name, data]) => `${name} (${data.frequency})`);
+                onClick={async () => {
+                  if (!user) return;
                   
-                  const otherSubs = subs
-                    .filter(s => s.id !== "formats" && s.enabled)
-                    .map(s => `${s.title} (${s.frequency})`);
+                  setIsSaving(true);
+                  try {
+                    const token = await user.getIdToken();
                     
-                  const allActive = [...otherSubs, ...activeFormats];
-                  
-                  let message = "";
-                  if (allActive.length === 0) {
-                    message = "All email subscriptions disabled.";
-                  } else {
-                    message = `Preferences saved! Subscribed to: ${allActive.join(", ")}`;
+                    const allSub = subs.find(s => s.id === "all");
+                    const trendingSub = subs.find(s => s.id === "trending");
+                    
+                    const payload = {
+                      all: allSub ? { enabled: allSub.enabled, frequency: allSub.frequency } : { enabled: true, frequency: "Daily" },
+                      trending: trendingSub ? { enabled: trendingSub.enabled, frequency: trendingSub.frequency } : { enabled: true, frequency: "Daily" },
+                      formats: formatSubs,
+                      beats: beatSubs
+                    };
+                    
+                    const res = await fetch("/api/subscriptions", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                      },
+                      body: JSON.stringify(payload)
+                    });
+                    
+                    if (res.ok) {
+                      const activeFormats = Object.entries(formatSubs)
+                        .filter(([_, data]) => data.enabled)
+                        .map(([name, data]) => `${name} (${data.frequency})`);
+                      
+                      const otherSubs = subs
+                        .filter(s => s.id !== "formats" && s.enabled)
+                        .map(s => `${s.title} (${s.frequency})`);
+                        
+                      const allActive = [...otherSubs, ...activeFormats];
+                      
+                      let message = "";
+                      if (allActive.length === 0) {
+                        message = "All email subscriptions disabled.";
+                      } else {
+                        message = "Preferences saved successfully!";
+                      }
+                      
+                      setToastMessage(message);
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 5000);
+                    } else {
+                      throw new Error("Failed to save preferences");
+                    }
+                  } catch (err) {
+                    console.error("Save error:", err);
+                    setToastMessage("Failed to save preferences. Please try again.");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 5000);
+                  } finally {
+                    setIsSaving(false);
                   }
-                  
-                  setToastMessage(message);
-                  setShowToast(true);
-                  setTimeout(() => setShowToast(false), 5000);
                 }}
               >
-                Save Preferences
+                {isSaving ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                      style={{ display: "inline-flex" }}
+                    >
+                      <Loader2 size={16} />
+                    </motion.div>
+                    <span>Saving...</span>
+                  </div>
+                ) : (
+                  "Save Preferences"
+                )}
               </button>
             </motion.div>
 

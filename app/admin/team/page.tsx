@@ -10,7 +10,7 @@ import { toast } from "react-hot-toast";
 
 const ACCENT = "#1B2A47";
 const BG = "#D5D2CB";
-const TERRA = "#D38B88";
+const TERRA = "#D92323";
 const TEXT = "#1A1A1A";
 const MUTED = "#555555";
 const MAIN_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
@@ -176,7 +176,7 @@ export default function AdminTeamPage() {
   };
 
   const roleBadge = (role: string, isMain?: boolean) => {
-    if (isMain) return { bg: "rgba(211,139,136,0.2)", color: "#b85c58", label: "Owner" };
+    if (isMain) return { bg: "rgba(217,35,35,0.12)", color: "#D92323", label: "Owner" };
     if (role === "admin") return { bg: "rgba(27,42,71,0.12)", color: ACCENT, label: "Author" };
     return { bg: "rgba(76,140,80,0.12)", color: "#3a7a3e", label: "Admin" };
   };
@@ -297,15 +297,15 @@ export default function AdminTeamPage() {
 
           {/* Main admin (always shown) */}
           <div style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #CFCBC3", marginBottom: 10, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "rgba(211,139,136,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b85c58" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "rgba(217,35,35,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D92323" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: "0.9rem", color: TEXT }}>{userName || "Vineet Mestry"}</div>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: MUTED, marginTop: 2 }}>{MAIN_ADMIN_EMAIL}</div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", padding: "3px 8px", borderRadius: 4, backgroundColor: "rgba(211,139,136,0.2)", color: "#b85c58" }}>Owner</span>
+              <span style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Inter', sans-serif", padding: "3px 8px", borderRadius: 4, backgroundColor: "rgba(217,35,35,0.12)", color: "#D92323" }}>Owner</span>
             </div>
           </div>
 

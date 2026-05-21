@@ -13,6 +13,7 @@ import {
 import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { MoveLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const MAX_USERNAME = 15;
 
@@ -74,6 +75,12 @@ function PasswordStrength({ password }: { password: string }) {
 export default function LoginPage() {
   const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAuth();
+
+  const formVariants = {
+    initial: { opacity: 0, x: 12 },
+    animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const } },
+    exit: { opacity: 0, x: -12, transition: { duration: 0.2, ease: [0.76, 0, 0.24, 1] as const } }
+  };
 
   const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
@@ -219,120 +226,341 @@ export default function LoginPage() {
     border: "1px solid var(--border)", backgroundColor: "white",
     fontSize: "0.9rem", fontFamily: "'Inter', sans-serif",
     color: "var(--text-main)", outline: "none", boxSizing: "border-box",
-    transition: "border-color 0.2s",
+    transition: "border-color 0.2s, box-shadow 0.2s",
   };
-  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = "#1B2A47");
-  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => (e.target.style.borderColor = "var(--border)");
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "#1B2A47";
+    e.target.style.boxShadow = "0 0 0 3px rgba(27,42,71,0.08)";
+  };
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "var(--border)";
+    e.target.style.boxShadow = "none";
+  };
 
   const usernameChars = username.trim().length;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-      <div style={{ width: "100%", maxWidth: 420, backgroundColor: "white", borderRadius: 16, padding: "40px 36px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)" }}>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 90, damping: 14 }}
+        style={{ width: "100%", maxWidth: 420, backgroundColor: "white", borderRadius: 16, padding: "40px 36px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", overflow: "hidden" }}
+      >
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.8rem", color: "var(--text-main)", lineHeight: 1 }}>
             Opinionated Kalam
           </div>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "var(--text-muted)", marginTop: 8, marginBottom: 0 }}>
-            {mode === "login" ? "Sign in to your account"
-              : mode === "register" ? "Create a free account"
-                : mode === "set-username" ? "Choose your username"
-                  : "Reset your password"}
-          </p>
+          <div style={{ overflow: "hidden", height: 20, marginTop: 8 }}>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={mode}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
+                style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}
+              >
+                {mode === "login" ? "Sign in to your account"
+                  : mode === "register" ? "Create a free account"
+                    : mode === "set-username" ? "Choose your username"
+                      : "Reset your password"}
+              </motion.p>
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* ══ SET USERNAME — old accounts only ══════════════════ */}
-        {mode === "set-username" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ padding: "12px 14px", backgroundColor: "rgba(27,42,71,0.06)", borderRadius: 8, fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "#1B2A47", lineHeight: 1.6, border: "1px solid rgba(27,42,71,0.12)" }}>
-              You're signed in but haven't set a username yet. Pick one to complete your profile.
-            </div>
-
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)" }}>Username</label>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                  {usernameChars}/{MAX_USERNAME}
-                </span>
-              </div>
-              <input
-                type="text"
-                placeholder={`Up to ${MAX_USERNAME} characters`}
-                value={username}
-                onChange={(e) => setUsername(e.target.value.slice(0, MAX_USERNAME))}
-                onKeyDown={(e) => e.key === "Enter" && handleSetUsername()}
-                maxLength={MAX_USERNAME}
-                autoFocus
-                style={inputStyle}
-                onFocus={onFocus}
-                onBlur={onBlur}
-              />
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 5 }}>
-                Letters, numbers, and underscores only.
-              </p>
-            </div>
-
-            {error && <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>}
-
-            <button onClick={handleSetUsername} disabled={loading || !username.trim()} style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading || !username.trim() ? "not-allowed" : "pointer", opacity: loading || !username.trim() ? 0.6 : 1 }}>
-              {loading ? "Saving…" : "Set Username"}
-            </button>
-          </div>
-        )}
-
-        {/* ══ FORGOT PASSWORD ════════════════════════════════════ */}
-        {mode === "forgot" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", margin: 0, lineHeight: 1.6 }}>
-              Enter your email and we'll send you a link to reset your password.
-            </p>
-            <input type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleForgotPassword()} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
-
-            {error && <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>}
-            {success && (
-              <div style={{ padding: "10px 14px", borderRadius: 8, backgroundColor: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
-                <p style={{ fontSize: "0.82rem", color: "#3a9e40", fontFamily: "'Inter', sans-serif", margin: 0 }}>{success}</p>
-              </div>
-            )}
-
-            <button onClick={handleForgotPassword} disabled={loading || !email.trim()} style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading || !email.trim() ? "not-allowed" : "pointer", opacity: loading || !email.trim() ? 0.6 : 1 }}>
-              {loading ? "Sending…" : "Send Reset Link"}
-            </button>
-            <button onClick={() => switchMode("login")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: "6px", justifyContent: "center" }}>
-              <MoveLeft size={16} /> Back to Sign in
-            </button>
-          </div>
-        )}
-
-        {/* ══ LOGIN / REGISTER ═══════════════════════════════════ */}
-        {(mode === "login" || mode === "register") && (
-          <>
-            {/* Google */}
-            <button onClick={handleGoogle} disabled={loading} style={{ width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid var(--border)", backgroundColor: "white", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: "0.9rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", cursor: "pointer", marginBottom: 20 }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = "white")}
+        <AnimatePresence mode="wait">
+          {/* ══ SET USERNAME — old accounts only ══════════════════ */}
+          {mode === "set-username" && (
+            <motion.div
+              key="set-username"
+              variants={formVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ display: "flex", flexDirection: "column", gap: 14 }}
             >
-              <svg width="18" height="18" viewBox="0 0 48 48">
-                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
-                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
-                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
-                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
-              </svg>
-              Continue with Google
-            </button>
+              <div style={{ padding: "12px 14px", backgroundColor: "rgba(27,42,71,0.06)", borderRadius: 8, fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: "#1B2A47", lineHeight: 1.6, border: "1px solid rgba(27,42,71,0.12)" }}>
+                You're signed in but haven't set a username yet. Pick one to complete your profile.
+              </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-              <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>or</span>
-              <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
-            </div>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)" }}>Username</label>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                    {usernameChars}/{MAX_USERNAME}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  placeholder={`Up to ${MAX_USERNAME} characters`}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.slice(0, MAX_USERNAME))}
+                  onKeyDown={(e) => e.key === "Enter" && handleSetUsername()}
+                  maxLength={MAX_USERNAME}
+                  autoFocus
+                  style={inputStyle}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 5 }}>
+                  Letters, numbers, and underscores only.
+                </p>
+              </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    style={{ overflow: "hidden" }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {/* Username — register only, filled once on sign-up */}
-              {mode === "register" && (
+              <motion.button
+                onClick={handleSetUsername}
+                disabled={loading || !username.trim()}
+                whileHover={loading || !username.trim() ? {} : { scale: 1.015 }}
+                whileTap={loading || !username.trim() ? {} : { scale: 0.98 }}
+                style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading || !username.trim() ? "not-allowed" : "pointer", opacity: loading || !username.trim() ? 0.6 : 1 }}
+              >
+                {loading ? "Saving…" : "Set Username"}
+              </motion.button>
+            </motion.div>
+          )}
+
+          {/* ══ FORGOT PASSWORD ════════════════════════════════════ */}
+          {mode === "forgot" && (
+            <motion.div
+              key="forgot"
+              variants={formVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ display: "flex", flexDirection: "column", gap: 14 }}
+            >
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif", margin: 0, lineHeight: 1.6 }}>
+                Enter your email and we'll send you a link to reset your password.
+              </p>
+              <input type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleForgotPassword()} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    style={{ overflow: "hidden" }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {success && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    style={{ overflow: "hidden" }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div style={{ padding: "10px 14px", borderRadius: 8, backgroundColor: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.2)" }}>
+                      <p style={{ fontSize: "0.82rem", color: "#3a9e40", fontFamily: "'Inter', sans-serif", margin: 0 }}>{success}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <motion.button
+                onClick={handleForgotPassword}
+                disabled={loading || !email.trim()}
+                whileHover={loading || !email.trim() ? {} : { scale: 1.015 }}
+                whileTap={loading || !email.trim() ? {} : { scale: 0.98 }}
+                style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading || !email.trim() ? "not-allowed" : "pointer", opacity: loading || !email.trim() ? 0.6 : 1 }}
+              >
+                {loading ? "Sending…" : "Send Reset Link"}
+              </motion.button>
+              <motion.button
+                onClick={() => switchMode("login")}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: "6px", justifyContent: "center" }}
+              >
+                <MoveLeft size={16} /> Back to Sign in
+              </motion.button>
+            </motion.div>
+          )}
+
+          {/* ══ LOGIN ═══════════════════════════════════════════════ */}
+          {mode === "login" && (
+            <motion.div
+              key="login"
+              variants={formVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ display: "flex", flexDirection: "column" }}
+            >
+              {/* Google */}
+              <motion.button
+                onClick={handleGoogle}
+                disabled={loading}
+                whileHover={{ scale: 1.01, backgroundColor: "#f9f9f9" }}
+                whileTap={{ scale: 0.99 }}
+                style={{ width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid var(--border)", backgroundColor: "white", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: "0.9rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", cursor: "pointer", marginBottom: 20 }}
+              >
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                  <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+                  <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                  <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+                  <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+                </svg>
+                Continue with Google
+              </motion.button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>or</span>
+                <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Email */}
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={inputStyle}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
+
+                {/* Password */}
+                <div>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleEmailAuth()}
+                      style={{ ...inputStyle, paddingRight: 42 }}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(s => !s)}
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, display: "flex" }}
+                    >
+                      {showPassword
+                        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                {/* Forgot link */}
+                <div style={{ textAlign: "right", marginTop: -6 }}>
+                  <button onClick={() => switchMode("forgot")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif", padding: 0, textDecoration: "underline" }}>
+                    Forgot password?
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      style={{ overflow: "hidden" }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <motion.button
+                  onClick={handleEmailAuth}
+                  disabled={loading}
+                  whileHover={loading ? {} : { scale: 1.015 }}
+                  whileTap={loading ? {} : { scale: 0.98 }}
+                  style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? "Please wait…" : "Sign in"}
+                </motion.button>
+              </div>
+
+              <p style={{ textAlign: "center", marginTop: 20, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", color: "var(--text-muted)", marginBottom: 0 }}>
+                Don't have an account?{" "}
+                <button onClick={() => switchMode("register")} style={{ background: "none", border: "none", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", padding: 0 }}>
+                  Sign up
+                </button>
+              </p>
+
+              <div style={{ textAlign: "center", marginTop: 24 }}>
+                <motion.button
+                  onClick={() => router.push("/")}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <MoveLeft size={14} /> Back to home
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ══ REGISTER ═══════════════════════════════════════════ */}
+          {mode === "register" && (
+            <motion.div
+              key="register"
+              variants={formVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ display: "flex", flexDirection: "column" }}
+            >
+              {/* Google */}
+              <motion.button
+                onClick={handleGoogle}
+                disabled={loading}
+                whileHover={{ scale: 1.01, backgroundColor: "#f9f9f9" }}
+                whileTap={{ scale: 0.99 }}
+                style={{ width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid var(--border)", backgroundColor: "white", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: "0.9rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", cursor: "pointer", marginBottom: 20 }}
+              >
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                  <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+                  <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+                  <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+                  <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+                </svg>
+                Continue with Google
+              </motion.button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+                <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>or</span>
+                <div style={{ flex: 1, height: 1, backgroundColor: "var(--border)" }} />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Username */}
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <label style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)" }}>Username</label>
@@ -354,81 +582,103 @@ export default function LoginPage() {
                     Letters, numbers, and underscores only.
                   </p>
                 </div>
-              )}
 
-              {/* Email */}
-              <input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={inputStyle}
-                onFocus={onFocus}
-                onBlur={onBlur}
-              />
+                {/* Email */}
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={inputStyle}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
 
-              {/* Password */}
-              <div>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder={mode === "register" ? "Password (8+ chars, letters + numbers + symbol)" : "Password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleEmailAuth()}
-                    style={{ ...inputStyle, paddingRight: 42 }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(s => !s)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, display: "flex" }}
-                  >
-                    {showPassword
-                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                    }
-                  </button>
-                </div>
-                {mode === "register" && password && (
-                  <div style={{ marginTop: 10 }}>
-                    <PasswordStrength password={password} />
+                {/* Password */}
+                <div>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password (8+ chars, letters + numbers + symbol)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleEmailAuth()}
+                      style={{ ...inputStyle, paddingRight: 42 }}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(s => !s)}
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, display: "flex" }}
+                    >
+                      {showPassword
+                        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      }
+                    </button>
                   </div>
-                )}
+                  <AnimatePresence>
+                    {password && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        style={{ overflow: "hidden", marginTop: 10 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <PasswordStrength password={password} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      style={{ overflow: "hidden" }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <motion.button
+                  onClick={handleEmailAuth}
+                  disabled={loading}
+                  whileHover={loading ? {} : { scale: 1.015 }}
+                  whileTap={loading ? {} : { scale: 0.98 }}
+                  style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? "Please wait…" : "Create account"}
+                </motion.button>
               </div>
 
-              {/* Forgot link */}
-              {mode === "login" && (
-                <div style={{ textAlign: "right", marginTop: -6 }}>
-                  <button onClick={() => switchMode("forgot")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.8rem", fontFamily: "'Inter', sans-serif", padding: 0, textDecoration: "underline" }}>
-                    Forgot password?
-                  </button>
-                </div>
-              )}
+              <p style={{ textAlign: "center", marginTop: 20, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", color: "var(--text-muted)", marginBottom: 0 }}>
+                Already have an account?{" "}
+                <button onClick={() => switchMode("login")} style={{ background: "none", border: "none", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", padding: 0 }}>
+                  Sign in
+                </button>
+              </p>
 
-              {error && <p style={{ fontSize: "0.82rem", color: "#D92323", fontFamily: "'Inter', sans-serif", margin: 0 }}>{error}</p>}
-
-              <button onClick={handleEmailAuth} disabled={loading} style={{ width: "100%", padding: "12px 0", borderRadius: 8, backgroundColor: "var(--text-main)", color: "white", border: "none", fontSize: "0.9rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}>
-                {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
-              </button>
-            </div>
-
-            <p style={{ textAlign: "center", marginTop: 20, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", color: "var(--text-muted)", marginBottom: 0 }}>
-              {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-              <button onClick={() => switchMode(mode === "login" ? "register" : "login")} style={{ background: "none", border: "none", cursor: "pointer", color: "#1B2A47", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", padding: 0 }}>
-                {mode === "login" ? "Sign up" : "Sign in"}
-              </button>
-            </p>
-
-            <div style={{ textAlign: "center", marginTop: 24 }}>
-              <button onClick={() => router.push("/")} style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <MoveLeft size={14} /> Back to home
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+              <div style={{ textAlign: "center", marginTop: 24 }}>
+                <motion.button
+                  onClick={() => router.push("/")}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px", padding: "5px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", fontFamily: "'Inter', sans-serif", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <MoveLeft size={14} /> Back to home
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

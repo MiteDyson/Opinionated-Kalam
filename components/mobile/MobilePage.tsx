@@ -14,6 +14,26 @@ import { useArticles, type Article } from "@/hooks/useArticles";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/auth/firebase";
 
+// ── Articles Feed Stagger Animation Variants ──────────────────────
+const feedContainerVariants: any = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.03,
+    }
+  }
+};
+
+const feedItemVariants: any = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 260, damping: 22 }
+  }
+};
+
 const RED = "#c0392b";
 const BLACK = "#111111";
 const BG = "#f5f0eb";
@@ -41,7 +61,7 @@ const SectionHeader = memo(function SectionHeader({ label, onClick }: { label: s
 // ── Tag chip — small pill/chip style with background ─
 function Tag({ label }: { label: string }) {
   return (
-    <span className="inline-block px-[6px] py-[1.5px] rounded-full font-sans text-[0.52rem] font-bold text-[#c0392b] uppercase tracking-[0.04em] bg-[#c0392b]/10 whitespace-nowrap">
+    <span className="inline-block px-[6px] py-[1.5px] rounded-full font-sans text-[0.52rem] font-bold text-[#c0392b] uppercase tracking-[0.04em] bg-[#c0392b]/10 whitespace-nowrap max-w-[75px] truncate">
       {label}
     </span>
   );
@@ -388,18 +408,30 @@ const MobilePodcastCard = memo(function MobilePodcastCard({
 const MobileShortCard = memo(function MobileShortCard({ s }: { s: Article }) {
   const views = (s as any).views || 0;
   return (
-    <Link href={`/shorts/${s.slug}`} className="no-underline text-inherit">
-      <article className="bg-transparent border-[1.5px] border-[#111111] rounded-[6px] p-[10px] flex flex-col min-h-[105px]">
+    <Link href={`/shorts/${s.slug}`} className="no-underline text-inherit h-full flex flex-col">
+      <article className="bg-transparent border-[1.5px] border-[#111111] rounded-[6px] p-[10px] flex flex-col min-h-[105px] h-full flex-1">
         {/* Tags top-left */}
         {s.tags?.length > 0 && (
-          <div className="flex gap-1 flex-wrap mb-1">
+          <div className="flex gap-1 flex-nowrap overflow-hidden mb-1 w-full">
             {s.tags.slice(0, 2).map(t => <Tag key={t} label={t} />)}
           </div>
         )}
         {/* Normal weight title */}
-        <h4 className="font-sans text-[0.76rem] font-medium text-[#111111] leading-[1.35] mb-auto pb-2">
+        <h4
+          className="font-sans text-[0.76rem] font-medium text-[#111111] leading-[1.35] pb-2"
+          style={{
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis"
+          }}
+        >
           {s.title}
         </h4>
+        
+        <div className="flex-1" />
+
         {/* Bottom: duration left, views right */}
         <div className="flex justify-between items-center mt-auto">
           <span className="font-sans text-[0.6rem] text-[#999999] flex items-center gap-[3px]">
@@ -545,12 +577,27 @@ function MobileArticlesView({ articles, loading, onTabChange }: { articles: Arti
           {[1, 2, 3, 4].map(i => <div key={i} className="flex flex-col gap-2"><Sk h={108} r={3} /><Sk h={13} w="80%" /><Sk h={10} w="50%" /></div>)}
         </div>
         : displayList.length === 0
-          ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
-            {selectedBeat ? `No articles in "${selectedBeat}" beat.` : "No articles yet."}
-          </p>
-          : <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[14px] pb-5">
-            {displayList.map(a => <MobileArticleCard key={a._id} a={a} />)}
-          </div>
+          ? <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]"
+            >
+              {selectedBeat ? `No articles in "${selectedBeat}" beat.` : "No articles yet."}
+            </motion.p>
+          : <motion.div
+              key={`${selectedBeat ?? "all"}-${sortOpt}`}
+              variants={feedContainerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[14px] pb-5"
+            >
+              {displayList.map(a => (
+                <motion.div key={a._id} variants={feedItemVariants}>
+                  <MobileArticleCard a={a} />
+                </motion.div>
+              ))}
+            </motion.div>
       }
     </div>
   );
@@ -587,10 +634,26 @@ function MobilePodcastsView({ podcasts, loading, onTabChange, activeSlug, setAct
       {loading
         ? [1, 2, 3].map(i => <div key={i} className="h-[96px] rounded-[6px] bg-white border-[1.5px] border-[#111111] mb-[10px] animate-[oksk_1.4s_ease-in-out_infinite]" />)
         : sorted.length === 0
-          ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
-            {selectedBeat ? `No podcasts in "${selectedBeat}" beat.` : "No podcasts yet."}
-          </p>
-          : sorted.map(p => <MobilePodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)
+          ? <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]"
+            >
+              {selectedBeat ? `No podcasts in "${selectedBeat}" beat.` : "No podcasts yet."}
+            </motion.p>
+          : <motion.div
+              key={`${selectedBeat ?? "all"}-${sortOpt}`}
+              variants={feedContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {sorted.map(p => (
+                <motion.div key={p._id} variants={feedItemVariants}>
+                  <MobilePodcastCard p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />
+                </motion.div>
+              ))}
+            </motion.div>
       }
     </div>
   );
@@ -626,12 +689,27 @@ function MobileShortsView({ shorts, loading, onTabChange }: { shorts: Article[];
           {[1, 2, 3, 4].map(i => <div key={i} className="h-[105px] rounded-[6px] bg-white border-[1.5px] border-[#111111] animate-[oksk_1.4s_ease-in-out_infinite]" />)}
         </div>
         : sorted.length === 0
-          ? <p className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]">
-            {selectedBeat ? `No short reads in "${selectedBeat}" beat.` : "No short reads yet."}
-          </p>
-          : <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[10px] pb-5">
-            {sorted.map(s => <MobileShortCard key={s._id} s={s} />)}
-          </div>
+          ? <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-center text-[#666666] font-sans py-[48px] text-[0.88rem]"
+            >
+              {selectedBeat ? `No short reads in "${selectedBeat}" beat.` : "No short reads yet."}
+            </motion.p>
+          : <motion.div
+              key={`${selectedBeat ?? "all"}-${sortOpt}`}
+              variants={feedContainerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-[10px] pb-5"
+            >
+              {sorted.map(s => (
+                <motion.div key={s._id} variants={feedItemVariants}>
+                  <MobileShortCard s={s} />
+                </motion.div>
+              ))}
+            </motion.div>
       }
     </div>
   );

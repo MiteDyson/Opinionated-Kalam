@@ -13,6 +13,7 @@ import { Mark, mergeAttributes } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
 import { auth } from "@/lib/auth/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { clientCache } from "@/lib/services/cache";
 import { uploadToImageKit } from "@/lib/services/imagekit";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AudioUpload from "@/components/admin/AudioUpload";
@@ -37,7 +38,7 @@ const FONT_FAMILIES = [
   { label: "Arial", value: "Arial, sans-serif" },
   { label: "Inter", value: "Inter, sans-serif" },
 ];
-const TEXT_COLORS = ["#1A1A1A", "#D92323", "#1B2A47", "#D38B88", "#555555", "#3a7a3e", "#8a6a00", "#ffffff"];
+const TEXT_COLORS = ["#1A1A1A", "#D92323", "#1B2A47", "#8e44ad", "#555555", "#3a7a3e", "#8a6a00", "#ffffff"];
 const HIGHLIGHT_COLORS = ["#FFF3CD", "#D1ECF1", "#D4EDDA", "#F8D7DA", "#E2E3E5", "#FFE0F0", "#D5D2CB"];
 
 function TBtn({ active, onClick, children, title }: { active?: boolean; onClick: () => void; children: React.ReactNode; title?: string }) {
@@ -115,7 +116,7 @@ export default function NewArticlePage() {
   const [coverImage, setCover] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [audioDuration, setAudioDuration] = useState("");
-  const [type, setType] = useState<"article" | "short">("article");
+  const type = "article";
   const [tags, setTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -214,12 +215,12 @@ export default function NewArticlePage() {
     chain.run(); setCopiedFormat(null);
   };
 
-  const handleSave = async (publishNow = false) => {
+  const handleSave = async () => {
     if (!title.trim()) { setError("Title is required."); return; }
     const content = editor?.getHTML() ?? "";
     if (!content || content === "<p></p>") { setError("Content is required."); return; }
     
-    if (publishNow && !showConfirmPublish) {
+    if (!showConfirmPublish) {
       setShowConfirmPublish(true);
       return;
     }
@@ -235,13 +236,14 @@ export default function NewArticlePage() {
           title, excerpt, content, coverImage, type, tags,
           audioUrl: audioUrl.trim() || undefined,
           duration: audioDuration || undefined,
-          status: publishNow ? "published" : "draft",
+          status: "published",
           author: userName || user.displayName || "Unknown Author",
           readTime,
         }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Save failed"); return; }
-      router.push("/admin");
+      clientCache.invalidate("fetch:/api/articles");
+      window.location.href = "/admin";
     } finally { 
       setSaving(false); 
       setShowConfirmPublish(false);
@@ -261,7 +263,7 @@ export default function NewArticlePage() {
         .tiptap-editor ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0 1em; }
         .tiptap-editor li { margin: 0.3em 0; }
-        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(211,139,136,0.06); color: ${MUTED}; font-style: italic; border-radius: 0 6px 6px 0; }
+        .tiptap-editor blockquote { border-left: 3px solid ${TERRA}; margin: 1.5em 0; padding: 8px 20px; background: rgba(217,35,35,0.06); color: ${MUTED}; font-style: italic; border-radius: 0 6px 6px 0; }
         .tiptap-editor code { background: rgba(27,42,71,0.08); color: ${ACCENT}; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
         .tiptap-editor pre { background: #1A1A1A; color: #e8e8e8; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
         .tiptap-editor pre code { background: none; color: inherit; padding: 0; }
@@ -289,8 +291,8 @@ export default function NewArticlePage() {
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
           {error && <span style={{ color: "#ff6b6b", fontSize: "0.72rem", fontFamily: "'Inter', sans-serif", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{error}</span>}
-          <button onClick={() => handleSave(false)} disabled={saving} style={{ padding: "0 10px", height: 30, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>Draft</button>
-          <button onClick={() => handleSave(true)} disabled={saving} style={{ padding: "0 12px", height: 30, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0 }}>
+          <button onClick={() => router.push("/admin")} disabled={saving} style={{ padding: "0 10px", height: 30, borderRadius: 6, border: "1px solid rgba(255,255,255,0.18)", backgroundColor: "transparent", color: "#ccc", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>Cancel</button>
+          <button onClick={() => handleSave()} disabled={saving} style={{ padding: "0 12px", height: 30, borderRadius: 6, border: "none", backgroundColor: TERRA, color: TEXT, cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Inter', sans-serif", opacity: saving ? 0.7 : 1, whiteSpace: "nowrap", flexShrink: 0 }}>
             {saving ? "…" : "Publish"}
           </button>
         </div>
@@ -298,14 +300,7 @@ export default function NewArticlePage() {
 
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: 22 }}>
 
-        {/* Type toggle */}
-        <div style={{ display: "flex", backgroundColor: "white", borderRadius: 8, padding: 3, border: "1px solid #CFCBC3", width: "fit-content" }}>
-          {(["article", "short"] as const).map(t => (
-            <button key={t} onClick={() => setType(t)} style={{ padding: "6px 18px", borderRadius: 6, border: "none", cursor: "pointer", backgroundColor: type === t ? ACCENT : "transparent", color: type === t ? "white" : MUTED, fontSize: "0.8rem", fontWeight: 600, fontFamily: "'Inter', sans-serif", transition: "all 0.14s" }}>
-              {t === "article" ? "📄 Article" : "⚡ Short Read"}
-            </button>
-          ))}
-        </div>
+        {/* Type toggle removed */}
 
         {/* Title */}
         <div>
@@ -390,7 +385,7 @@ export default function NewArticlePage() {
       <ConfirmModal
         isOpen={showConfirmPublish}
         onClose={() => setShowConfirmPublish(false)}
-        onConfirm={() => handleSave(true)}
+        onConfirm={() => handleSave()}
         title="Publish Content"
         message="Ready to share this article with the world? It will be visible on the public site immediately."
         confirmText="Publish"

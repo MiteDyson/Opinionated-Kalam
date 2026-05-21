@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { verifyAdmin } from "@/lib/auth/verifyAdmin";
 import { createArticleSchema, validateBody } from "@/lib/security/validators";
 import { sanitizeHtml } from "@/lib/security/sanitize";
+import { sendArticleNotification } from "@/lib/services/email";
 
 function getArticleModel() {
   if (mongoose.models.Article) return mongoose.models.Article;
@@ -149,6 +150,13 @@ export async function POST(req: NextRequest) {
     body.updatedAt = new Date();
 
     const article = await Article.create(body);
+
+    if (article.status === "published") {
+      sendArticleNotification(article).catch(err => 
+        console.error("[POST /api/articles] Notification failed:", err.message)
+      );
+    }
+
     revalidatePath("/");
     return NextResponse.json(article, { status: 201 });
   } catch (err: any) {

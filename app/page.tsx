@@ -11,19 +11,19 @@ import { useMobileReady } from "@/hooks/useMobile";
 import { useArticles } from "@/hooks/useArticles";
 import dynamic from "next/dynamic";
 import { MobileAboutView, MobileGrievanceView, MobileTeamView, MobileContactView } from "@/components/mobile/MobileInfoPages";
-import { BookOpen, MoveLeft, Heart, Bookmark, Share, Maximize2, Play, Pause, MoveRight } from "lucide-react";
+import { BookOpen, MoveLeft, Heart, Bookmark, Share, Maximize2, Play, Pause, MoveRight, Check, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Lazy-load the mobile page to avoid SSR issues
 const MobilePage = dynamic(() => import("@/components/mobile/MobilePage"), { ssr: false });
 
-const ACCENT   = "#1B2A47";
-const RED      = "#D92323";
-const MUTED    = "#666666";
+const ACCENT = "#1B2A47";
+const RED = "#D92323";
+const MUTED = "#666666";
 const ALL_TAGS = ["Automotive", "Business", "Environment", "Geo Politics", "Governance", "Law & Order", "Media", "Society", "Technology"];
 
-const POD_BG       = "#e1dfe8";
-const SHORT_BG     = "#fae8c1";
+const POD_BG = "#e1dfe8";
+const SHORT_BG = "#fae8c1";
 const READ_PILL_BG = "#f2e3e1";
 const READ_PILL_TX = "#a94438";
 
@@ -73,6 +73,61 @@ function SectionLabel({ children, onClick }: { children: string; onClick?: () =>
   );
 }
 
+// ── Dropdown Stagger Animation Variants ──────────────────────────
+const dropdownContainerVariants: any = {
+  hidden: { opacity: 0, scale: 0.96, y: -8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 24,
+      staggerChildren: 0.03,
+      delayChildren: 0.05
+    }
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.96,
+    y: -8,
+    transition: {
+      duration: 0.15,
+      ease: "easeInOut" as const
+    }
+  }
+};
+
+const dropdownItemVariants: any = {
+  hidden: { opacity: 0, y: 6 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 300, damping: 22 }
+  }
+};
+
+// ── Articles Feed Stagger Animation Variants ──────────────────────
+const feedContainerVariants: any = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.07,
+      delayChildren: 0.04,
+    }
+  }
+};
+
+const feedItemVariants: any = {
+  hidden: { opacity: 0, y: 22 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 260, damping: 22 }
+  }
+};
+
 // ── Beats Filter dropdown (desktop) ────────────────────────────
 function BeatsDropdown({ selectedBeat, onBeatChange }: { selectedBeat: string | null; onBeatChange: (b: string | null) => void }) {
   const [open, setOpen] = useState(false);
@@ -87,78 +142,111 @@ function BeatsDropdown({ selectedBeat, onBeatChange }: { selectedBeat: string | 
   }, []);
 
   const RotateCcw = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
     </svg>
   );
 
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-      <button
+      <motion.button
         onClick={() => setOpen(o => !o)}
+        whileTap={{ scale: 0.97 }}
         style={{
           display: "flex", alignItems: "center", gap: 6,
-          padding: "6px 14px", borderRadius: 6,
-          border: "1px solid #ddd",
-          backgroundColor: "white",
-          color: "#333",
-          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 500,
+          padding: "7px 14px", borderRadius: 8,
+          border: selectedBeat ? "1px solid #1B2A47" : "1px solid #ddd",
+          backgroundColor: selectedBeat ? "rgba(27, 42, 71, 0.04)" : "white",
+          color: selectedBeat ? "#1B2A47" : "#333",
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
           cursor: "pointer",
+          boxShadow: selectedBeat ? "0 2px 8px rgba(27, 42, 71, 0.08)" : "none",
+          transition: "border-color 0.2s, background-color 0.2s, color 0.2s",
         }}
       >
-        Beats <span style={{ fontSize: "0.55rem", opacity: 0.6 }}>▼</span>
-      </button>
+        <span>{selectedBeat ? `Beats: ${selectedBeat}` : "Beats"}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <ChevronDown size={14} style={{ opacity: selectedBeat ? 0.9 : 0.6 }} />
+        </motion.span>
+      </motion.button>
 
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 6px)", right: 0,
-          backgroundColor: "white", borderRadius: 8,
-          border: "1px solid #eee", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-          zIndex: 100, minWidth: 180, overflow: "hidden",
-          animation: "fadeDown 0.1s ease",
-        }}>
-          <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}`}</style>
-          
-          <button
-            onClick={() => { onBeatChange(null); setOpen(false); }}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            variants={dropdownContainerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             style={{
-              width: "100%", padding: "12px 16px", background: "none", border: "none",
-              cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
-              color: "#999", fontWeight: 600, textAlign: "left",
-              display: "flex", alignItems: "center", gap: "8px",
-              transition: "background 0.2s"
+              position: "absolute", top: "calc(100% + 6px)", right: 0,
+              backgroundColor: "rgba(255, 255, 255, 0.96)",
+              backdropFilter: "blur(16px)",
+              borderRadius: 10,
+              border: "1px solid rgba(0, 0, 0, 0.08)",
+              boxShadow: "0 12px 36px rgba(27, 42, 71, 0.12)",
+              zIndex: 100, width: 135, overflow: "hidden",
             }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9"}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
           >
-            <RotateCcw /> Reset to Default
-          </button>
-          
-          <div style={{ height: "1px", backgroundColor: "#eee" }} />
+            <motion.button
+              variants={dropdownItemVariants}
+              onClick={() => { onBeatChange(null); setOpen(false); }}
+              whileHover={{ x: 4, backgroundColor: "rgba(27, 42, 71, 0.03)" }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                width: "100%", padding: "8px 12px", background: "none", border: "none",
+                cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
+                color: "#999", fontWeight: 600, textAlign: "left",
+                display: "flex", alignItems: "center", gap: "8px",
+                boxSizing: "border-box",
+              }}
+            >
+              <RotateCcw /> Reset
+            </motion.button>
 
-          <div style={{ display: "flex", flexDirection: "column", padding: "4px 0" }}>
-            {ALL_TAGS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => { onBeatChange(tag); setOpen(false); }}
-                style={{
-                  width: "100%", padding: "10px 16px", background: "none", border: "none",
-                  cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem",
-                  color: selectedBeat === tag ? "#1B2A47" : "#444",
-                  fontWeight: selectedBeat === tag ? 700 : 400,
-                  textAlign: "left",
-                  transition: "background 0.2s",
-                  backgroundColor: selectedBeat === tag ? "#f5f2ed" : "transparent"
-                }}
-                onMouseEnter={e => { if (selectedBeat !== tag) (e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9"; }}
-                onMouseLeave={e => { if (selectedBeat !== tag) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+            <div style={{ height: "1px", backgroundColor: "rgba(0,0,0,0.06)" }} />
+
+            <div style={{ display: "flex", flexDirection: "column", padding: "4px 0" }}>
+              {ALL_TAGS.map((tag) => {
+                const isSelected = selectedBeat === tag;
+                return (
+                  <motion.button
+                    key={tag}
+                    variants={dropdownItemVariants}
+                    onClick={() => { onBeatChange(tag); setOpen(false); }}
+                    whileHover={{ x: 4, backgroundColor: "rgba(27, 42, 71, 0.03)" }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      width: "100%", padding: "8px 12px", background: "none", border: "none",
+                      cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
+                      color: isSelected ? "#1B2A47" : "#444",
+                      fontWeight: isSelected ? 700 : 400,
+                      textAlign: "left",
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <span style={{ transition: "color 0.2s" }}>{tag}</span>
+                    {isSelected && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                        style={{ color: "#D92323", display: "flex", alignItems: "center" }}
+                      >
+                        <Check size={14} strokeWidth={3} />
+                      </motion.span>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -176,69 +264,106 @@ function SortDropdown({ selectedSort, onSortChange }: { selectedSort: string; on
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const isDefault = selectedSort === "Newest";
+
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-      <button
+      <motion.button
         onClick={() => setOpen(o => !o)}
+        whileTap={{ scale: 0.97 }}
         style={{
           display: "flex", alignItems: "center", gap: 6,
-          padding: "6px 14px", borderRadius: 6,
-          border: "1px solid #ddd",
-          backgroundColor: "white",
-          color: "#333",
-          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 500,
+          padding: "7px 14px", borderRadius: 8,
+          border: !isDefault ? "1px solid #1B2A47" : "1px solid #ddd",
+          backgroundColor: !isDefault ? "rgba(27, 42, 71, 0.04)" : "white",
+          color: !isDefault ? "#1B2A47" : "#333",
+          fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", fontWeight: 600,
           cursor: "pointer",
+          boxShadow: !isDefault ? "0 2px 8px rgba(27, 42, 71, 0.08)" : "none",
+          transition: "border-color 0.2s, background-color 0.2s, color 0.2s",
         }}
       >
-        Sort <span style={{ fontSize: "0.55rem", opacity: 0.6 }}>▼</span>
-      </button>
+        <span>Sort: {selectedSort}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <ChevronDown size={14} style={{ opacity: !isDefault ? 0.9 : 0.6 }} />
+        </motion.span>
+      </motion.button>
 
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 6px)", right: 0,
-          backgroundColor: "white", borderRadius: 8,
-          border: "1px solid #eee", boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-          zIndex: 100, minWidth: 160, overflow: "hidden",
-          animation: "fadeDown 0.1s ease",
-        }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {options.map((opt, i) => (
-              <React.Fragment key={opt}>
-                <button
-                  onClick={() => { onSortChange(opt); setOpen(false); }}
-                  style={{
-                    width: "100%", padding: "12px 16px", background: "none", border: "none",
-                    cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.88rem",
-                    color: selectedSort === opt ? "#1B2A47" : "#444",
-                    fontWeight: selectedSort === opt ? 700 : 400,
-                    textAlign: "left",
-                    transition: "background 0.2s",
-                    backgroundColor: selectedSort === opt ? "#f5f2ed" : "transparent"
-                  }}
-                  onMouseEnter={e => { if (selectedSort !== opt) (e.currentTarget as HTMLElement).style.backgroundColor = "#f9f9f9"; }}
-                  onMouseLeave={e => { if (selectedSort !== opt) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
-                >
-                  {opt}
-                </button>
-                {i < options.length - 1 && <div style={{ height: "1px", backgroundColor: "#eee" }} />}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            variants={dropdownContainerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{
+              position: "absolute", top: "calc(100% + 6px)", right: 0,
+              backgroundColor: "rgba(255, 255, 255, 0.96)",
+              backdropFilter: "blur(16px)",
+              borderRadius: 10,
+              border: "1px solid rgba(0, 0, 0, 0.08)",
+              boxShadow: "0 12px 36px rgba(27, 42, 71, 0.12)",
+              zIndex: 100, width: 130, overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", padding: "4px 0" }}>
+              {options.map((opt) => {
+                const isSelected = selectedSort === opt;
+                return (
+                  <motion.button
+                    key={opt}
+                    variants={dropdownItemVariants}
+                    onClick={() => { onSortChange(opt); setOpen(false); }}
+                    whileHover={{ x: 4, backgroundColor: "rgba(27, 42, 71, 0.03)" }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      width: "100%", padding: "8px 12px", background: "none", border: "none",
+                      cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "0.85rem",
+                      color: isSelected ? "#1B2A47" : "#444",
+                      fontWeight: isSelected ? 700 : 400,
+                      textAlign: "left",
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <span style={{ transition: "color 0.2s" }}>{opt}</span>
+                    {isSelected && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                        style={{ color: "#D92323", display: "flex", alignItems: "center" }}
+                      >
+                        <Check size={14} strokeWidth={3} />
+                      </motion.span>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Article; showTag?: boolean; activeSlug: string | null; setActiveSlug: (slug: string | null) => void }) {
   const [progress, setProgress] = useState(0);
-  const [current, setCurrent]   = useState("0:00");
+  const [current, setCurrent] = useState("0:00");
   const [totalDur, setTotalDur] = useState(p.duration ?? "0:00");
-  const [liked, setLiked]       = useState(false);
-  const [saved, setSaved]       = useState(false);
-  const [saving, setSaving]     = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef   = useRef<HTMLAudioElement | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [localAnimateLike, setLocalAnimateLike] = useState(false);
+  const [localAnimateSave, setLocalAnimateSave] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
   const isExpanded = activeSlug === p.slug;
 
@@ -316,14 +441,17 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
     }
   };
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     const url = `${window.location.origin}/podcasts/${p.slug}`;
-    if (navigator.share) navigator.share({ title: p.title, url }).catch(() => { });
-    else {
-      navigator.clipboard.writeText(url);
-      alert("Link copied to clipboard!");
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const el = document.createElement("textarea"); el.value = url;
+      document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const skip = (e: React.MouseEvent, sec: number) => {
@@ -335,17 +463,17 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
     e.preventDefault(); e.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
-    
+
     // Ensure metadata is loaded
     if (!isFinite(audio.duration) || audio.duration === 0) return;
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     if (rect.width === 0) return;
-    
+
     const x = e.clientX - rect.left;
     const ratio = Math.max(0, Math.min(1, x / rect.width));
     const targetTime = ratio * audio.duration;
-    
+
     if (isFinite(targetTime)) {
       audio.currentTime = targetTime;
       // Force immediate progress update for better feedback
@@ -357,23 +485,45 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
   };
 
   return (
-    <div onClick={togglePlay} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{
-        backgroundColor: "white",
-        border: "1px solid #111",
-        borderRadius: 14,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        transition: "all 0.2s ease-in-out",
-        cursor: "pointer",
-        position: "relative",
-        boxShadow: isExpanded ? "0 12px 40px rgba(0,0,0,0.12)" : "none",
-        transform: isExpanded ? "translateY(-4px)" : "none"
-      }}>
-        <div style={{ padding: "12px 12px 0" }}>
+    <div onClick={togglePlay} style={{ textDecoration: "none", color: "inherit", height: "100%", display: "flex", flexDirection: "column" }}>
+      <article
+        onMouseEnter={(e) => {
+          const target = e.currentTarget as HTMLElement;
+          if (!isExpanded) {
+            target.style.transform = "translateY(-2px)";
+            target.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+          }
+          const img = target.querySelector("img");
+          if (img) img.style.transform = "scale(1.04)";
+        }}
+        onMouseLeave={(e) => {
+          const target = e.currentTarget as HTMLElement;
+          if (!isExpanded) {
+            target.style.transform = "translateY(0)";
+            target.style.boxShadow = "none";
+          }
+          const img = target.querySelector("img");
+          if (img) img.style.transform = "scale(1)";
+        }}
+        style={{
+          backgroundColor: "white",
+          border: "1px solid #111",
+          borderRadius: 14,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          flex: 1,
+          transition: "transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          cursor: "pointer",
+          position: "relative",
+          boxShadow: isExpanded ? "0 12px 40px rgba(0,0,0,0.12)" : "none",
+          transform: isExpanded ? "translateY(-4px)" : "translateY(0)"
+        }}
+      >
+        <div style={{ padding: "12px 12px 0", overflow: "hidden", borderRadius: 14 }}>
           {p.coverImage ? (
-            <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 10, display: "block" }} />
+            <img src={p.coverImage} alt={p.title} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 10, display: "block", transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
           ) : (
             <div style={{ width: "100%", aspectRatio: "4/3", backgroundColor: "rgba(27,42,71,0.06)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: "2.4rem" }}>🎙</span>
@@ -381,26 +531,62 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
           )}
         </div>
 
-        <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
           {/* Tags row */}
           {showTag && p.tags?.length > 0 && (
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "nowrap", overflow: "hidden", width: "100%" }}>
               {p.tags.slice(0, 2).map(t => (
-                <span key={t} style={{ fontSize: "0.58rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.06em", backgroundColor: "rgba(217,35,35,0.08)", borderRadius: 20, padding: "2px 8px" }}>{t}</span>
+                <span key={t} style={{
+                  fontSize: "0.58rem",
+                  fontWeight: 800,
+                  color: RED,
+                  fontFamily: "'Inter', sans-serif",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  backgroundColor: "rgba(217,35,35,0.08)",
+                  borderRadius: 20,
+                  padding: "2px 8px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "90px",
+                  display: "inline-block"
+                }}>{t}</span>
               ))}
             </div>
           )}
 
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.05rem", lineHeight: 1.25, color: "#111", margin: 0 }}>
+          <h3 style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "1.05rem",
+            lineHeight: 1.25,
+            color: "#111",
+            margin: 0,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis"
+          }}>
             {p.title}
           </h3>
+
+          <div style={{ flex: 1 }} />
 
           {!isExpanded && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
               <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.72rem", color: MUTED }}>{totalDur}</span>
               <button
                 onClick={togglePlay}
-                style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1.1)";
+                  (e.currentTarget as HTMLElement).style.backgroundColor = RED;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "#111";
+                }}
               >
                 <Play size={16} color="white" fill="white" style={{ marginLeft: 2 }} />
               </button>
@@ -419,17 +605,44 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
                 <div style={{ paddingTop: 16 }}>
                   {/* Playback Row */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 16 }}>
-                    <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111", display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", fontWeight: 600 }}>
+                    <button onClick={(e) => skip(e, -10)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111", display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", fontWeight: 600, transition: "opacity 0.2s ease, transform 0.2s ease" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.opacity = "0.7";
+                        (e.currentTarget as HTMLElement).style.transform = "translateX(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.opacity = "1";
+                        (e.currentTarget as HTMLElement).style.transform = "translateX(0)";
+                      }}
+                    >
                       <MoveLeft size={16} /> 10
                     </button>
-                    <button onClick={togglePlay} style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <button onClick={togglePlay} style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: "#111", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform = "scale(1.08)";
+                        (e.currentTarget as HTMLElement).style.backgroundColor = RED;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "#111";
+                      }}
+                    >
                       {isPlaying ? (
                         <Pause size={20} color="white" fill="white" />
                       ) : (
                         <Play size={20} color="white" fill="white" style={{ marginLeft: 3 }} />
                       )}
                     </button>
-                    <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111", display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", fontWeight: 600 }}>
+                    <button onClick={(e) => skip(e, 10)} style={{ background: "none", border: "none", cursor: "pointer", color: "#111", display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", fontWeight: 600, transition: "opacity 0.2s ease, transform 0.2s ease" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.opacity = "0.7";
+                        (e.currentTarget as HTMLElement).style.transform = "translateX(2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.opacity = "1";
+                        (e.currentTarget as HTMLElement).style.transform = "translateX(0)";
+                      }}
+                    >
                       10 <MoveRight size={16} />
                     </button>
                   </div>
@@ -444,11 +657,11 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
                   {/* Interactions Row */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", gap: 12 }}>
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: liked ? RED : "#111" }}>
-                        <Heart size={20} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} />
+                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); setLocalAnimateLike(true); setTimeout(() => setLocalAnimateLike(false), 400); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: liked ? RED : "#111" }}>
+                        <Heart size={20} fill={liked ? "currentColor" : "none"} strokeWidth={1.5} className={localAnimateLike ? "animate-pop" : ""} />
                       </button>
-                      <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#111" }}>
-                        <Share size={18} strokeWidth={1.5} />
+                      <button onClick={handleShare} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: copied ? "#27ae60" : "#111", transition: "color 0.2s" }} title={copied ? "Copied!" : "Share Link"}>
+                        {copied ? <Check size={18} strokeWidth={1.5} /> : <Share size={18} strokeWidth={1.5} />}
                       </button>
                     </div>
 
@@ -457,8 +670,8 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
                     </div>
 
                     <div style={{ display: "flex", gap: 12 }}>
-                      <button onClick={handleSave} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: saved ? RED : "#111", opacity: saving ? 0.5 : 1 }}>
-                        <Bookmark size={20} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} />
+                      <button onClick={(e) => { handleSave(e); setLocalAnimateSave(true); setTimeout(() => setLocalAnimateSave(false), 400); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: saved ? RED : "#111", opacity: saving ? 0.5 : 1 }}>
+                        <Bookmark size={20} fill={saved ? "currentColor" : "none"} strokeWidth={1.5} className={localAnimateSave ? "animate-pop" : ""} />
                       </button>
                       <Link href={`/podcasts/${p.slug}`} onClick={(e) => e.stopPropagation()} style={{ color: "#111", display: "flex" }}>
                         <Maximize2 size={18} strokeWidth={1.5} />
@@ -477,27 +690,84 @@ function PodcastCard({ p, showTag = true, activeSlug, setActiveSlug }: { p: Arti
 
 function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
   return (
-    <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ backgroundColor: "transparent", border: "1px solid #000", borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer", transition: "transform 0.18s, box-shadow 0.18s" }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
-        <div style={{ padding: "10px 10px 0" }}>
-          {s.coverImage ? <img src={s.coverImage} alt={s.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block" }} />
-            : <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "rgba(211,139,136,0.15)", borderRadius: 8 }} />}
+    <Link href={`/shorts/${s.slug}`} style={{ textDecoration: "none", color: "inherit", height: "100%", display: "flex", flexDirection: "column" }}>
+      <article
+        onMouseEnter={(e) => {
+          const target = e.currentTarget as HTMLElement;
+          target.style.transform = "translateY(-2px)";
+          target.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+          const img = target.querySelector("img");
+          if (img) img.style.transform = "scale(1.04)";
+        }}
+        onMouseLeave={(e) => {
+          const target = e.currentTarget as HTMLElement;
+          target.style.transform = "translateY(0)";
+          target.style.boxShadow = "none";
+          const img = target.querySelector("img");
+          if (img) img.style.transform = "scale(1)";
+        }}
+        style={{
+          backgroundColor: "transparent",
+          border: "1px solid #000",
+          borderRadius: 12,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          flex: 1,
+          cursor: "pointer",
+          transition: "transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+        }}
+      >
+        <div style={{ padding: "10px 10px 0", overflow: "hidden", borderRadius: 12 }}>
+          {s.coverImage ? (
+            <img src={s.coverImage} alt={s.title} style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", borderRadius: 8, display: "block", transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
+          ) : (
+            <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: "rgba(217,35,35,0.15)", borderRadius: 8 }} />
+          )}
         </div>
-        <div style={{ padding: "10px 14px 14px" }}>
+        <div style={{ padding: "10px 14px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
           {s.tags?.length > 0 && (
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "nowrap", overflow: "hidden", width: "100%", marginBottom: 6, alignItems: "center" }}>
               {s.tags.slice(0, 3).map(t => (
-                <span key={t} style={{ fontSize: "0.55rem", fontWeight: 800, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.07em", backgroundColor: "rgba(217,35,35,0.08)", borderRadius: 20, padding: "2px 8px" }}>{t}</span>
+                <span key={t} style={{
+                  fontSize: "0.55rem",
+                  fontWeight: 800,
+                  color: RED,
+                  fontFamily: "'Inter', sans-serif",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.07em",
+                  backgroundColor: "rgba(217,35,35,0.08)",
+                  borderRadius: 20,
+                  padding: "2px 8px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "90px",
+                  display: "inline-block"
+                }}>{t}</span>
               ))}
             </div>
           )}
-          <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "0.95rem", lineHeight: 1.25, color: "var(--text-main)", margin: "0 0 8px" }}>{s.title}</h3>
+          <h3 style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: "0.95rem",
+            lineHeight: 1.25,
+            color: "var(--text-main)",
+            margin: "0 0 8px",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis"
+          }}>{s.title}</h3>
+          
+          <div style={{ flex: 1 }} />
+
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--text-muted)", fontSize: "0.68rem", fontFamily: "'Inter', sans-serif" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
               </svg>
               {(s.views || 0).toLocaleString()} {(s.views || 0) === 1 ? 'View' : 'Views'}
             </div>
@@ -515,21 +785,50 @@ function ShortCard({ s, showTag = true }: { s: Article; showTag?: boolean }) {
 function ArticleCard({ a }: { a: Article }) {
   const date = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "";
   return (
-    <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <article style={{ display: "flex", flexDirection: "column", gap: 8, cursor: "pointer" }}>
+    <Link href={`/article/${a.slug}`} style={{ textDecoration: "none", color: "inherit", height: "100%", display: "flex", flexDirection: "column" }}>
+      <article style={{ display: "flex", flexDirection: "column", gap: 8, cursor: "pointer", height: "100%", flex: 1 }}>
         {a.coverImage ? <img src={a.coverImage} alt={a.title} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 10 }} />
           : <div style={{ width: "100%", aspectRatio: "16/10", backgroundColor: "#CFCBC3", borderRadius: 10 }} />}
-        
+
         {/* Tags — pill chips below image */}
         {a.tags?.length > 0 && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", overflow: "hidden", width: "100%", marginTop: 4 }}>
             {a.tags.slice(0, 2).map(t => (
-              <span key={t} style={{ fontSize: "0.58rem", fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", backgroundColor: "rgba(217,35,35,0.06)", borderRadius: 4, padding: "2px 6px" }}>{t}</span>
+              <span key={t} style={{
+                fontSize: "0.58rem",
+                fontWeight: 700,
+                color: RED,
+                fontFamily: "'Inter', sans-serif",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                backgroundColor: "rgba(217,35,35,0.06)",
+                borderRadius: 4,
+                padding: "2px 6px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "90px",
+                display: "inline-block"
+              }}>{t}</span>
             ))}
           </div>
         )}
 
-        <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "1.15rem", lineHeight: 1.25, margin: "4px 0 2px", color: "var(--text-main)" }}>{a.title}</h2>
+        <h2 style={{
+          fontFamily: "'DM Serif Display', serif",
+          fontSize: "1.15rem",
+          lineHeight: 1.25,
+          margin: "4px 0 2px",
+          color: "var(--text-main)",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          textOverflow: "ellipsis"
+        }}>{a.title}</h2>
+        
+        <div style={{ flex: 1 }} />
+
         <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: "0.65rem", color: "var(--text-muted)", fontFamily: "'Inter', sans-serif" }}>
           <span>{date}</span>
           {a.author && <><span style={{ opacity: 0.3 }}>·</span><span>{a.author}</span></>}
@@ -559,11 +858,11 @@ function RecentView({ articles, loading, onTabChange }: { articles: Article[]; l
   const [selectedSort, setSelectedSort] = useState("Newest");
 
   let filtered = selectedBeat ? articles.filter(a => a.tags?.includes(selectedBeat)) : [...articles];
-  
-  if (selectedSort === "Newest") filtered.sort((a,b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  else if (selectedSort === "Oldest") filtered.sort((a,b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
-  else if (selectedSort === "Most Views") filtered.sort((a,b) => (b.views || 0) - (a.views || 0));
-  else if (selectedSort === "Least Views") filtered.sort((a,b) => (a.views || 0) - (b.views || 0));
+
+  if (selectedSort === "Newest") filtered.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  else if (selectedSort === "Oldest") filtered.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
+  else if (selectedSort === "Most Views") filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+  else if (selectedSort === "Least Views") filtered.sort((a, b) => (a.views || 0) - (b.views || 0));
 
   return (
     <div>
@@ -579,16 +878,31 @@ function RecentView({ articles, loading, onTabChange }: { articles: Article[]; l
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "48px 28px" }}>
-          {[1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)}
+          {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "40px 0" }}>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "40px 0" }}
+        >
           {selectedBeat ? `No articles in the "${selectedBeat}" beat.` : "No articles yet."}
-        </p>
+        </motion.p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "48px 28px", marginBottom: 60 }}>
-          {filtered.map(a => <ArticleCard key={a._id} a={a} />)}
-        </div>
+        <motion.div
+          key={`${selectedBeat ?? "all"}-${selectedSort}`}
+          variants={feedContainerVariants}
+          initial="hidden"
+          animate="visible"
+          style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "48px 28px", marginBottom: 60 }}
+        >
+          {filtered.map(a => (
+            <motion.div key={a._id} variants={feedItemVariants}>
+              <ArticleCard a={a} />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
     </div>
   );
@@ -599,9 +913,9 @@ function PodcastsView({ podcasts, loading, activeSlug, setActiveSlug, onTabChang
   const [selectedSort, setSelectedSort] = useState("Newest");
 
   let filtered = selectedBeat ? podcasts.filter(p => p.tags?.includes(selectedBeat)) : [...podcasts];
-  
-  if (selectedSort === "Most Views") filtered.sort((a,b) => (b.views || 0) - (a.views || 0));
-  else if (selectedSort === "Newest") filtered.sort((a,b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+  if (selectedSort === "Most Views") filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+  else if (selectedSort === "Newest") filtered.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
   return (
     <div>
@@ -617,16 +931,31 @@ function PodcastsView({ podcasts, loading, activeSlug, setActiveSlug, onTabChang
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
-          {[1,2,3,4,5,6,7,8].map(i => <SkeletonCard key={i} />)}
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "40px 0" }}>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "40px 0" }}
+        >
           {selectedBeat ? `No podcasts in the "${selectedBeat}" beat.` : "No podcasts yet."}
-        </p>
+        </motion.p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 60 }}>
-          {filtered.map(p => <PodcastCard key={p._id} p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />)}
-        </div>
+        <motion.div
+          key={`${selectedBeat ?? "all"}-${selectedSort}`}
+          variants={feedContainerVariants}
+          initial="hidden"
+          animate="visible"
+          style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 60 }}
+        >
+          {filtered.map(p => (
+            <motion.div key={p._id} variants={feedItemVariants}>
+              <PodcastCard p={p} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
     </div>
   );
@@ -652,16 +981,31 @@ function ShortsView({ shorts, loading, onTabChange }: { shorts: Article[]; loadi
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
-          {[1,2,3,4,5,6,7,8].map(i => <SkeletonCard key={i} />)}
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <p style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "40px 0" }}>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ color: "#aaa", fontFamily: "'Inter', sans-serif", textAlign: "center", padding: "40px 0" }}
+        >
           {selectedBeat ? `No short articles in the "${selectedBeat}" beat.` : "No short articles yet."}
-        </p>
+        </motion.p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 60 }}>
-          {filtered.map(s => <ShortCard key={s._id} s={s} />)}
-        </div>
+        <motion.div
+          key={`${selectedBeat ?? "all"}-${selectedSort}`}
+          variants={feedContainerVariants}
+          initial="hidden"
+          animate="visible"
+          style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 60 }}
+        >
+          {filtered.map(s => (
+            <motion.div key={s._id} variants={feedItemVariants}>
+              <ShortCard s={s} />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
     </div>
   );
@@ -672,7 +1016,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
   onTabChange: (t: string) => void; activeSlug: string | null; setActiveSlug: (s: string | null) => void;
 }) {
   const router = useRouter();
-  const hero   = articles[0];
+  const hero = articles[0];
   const others = articles.slice(1, 5);
 
   if (loading) return (
@@ -683,7 +1027,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
           <Skeleton h={240} radius={8} /><Skeleton h={28} w="70%" /><Skeleton h={14} w="40%" /><Skeleton h={14} /><Skeleton h={14} w="90%" />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {[1,2,3,4].map(i => (
+          {[1, 2, 3, 4].map(i => (
             <div key={i} style={{ display: "flex", gap: 12 }}>
               <Skeleton h={60} w={90} radius={6} />
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}><Skeleton h={14} /><Skeleton h={12} w="60%" /></div>
@@ -694,7 +1038,7 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
       <div>
         <Skeleton h={20} w={180} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 16 }}>
-          {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+          {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
         </div>
       </div>
     </div>
@@ -825,8 +1169,8 @@ function HomeView({ articles, podcasts, shorts, loading, onTabChange, activeSlug
 function HomePageContent() {
   const [isMobile, mobileReady] = useMobileReady();
   const [activeTab, setActiveTab] = useState("home");
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [menuMode, setMenuMode]   = useState<"menu" | "search">("menu");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuMode, setMenuMode] = useState<"menu" | "search">("menu");
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
@@ -850,8 +1194,8 @@ function HomePageContent() {
   // Render mobile layout if on mobile device
   if (isMobile) {
     return (
-      <MobilePage 
-        initialData={{ articles, podcasts, shorts, loading }} 
+      <MobilePage
+        initialData={{ articles, podcasts, shorts, loading }}
       />
     );
   }
@@ -859,17 +1203,17 @@ function HomePageContent() {
   // Desktop layout
   const renderTab = () => {
     switch (activeTab) {
-      case "home":     return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
+      case "home": return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
       case "articles": return <RecentView articles={articles} loading={loading} onTabChange={setActiveTab} />;
       case "podcasts": return <PodcastsView podcasts={podcasts} loading={loading} activeSlug={activeSlug} setActiveSlug={setActiveSlug} onTabChange={setActiveTab} />;
-      case "shorts":   return <ShortsView shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
-      case "about":     return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileAboutView onTabChange={setActiveTab} /></div>;
-      case "team":      return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileTeamView onTabChange={setActiveTab} /></div>;
+      case "shorts": return <ShortsView shorts={shorts} loading={loading} onTabChange={setActiveTab} />;
+      case "about": return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileAboutView onTabChange={setActiveTab} /></div>;
+      case "team": return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileTeamView onTabChange={setActiveTab} /></div>;
       case "grievance": return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileGrievanceView onTabChange={setActiveTab} /></div>;
-      case "contact":   return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileContactView onTabChange={setActiveTab} /></div>;
+      case "contact": return <div style={{ maxWidth: 800, margin: "0 auto" }}><MobileContactView onTabChange={setActiveTab} /></div>;
       // Legacy beats tab kept for deep links
-      case "beats":    return <RecentView articles={articles} loading={loading} onTabChange={setActiveTab} />;
-      default:         return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
+      case "beats": return <RecentView articles={articles} loading={loading} onTabChange={setActiveTab} />;
+      default: return <HomeView articles={articles} podcasts={podcasts} shorts={shorts} loading={loading} onTabChange={setActiveTab} activeSlug={activeSlug} setActiveSlug={setActiveSlug} />;
     }
   };
 

@@ -41,11 +41,11 @@ export default function TeamPage() {
       )}
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 20px 80px" }}>
-        
+
         {/* Navigation */}
         <div style={{ display: "flex", alignItems: "center", marginBottom: 30 }}>
-          <button 
-            onClick={() => router.push("/")} 
+          <button
+            onClick={() => router.push("/")}
             style={{
               background: "none", border: "1px solid rgb(221, 221, 221)", borderRadius: "6px",
               padding: "5px 12px", cursor: "pointer", fontFamily: "'Inter', sans-serif",
@@ -69,7 +69,7 @@ export default function TeamPage() {
 
         {/* Core Content */}
         <div style={{ display: "flex", flexDirection: "column", gap: "48px" }}>
-          
+
           <div style={{ borderBottom: "1px solid #e0d8d0", paddingBottom: "30px" }}>
             <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: "1.8rem", fontWeight: 600, color: "#111111", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
               Vineet Mestry
@@ -96,7 +96,7 @@ export default function TeamPage() {
               Mitesh is the developer behind the platform you interact with here. He built this space to focus on scalable full-stack solutions and production-ready engineering. His goal is simple: to stop relying on boilerplate code and start delivering custom systems that solve real problems and create seamless user experiences.
             </p>
             <div style={{ fontFamily: "'Radley', serif", fontSize: "1.1rem", color: "#111111", marginLeft: "20px" }}>
-              Contact - <a href="mailto:mitesh.shetye154@hgmail.com" style={{ color: "#111111", textDecoration: "underline" }}>mitesh.shetye154@hgmail.com</a>
+              Contact - <a href="mailto:mitesh.shetye154@gmail.com" style={{ color: "#111111", textDecoration: "underline" }}>mitesh.shetye154@gmail.com</a>
             </div>
           </div>
 

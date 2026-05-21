@@ -44,7 +44,7 @@ function TypeBadge({ type }: { type: string }) {
   const map: Record<string, { label: string; color: string }> = {
     article: { label: "Article", color: ACCENT },
     podcast: { label: "Podcast", color: "#3a7a3e" },
-    short: { label: "Short", color: "#b85c58" },
+    short: { label: "Short", color: "#D92323" },
   };
   const s = map[type] ?? map.article;
   return (

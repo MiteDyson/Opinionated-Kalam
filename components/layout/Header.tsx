@@ -25,6 +25,26 @@ interface HeaderProps {
   onTabChange: (tab: string) => void;
 }
 
+const dropdownStaggerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const dropdownItemVariants = {
+  hidden: { opacity: 0, x: 8 },
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: { type: "spring" as const, stiffness: 350, damping: 25 },
+  },
+};
+
 export default function Header({ onMenuOpen, onSearchOpen, activeTab, onTabChange }: HeaderProps) {
   const router = useRouter();
   const { user, logout, isAdmin, isMainAdmin } = useAuth();
@@ -109,15 +129,18 @@ export default function Header({ onMenuOpen, onSearchOpen, activeTab, onTabChang
         <div className="flex items-center gap-[14px] justify-end">
           {user ? (
             <div ref={dropdownRef} className="relative">
-              <button
+              <motion.button
                 onClick={() => setDropdownOpen(o => !o)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 className={`flex items-center gap-[6px] bg-none border ${
-                  !hasUsername ? "border-[#d38b88]/60 text-[#b85c58]" : "border-[var(--border)] text-[var(--text-main)]"
+                  !hasUsername ? "border-[#D92323]/60 text-[#D92323]" : "border-[var(--border)] text-[var(--text-main)]"
                 } cursor-pointer px-[12px] py-[5px] rounded-full text-[0.82rem] font-sans font-semibold transition-all hover:bg-black/5`}
               >
                 {displayName}
-                {!hasUsername && <span className="ml-1 text-[0.62rem] text-[#b85c58]">!</span>}
-              </button>
+                {!hasUsername && <span className="ml-1 text-[0.62rem] text-[#D92323]">!</span>}
+              </motion.button>
 
               <AnimatePresence>
                 {dropdownOpen && (
@@ -130,21 +153,29 @@ export default function Header({ onMenuOpen, onSearchOpen, activeTab, onTabChang
                   >
                     <div className="px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]">
                       <div className="text-[0.78rem] font-bold text-[var(--text-main)] font-sans">
-                        {hasUsername ? displayName : <span className="text-[#b85c58]">No username set</span>}
+                        {hasUsername ? displayName : <span className="text-[#D92323]">No username set</span>}
                       </div>
                       <div className="text-[0.7rem] text-[var(--text-muted)] font-sans mt-[2px]">{user.email}</div>
                     </div>
-                    {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
-                      <Link key={item.label} href={item.href} className="flex items-center px-[14px] py-[10px] no-underline text-[var(--text-main)] text-[0.85rem] font-sans border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
-                        {item.label} <ChevronRight size={12} className="ml-auto text-[var(--text-muted)]" />
-                      </Link>
-                    ))}
-                    <button
-                      onClick={() => { logout(); setDropdownOpen(false); }}
-                      className="flex items-center w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
-                    >
-                      Sign out
-                    </button>
+                    
+                    <motion.div variants={dropdownStaggerVariants} initial="hidden" animate="show">
+                      {[{ label: "Saved Articles", href: "/saved" }, { label: "My Subscriptions", href: "/subscriptions" }].map((item) => (
+                        <motion.div key={item.label} variants={dropdownItemVariants} whileTap={{ scale: 0.97 }}>
+                          <Link href={item.href} className="flex items-center px-[14px] py-[10px] no-underline text-[var(--text-main)] text-[0.85rem] font-sans border-b border-[var(--border)] transition-colors hover:bg-[#faf9f7]">
+                            {item.label} <ChevronRight size={12} className="ml-auto text-[var(--text-muted)]" />
+                          </Link>
+                        </motion.div>
+                      ))}
+                      
+                      <motion.div variants={dropdownItemVariants} whileTap={{ scale: 0.97 }}>
+                        <button
+                          onClick={() => { logout(); setDropdownOpen(false); }}
+                          className="flex items-center w-full px-[14px] py-[10px] bg-none border-none cursor-pointer text-[#e05555] text-[0.85rem] font-sans text-left transition-colors hover:bg-[#fff5f5]"
+                        >
+                          Sign out
+                        </button>
+                      </motion.div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>

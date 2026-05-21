@@ -17,7 +17,7 @@ interface ConfirmModalProps {
 }
 
 const ACCENT = "#1B2A47";
-const TERRA  = "#D38B88";
+const TERRA  = "#D92323";
 
 export default function ConfirmModal({
   isOpen,

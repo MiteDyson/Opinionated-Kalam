@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import { auth } from "@/lib/auth/firebase";
+import { clientCache } from "@/lib/services/cache";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -81,7 +82,7 @@ const SkeletonStat = () => (
 const typeBadge = (type: string) => {
   const map: Record<string, { bg: string; color: string }> = {
     article: { bg: "rgba(27,42,71,0.12)",   color: ACCENT },
-    short:   { bg: "rgba(211,139,136,0.2)", color: "#b85c58" },
+    short:   { bg: "rgba(217,35,35,0.12)", color: "#D92323" },
     podcast: { bg: "rgba(76,140,80,0.12)",  color: "#3a7a3e" },
   };
   const s = map[type] ?? map.article;
@@ -132,7 +133,7 @@ function MobileArticleRow({ a, i, filtered, onToggleStatus, onDelete, actionLoad
         <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
           {canEdit && (
             <Link
-              href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`}
+              href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : a.type === "short" ? `/admin/shorts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`}
               title="Edit"
               style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
             ><IconEdit /></Link>
@@ -226,8 +227,8 @@ export default function AdminDashboard() {
       const token = await auth.currentUser?.getIdToken();
       const headers = { Authorization: `Bearer ${token}` };
       const [pubRes, draftRes] = await Promise.all([
-        fetch("/api/articles?status=published", { headers }),
-        fetch("/api/articles?status=draft",     { headers }),
+        fetch("/api/articles?status=published", { headers, cache: "no-store" }),
+        fetch("/api/articles?status=draft",     { headers, cache: "no-store" }),
       ]);
       const pub   = pubRes.ok   ? await pubRes.json()   : [];
       const draft = draftRes.ok ? await draftRes.json() : [];
@@ -248,6 +249,7 @@ export default function AdminDashboard() {
     try {
       const token = await auth.currentUser?.getIdToken();
       await fetch(`/api/articles/${confirmDelete.slug}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      clientCache.invalidate("fetch:/api/articles");
       setArticles(prev => prev.filter(a => a.slug !== confirmDelete.slug));
       toast.success(`"${confirmDelete.title}" deleted`);
       setConfirmDelete(null);
@@ -276,6 +278,7 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus, publishedAt: newStatus === "published" ? new Date() : null }),
       });
+      clientCache.invalidate("fetch:/api/articles");
       setArticles(prev => prev.map(a => a.slug === article.slug ? { ...a, status: newStatus } : a));
       toast.success(`Post ${newStatus === "published" ? "published" : "moved to drafts"}`);
       setConfirmPublish(null);
@@ -546,7 +549,7 @@ export default function AdminDashboard() {
                   <div style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.82rem", color: MUTED }}>{a.likes ?? 0}</div>
                   <div style={{ display: "flex", gap: 5 }}>
                     {(isFullAdmin || (user?.displayName && a.author === user.displayName)) && (
-                      <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
+                      <Link href={a.type === "podcast" ? `/admin/podcasts/${a.slug}/edit` : a.type === "short" ? `/admin/shorts/${a.slug}/edit` : `/admin/articles/${a.slug}/edit`} title="Edit"
                         style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid rgba(27,42,71,0.25)", backgroundColor: "transparent", color: ACCENT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "all 0.13s" }}
                       ><IconEdit /></Link>
                     )}
